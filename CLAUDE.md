@@ -19,14 +19,19 @@ End-to-end UGC ad cloning. Four halves:
 4. User picks the model (Seedance/Kling/Veo) and provides their product/character assets.
 5. Generate **4–6 reference characters in parallel** with GPT Image 2 → user picks one anchor.
 6. Adapt the analysis into a model-specific prompt. **Show the full prompt in chat. Wait for explicit go.**
-7. **Test proper-noun pronunciation at 4s** before committing to longer clips.
+7. **Test proper-noun pronunciation at the shortest viable duration** before committing to longer clips.
 8. Generate clips (typically 3 for a 35s ad: 14 + 11 + 10s).
-9. Stitch with ffmpeg `concat` demuxer (lossless if codec params match).
-10. Add b-rolls via `filter_complex` (replace video segments, audio passthrough).
-11. Caption with `caption.py` (Whisper → PIL → ffmpeg overlay).
-12. Optional variants: same script, different character anchor.
+9. **Dissect every generated clip immediately** with `dissect.py --interval 1.0`. Review opening, midpoint, and end frames + Whisper transcript. Verify: identity match, visual age, emotional tone lock, camera lock (no drift), motion fidelity, lip-sync, proper-noun pronunciation, audio quality. **Do not proceed to the next clip or to stitching until the current clip passes this QA gate.**
+10. **Trim silence; chain via clip-1 anchor.** Per-clip post-QA flow:
+    a. `scripts/trim_silence.py <clip.mp4> <transcript.json>` (start/end-only by default — preserves internal pacing). Outputs `<clip>_trimmed.mp4`.
+    b. **For clips 2-N: use a clean frame from CLIP 1 as the `IMAGE_2_VIDEO` first-frame**, NOT the last frame of the previous clip. Last-frame chaining compounds quality degradation across N generations; clip-1 anchor keeps quality consistent throughout the ad. Small visible "reset" between clips is acceptable for short-form UGC pacing.
+    c. Pick a clean clip-1 frame: eyes direct, mouth in soft neutral line, no mid-blink. Upload to KIE; reuse the same uploaded URL for all subsequent clip prompts.
+11. Stitch with ffmpeg `concat` demuxer (lossless if codec params match).
+12. Add b-rolls via `filter_complex` (replace video segments, audio passthrough).
+13. Caption with `caption.py` (Whisper → PIL → ffmpeg overlay).
+14. Optional variants: same script, different character anchor.
 
-**Never run a generation without explicit user approval ("go", "run", "yes").**
+**Iteration cadence:** generate freely — no explicit "go" needed per clip. After each clip, dissect per step 9. If it passes QA, advance to the next clip. If it fails, you have up to **3 re-generation attempts on the same clip** to fix the issue (adjust the prompt, the seed, the reference image, or the model). After 3 failed attempts, stop and escalate to the user for guidance instead of burning budget.
 
 ---
 
@@ -148,6 +153,7 @@ Phonetic respells that work:
 - `Chino` → `Chee-no`
 - `Folsom` → usually fine
 - `Represa` → `Re-press-uh`
+- `Mija` → `Mee-hah` (Whisper may transcribe as "me, huh?" — that's the correct Spanish /ˈmi.xa/ rendering, **keep it; do not revert to "Mija" spelling in the prompt**)
 
 Pronunciation can drift at longer durations even when 4s test was clean. If a respell fails at 14s, try a more phonetically explicit form, or plan to dub via ElevenLabs at the end.
 
@@ -171,6 +177,22 @@ ffmpeg -y -i partN.mp4 -t 8.5 -c copy partN_trimmed.mp4
 ```
 
 **Use absolute paths in the concat list** — relative paths resolve relative to the list file, not the cwd.
+
+### Last-frame → first-frame continuity (Veo 3 IMAGE_2_VIDEO chain)
+
+For a "fake one-take" multi-clip Veo ad, chain clips so each new clip starts from the previous clip's final frame. After each clip lands and passes QA:
+
+```bash
+# Extract last clean frame (avoid mid-blink/mid-syllable — use sseof tail or pick a known-clean timestamp)
+ffmpeg -y -sseof -0.05 -i clipN.mp4 -frames:v 1 -q:v 2 /tmp/clipN_last.jpg
+
+# Upload to KIE for the next clip's first-frame reference
+curl -sS -X POST https://kieai.redpandaai.co/api/file-stream-upload \
+  -H "Authorization: Bearer $KIE_API_KEY" \
+  -F "file=@/tmp/clipN_last.jpg" -F "uploadPath=aicreative" | jq -r '.data.downloadUrl'
+```
+
+Then use that URL as `imageUrls[0]` with `generationType: "IMAGE_2_VIDEO"` for clip N+1. Caveat: if the last frame is mid-syllable / mid-blink / glance off-camera, the next clip starts in that ugly state — pick an earlier clean frame in those cases or accept a small visual reset.
 
 ---
 
