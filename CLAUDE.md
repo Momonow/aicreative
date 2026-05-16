@@ -24,7 +24,7 @@ End-to-end UGC ad cloning. Four halves:
     a. `scripts/trim_silence.py <clip.mp4> <transcript.json>` (start/end-only by default — preserves internal pacing). Outputs `<clip>_trimmed.mp4`.
     b. **For clips 2-N: use a clean frame from CLIP 1 as the `IMAGE_2_VIDEO` first-frame**, NOT the last frame of the previous clip. Last-frame chaining compounds quality degradation across N generations; clip-1 anchor keeps quality consistent throughout the ad. Small visible "reset" between clips is acceptable for short-form UGC pacing. (Last-frame chain is an alternate technique — see "Stitching multi-clip ads" — for a "fake one-take" feel where you accept the drift.)
     c. **Rotate anchor frames across clips 2-N** — extract 5-7 different clean frames from clip 1 at varied timestamps (e.g., t=0.5s, 2.0s, 3.5s, 5.0s, 6.5s) and assign a different one to each subsequent clip. Optionally pull 1-2 more from clip 2 once it lands for extra variety. **Never reuse a single anchor URL for every clip** — that produces visually identical clip starts and reads as templated/unnatural on UGC playback. Pattern in `scripts/chowchilla_a2_variations.py`: `get_anchor_url()` checks `clip{N}_anchor_url.txt` per-clip first, falls back to `clip1_anchor_url.txt`. See `feedback_clip_anchor_rotation.md` memory.
-11. **Audit voice consistency** with `scripts/audio_match.py <clip1_trimmed.mp4> <clip2_trimmed.mp4> ...`. If voice loudness span > ~10dB or several clips fail tolerance, **normalize via ElevenLabs voice changer** (see "Audio normalization" section). This single step fixes Veo's biggest weakness — its TTS varies wildly between generations.
+11. **Audit voice consistency — run BOTH detectors** (see "Audio QA" section): `scripts/audio_match.py` for loudness/noise/spectral outliers, and `scripts/voice_consistency.py` for speaker-identity drift (embedding cosine + F0). `audio_match` alone misses the "wrong person" cases; `voice_consistency` alone misses the "right person but mic blew up" cases. If voice loudness span > ~10dB OR speaker similarity < 0.85 OR |ΔF0| > 15Hz on several clips, **normalize via ElevenLabs voice changer** (see "Audio normalization" section). This is the single fix for Veo's biggest weakness — its TTS varies wildly between generations.
 12. Stitch with ffmpeg `concat` demuxer (lossless if codec params match).
 13. Add b-rolls via `filter_complex` (replace video segments, audio passthrough).
 14. Caption with `caption.py` (Whisper → PIL → ffmpeg overlay).
@@ -74,15 +74,28 @@ Use this even when Veo runs via Poyo — image hosting is a separate concern fro
 - **Submit rate limit: 20 requests per 10 seconds (account-wide).** Batches >20 in parallel will 429. Use `max_workers=10` in ThreadPoolExecutor — generation takes 90-180s so sustained submit rate stays under limit.
 - **Status polling rate limit: 1 request per 2 seconds PER TASK.** The built-in `_poll(interval=5)` is safe. Don't manually curl the status endpoint while a script is polling — you'll trip the limit and confuse the script.
 - Async model: POST `/api/generate/submit` returns `task_id`, then poll `/api/generate/status/{task_id}` until `status: finished`. Files in `data.files[].file_url`, valid 24h.
+- **KIE/Poyo tempfile URLs (both inputs and outputs) expire after ~24h.** This includes anchor frame URLs uploaded via `kie_client.upload_file()` for `IMAGE_2_VIDEO` / `frame`-mode generation — `clip{N}_anchor_url.txt` files from prior sessions WILL go dead. **Always keep the local source file** (e.g., `outputs/<source>/frames/scene_00_at_0.00s.jpg`, `outputs/<variation>/clip1_anchor.jpg`) and re-upload via `upload_file()` to get a fresh URL before re-running an old variation or porting a prompt to another platform. Don't trust the URLs in version-controlled txt files as a long-term reference.
 - `veo3.1-fast` is the model id (not `veo3_fast`). Quality model `veo3.1-quality` exists too — costlier.
+- **Poyo outages → KIE Veo fallback.** Poyo's `veo3.1-fast` endpoint can degrade — 10min+ timeouts on payloads that succeeded earlier, "Server exception" on benign prompts. When this happens, `kie_client.generate_veo` (model `veo3_fast`, mode `"IMAGE_2_VIDEO"`) is the backup at $0.30/clip vs $0.10 — same underlying Veo 3 Fast model, different infrastructure. Use the **same anchor URL** (works for both providers); output is codec-compatible for concat. **Diagnosis:** if a known-good payload (one that succeeded earlier in the session) times out too, it's a Poyo-wide outage, not prompt-specific moderation — switch providers immediately.
 
 **Resolution mismatch warning:** Seedance 480p (496×864) won't concat cleanly with Veo/Kling 720p (720×1280). Pick one model per ad, or rescale.
+
+### Veo content-moderation triggers (Poyo + KIE)
+
+Veo's NSFW/safety classifier runs ~10% into the job. Rejected prompts return opaque `"Server exception"` — the real reason is hidden. After 2 consecutive 10%-mark failures, treat it as deterministic moderation, not transient — re-rolling won't help, the prompt needs to change.
+
+Visual-prompt language that triggers rejection, especially when combined with sensitive dialogue ("sexual abuse", "juvenile center", "lawsuit"):
+- **Racial descriptors** — "Black man" gets flagged on sensitive-topic dialogue. Use a skin-tone descriptor instead: `"man, medium-dark skin tone"` passes where `"Black man, medium-dark skin tone"` doesn't.
+- **Specific commercial settings** — `"Chicago corner store / bodega"`, `"liquor store exterior"` get flagged. Soften to `"residential street, brick wall slightly out of focus, faded awning edge"`.
+- **"durag"** — slightly higher rejection rate; **`"wave cap tied at the back"`** reads visually identical in the output and passes reliably.
+- **In-car / parked-vehicle settings + young Black male persona** — frequently blocked even with benign dialogue. (Persona E "block_serious" in the IL JDC campaign was entirely unusable until the car setting was swapped.) **`"older sedan"`** is worse than **`"car"`**.
+- **Neck tattoo + sensitive dialogue** — compounds risk. Remove the neck-tattoo line from the visual prompt for clips that carry abuse/lawsuit language. Carry the neck tattoo on clip 1 only (where dialogue is the hook, not the claim).
 
 ### GPT Image — OpenAI direct (NOT KIE)
 
 | Function | Module | Auth | Notes |
 |---|---|---|---|
-| `generate_image` | `openai_image.py` | `OPENAI_API_KEY` | Text-to-image and image-to-image via OpenAI's `gpt-image-1` (or successor). **Do not use `kie_client.generate_gpt_image`.** |
+| `generate_image` | `openai_image.py` | `OPENAI_API_KEY` | Text-to-image and image-to-image via OpenAI's **`gpt-image-2`** (current default, confirmed live 2026-05). **Do not use `kie_client.generate_gpt_image`.** |
 
 `kie_client.generate_gpt_image` exists but is **deprecated for this project** — it routes through KIE's GPT Image proxy and adds cost/latency. Always import from `openai_image` instead.
 
@@ -194,6 +207,23 @@ seq 1 10 | xargs -P 2 -I {} .venv/bin/python dissect.py clips/clip{}.mp4 --inter
 for n in {1..10}; do .venv/bin/python dissect.py clip${n}.mp4 & ; done; wait
 ```
 
+### dissect.py output-dir collisions
+
+`dissect.py` writes to `outputs/<video_stem>/`. When you have multiple files named `clip1.mp4`, `clip2.mp4` across persona directories (e.g. `outputs/illinois_jdc_blue_collar/clip1.mp4` and `outputs/illinois_jdc_stoop_calm/clip1.mp4`), they all collide on `outputs/clip1/` and overwrite each other — the last dissect wins, prior transcripts are lost.
+
+**Fix:** copy each clip to a unique stem before dissecting:
+
+```bash
+for slug in blue_collar stoop_calm; do
+  for idx in 1 2 3; do
+    cp outputs/illinois_jdc_${slug}/clip${idx}.mp4 outputs/illinois_jdc_${slug}_clip${idx}.mp4
+  done
+done
+# Each dissect output now lands in outputs/illinois_jdc_<slug>_clip<idx>/
+```
+
+Then point `trim_silence.py` / `voice_consistency.py` at the unique-stem transcript path.
+
 ### Tesseract on macOS — invoke via stdin
 
 The homebrew tesseract install can't read files directly from `/tmp/` due to sandbox. Always pipe via stdin:
@@ -223,6 +253,8 @@ ffmpeg/ffprobe on PATH (`brew install ffmpeg`). `KIE_API_KEY` and `ELEVENLABS_AP
 ## Prompt Rules
 
 - Word limit ~100–260 for Seedance prompts. Kling allows 0–2500.
+- **Veo (Poyo / KIE)** accepts ~3,000+ characters comfortably — our standard Chowchilla per-clip prompts run ~3,100 chars / ~520 words with all locks (CHARACTER, SETTING, CAMERA, register, EYES_LOCK, MOUTH_LOCK_NEUTRAL, NO_TEXT_LOCK, PRONUNCIATION_LOCK, DIALOGUE_LOCK, SPOKEN DIALOGUE).
+- **Runway (Gen-4 / Aleph) hard-caps prompts at 2,500 characters.** When porting a Veo prompt over, compress in this order without losing fidelity: (1) consolidate EYES + MOUTH locks into one sentence, (2) trim adjectival redundancy in CHARACTER ("late 40s to early 50s" → "late 40s", "Throughout the entire clip" → drop), (3) shorten SETTING photo descriptions ("framed family photographs — a graduation portrait at left…" → "framed family photos — graduation at left…"), (4) drop the "no beauty mode, no retouching, no filter, no skin smoothing" tail if still over. **Never cut**: CHARACTER core identity, register, NO_TEXT_LOCK, PRONUNCIATION_LOCK, DIALOGUE_LOCK, SPOKEN DIALOGUE. Target ~2,300 chars to leave headroom. V2 clip 1 reference: 3,171 → 2,287 chars with all critical locks intact.
 - Reference images in Seedance prompts: `@(img1)`, `@(img2)` in order.
 - Reference elements in Kling prompts: `@element_name` (defined under `kling_elements`).
 - **Forbidden words:** cinematic, professional, stunning, 8k, studio, perfect.
@@ -355,6 +387,11 @@ Veo will frequently:
 6. **News-headline phrasing triggers newscaster TTS delivery** — if the dialogue reads like an article intro ("Women from the California women's prisons are finding out they may qualify…"), Veo's TTS shifts to a formal/energetic announcer voice that doesn't match the intimate UGC tone of the rest of the ad. **Fix: rewrite the line to be conversational** ("Women in California prisons may qualify for compensation. For what the guards did.") AND add a tone hint like "SAME intimate quiet tone as the rest, NOT news-anchor, NOT informational, NOT energetic — she's repeating what she just read in her own quiet voice."
 7. **Quote-framing ("And it said…", "She's like…") sometimes triggers a second, off-screen narrator voice** for the framing phrase. The framing is rendered by a DIFFERENT speaker than the main character. Fix: drop the framing entirely. Just have her say the line directly.
 8. **Doubled lines** — Veo occasionally repeats the last sentence ("Tap the button. See if you qualify. See if you qualify."). Must re-roll. Detect via Whisper transcript word-count.
+9. **Em-dash list-completion trap** — Veo invents a noun to "complete" a grammatically-open list. Example from IL JDC: `"...Cook County, St. Charles, or Harrisburg — I need you to hear this"` produced gibberish `"Coast Center"` between "Harrisburg" and "I need" — Veo grammatically completed the list as if the user had said `"Cook County [center], St. Charles [center], or Harrisburg [Center]"`. The em-dash gave Veo permission to keep going.
+   **Fix:** restructure so the noun list is grammatically closed before the next clause. Use a preposition + comma:
+   - ✗ `"a kid in Cook County, St. Charles, or Harrisburg — I need you to hear this"`
+   - ✓ `"a kid LOCKED UP IN Cook County, St. Charles, or Harrisburg, I need you to hear this"`
+   The `"locked up in [list],"` structure makes the noun phrase grammatically complete. Veo no longer feels compelled to add a list-completing noun. Same rule applies to em-dashes, "or", "and" — any conjunction without a closing preposition invites improv.
 
 ### Required prompt clauses to lock dialogue
 
@@ -406,11 +443,31 @@ EBU R128 loudness normalization. Brings voice loudness within ~2.5dB across clip
 
 `loudnorm` only fixes LOUDNESS. If one clip sounds "from a different mic" (different spectral centroid, different noise floor) compared to the others — that's a timbre problem, not a loudness problem. Use voice_changer.
 
-**Important learnings from this session:**
-- Voice_changer normalizes TIMBRE successfully (centroid drift drops from ±15% to ±3%).
+**Important learnings:**
+- Voice_changer normalizes TIMBRE successfully (centroid drift drops from ±15% to ±3%, speaker-embedding sim jumps from ~0.83 to ~0.90+).
 - But voice_changer can MAKE LOUDNESS VARIANCE WORSE — the cloned voice's output cleanliness varies per clip, so output loudness diverges. Always run `loudnorm` AFTER voice_changer if you use it.
 - **ElevenLabs has a 5-concurrent-request limit.** Use `max_workers=4` in ThreadPoolExecutor.
-- Don't bother voice-changing if `audio_match.py` only flags a few clips on LOUDNESS — `loudnorm` alone is enough. Only invoke voice_changer when CENTROID or NOISE differs significantly (>10%/4dB).
+- Don't bother voice-changing if `audio_match.py` only flags a few clips on LOUDNESS — `loudnorm` alone is enough. Only invoke voice_changer when CENTROID or NOISE differs significantly (>10%/4dB), OR when `voice_consistency.py` flags speaker similarity <0.85.
+
+### STS pitch-delta zones — when voice_changer works vs fails
+
+Voice_changer is Speech-to-Speech: it preserves the source's **pitch contour** (so lip-sync stays intact) and only swaps **timbre**. **It cannot fix pitch drift.** A clip whose mean F0 is +50Hz higher than your reference clip will STILL be +50Hz higher after voice_changer — just now sounding like the cloned voice at an unnatural elevated pitch.
+
+| Source F0 delta from ref clip | STS outcome |
+|---|---|
+| ≤10Hz | Clean — timbre unified, post-VC sim ≥0.90 |
+| 10–25Hz | Usually clean, reads as natural intonation |
+| 25–40Hz | Hit-or-miss — depends on input quality, post-VC sim 0.80–0.90 |
+| **>40Hz** | **STS fails** — output sounds like different person, sim drops to 0.70s |
+
+When source clip's F0 delta is in the failure zone (>40Hz from reference clip 1), **re-roll the source clip via Veo** before running STS — don't keep adjusting stability values. Empirical: bumping `stability` from 0.5 → 0.7 on a +45Hz-off clip only moved sim from 0.724 → 0.752 (still under threshold).
+
+**Right order of operations:**
+1. Generate all clips → audit with `voice_consistency.py`
+2. If any clip's F0 delta from clip 1 >40Hz → **re-roll that clip** (Poyo first; KIE if Poyo's down) — don't proceed to STS yet
+3. Once all clips have F0 deltas <40Hz → clone clip 1's voice → voice_changer each clip (stability=0.5, similarity_boost=0.85, model `eleven_multilingual_sts_v2`)
+4. Re-loudnorm post-VC
+5. Re-audit with `voice_consistency.py` to confirm sim ≥0.85 across all clips before stitching
 
 ### Recipe (for timbre normalization)
 
@@ -472,7 +529,9 @@ Voice loudness span shrinks from ~40dB (Veo native) to ~5dB across all clips. Us
 
 ---
 
-## Audio QA (`scripts/audio_match.py`)
+## Audio QA — two detectors, run both
+
+### Tier 1: `scripts/audio_match.py` (spectral statistics)
 
 Audits voice loudness, noise floor, and spectral character across clips against a reference. Use after every Veo batch to detect outliers before stitching.
 
@@ -486,10 +545,30 @@ Audits voice loudness, noise floor, and spectral character across clips against 
 - spectral centroid ±20%
 - spectral rolloff ±20%
 
-**Use cases:**
-1. **Before stitching** — detect Veo outliers; decide whether to re-roll worst offenders or normalize via voice_changer
-2. **After voice_changer** — verify normalization actually reduced the spread
-3. **Tuning thresholds** — relax `--tol-voice-db 5` etc. if the strict defaults flag every clip; the goal is to spot true outliers, not theoretical drift
+**Catches:** loudness mismatches, mic/noise-floor differences, gross timbre drift.
+**Misses:** speaker-character changes that humans clearly hear. Centroid at ±20% is too loose for "is this the same person."
+
+### Tier 2: `scripts/voice_consistency.py` (speaker-identity QA)
+
+Use this whenever the user (or you on close listening) reports "the voice changes" between clips — `audio_match.py` will pass clips that clearly sound like different speakers.
+
+```bash
+.venv/bin/python scripts/voice_consistency.py <ref.mp4> <clip2.mp4> <clip3.mp4>
+```
+
+Two metrics that match human perception:
+1. **Speaker embedding** (Resemblyzer / GE2E) — 256-dim unit vector per clip, cosine similarity to reference.
+   - `≥0.85` reliably same speaker
+   - `0.75–0.85` borderline, audible character shift
+   - `<0.75` reads as different speaker
+2. **F0 (pitch)** via librosa pyin — `mean ± std` per clip in Hz.
+   - `Δmean ≤8Hz` below human perception threshold
+   - `>15Hz` audibly different pitch
+   - `>40Hz` essentially a different vocal register
+
+Stack is free, local, no API calls. Resemblyzer is Apache 2.0; weights bundled (~17MB cached). `pip install resemblyzer` once.
+
+**Run both.** Tier 1 catches volume/mic-floor issues. Tier 2 catches speaker-identity drift. Each misses what the other catches.
 
 ---
 
@@ -538,10 +617,12 @@ These auto-surface on relevant user phrases. Don't need to invoke manually — C
 2. Switch from v2v to i2v if moderation keeps tripping.
 3. Try a different model (Seedance → Kling, etc.).
 4. For sensitive contexts: encode visually (institutional pants, weary look) instead of naming ("victim", "abuse", "prison").
-5. **Veo "Internal Error" responses** are random; just re-roll the same prompt.
-6. **Veo improvisation** (extra words, doubled proper nouns, trailing word, burned text, off-screen narrator) — see "Veo 3 gotchas" section. Most issues require **re-roll**, not post-fix.
+5. **Veo "Internal Error" responses** are random; just re-roll the same prompt. **Exception:** if you get 2+ consecutive failures at the ~10% progress mark, treat it as deterministic content-moderation, not transient — see "Veo content-moderation triggers" in the Poyo section. Soften the prompt or anchor before more retries.
+6. **Veo improvisation** (extra words, doubled proper nouns, trailing word, burned text, off-screen narrator, em-dash list-completion) — see "Veo 3 gotchas" section. Most issues require **re-roll**, not post-fix.
 7. **Burned subtitle hallucinations** — flagged automatically by `dissect.py`'s OCR step. Check `burned_text.json`. Re-roll any flagged clip.
 8. **Poyo rate-limited (429)** — drop `max_workers` from 40 to 10. Submit limit is 20/10s account-wide.
+9. **Poyo wider outage** — known-good payloads (a prompt+anchor combo that succeeded earlier in the session) time out after 10min, or every submission returns "Server exception" regardless of prompt content. Switch to `kie_client.generate_veo` (model `veo3_fast`, mode `"IMAGE_2_VIDEO"`) — same Veo model, different infra, $0.30/clip. See Poyo gotchas section.
+10. **Voice character drifts across clips post-stitch** — run `voice_consistency.py`. If a clip's F0 delta from ref is >40Hz, voice_changer won't fix it (STS preserves source pitch). Re-roll that clip via Veo first, then run STS. See "STS pitch-delta zones".
 
 ---
 
@@ -582,3 +663,9 @@ For variants (A/B test same script with different character), pick a different a
 - **Paraphrase the Pulaski/Jones disclaimer** — it's REGULATED legal copy. Every comma is intentional. Skill `pulaski-jones-disclaimer` has the verbatim text.
 - **Frame Veo dialogue as a news-headline** (e.g., "Women from the X are finding out…") — triggers newscaster TTS that doesn't match intimate UGC tone. Rewrite conversationally.
 - **Use quote-framing in dialogue** ("And it said…", "She's like…") — Veo sometimes renders the framing as a separate off-screen narrator voice. Drop the framing.
+- **End a noun list with an em-dash before the next clause** (e.g., "…Cook County, St. Charles, or Harrisburg — I need…") — Veo invents a noun to complete the list ("Coast Center"). Use a preposition + closing comma: `"locked up in [list], I need…"`.
+- **Include "Black man" in Veo prompts paired with sensitive-topic dialogue** (sexual abuse, juvenile center, lawsuit) — deterministic moderation block. Use a skin-tone descriptor only: `"man, medium-dark skin tone"`. Same applies to specific commercial settings ("Chicago corner store"), in-car settings + young Black male persona, and neck-tattoo descriptors. See "Veo content-moderation triggers".
+- **Retry voice_changer with higher stability to fix big pitch drift** — STS preserves source pitch by design. If F0 delta from ref clip is >40Hz, re-roll the source via Veo instead. Bumping `stability=0.5 → 0.7` only moves sim ~0.03 (0.724 → 0.752 — still under 0.85 threshold).
+- **Skip `voice_consistency.py` when user reports voice changes** — `audio_match.py`'s ±20% centroid tolerance is too loose to catch what humans hear. Always run both detectors.
+- **Dissect multiple `clip1.mp4` files in one run** — they all overwrite `outputs/clip1/`. Copy to unique stems first: `outputs/illinois_jdc_<slug>_clip${idx}.mp4`.
+- **Keep submitting Poyo after 10min timeouts on known-good payloads** — that's a Poyo-wide outage. Switch to `kie_client.generate_veo` at $0.30/clip instead of burning budget on retries.
