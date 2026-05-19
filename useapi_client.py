@@ -92,14 +92,21 @@ def upload_asset(source, name=None):
 
 # ─── Shared submit / poll ─────────────────────────────────────────────
 
-def _poll(task_id, label="useapi", timeout=900):
-    """Poll GET /tasks/{taskId} until SUCCEEDED or FAILED."""
+def _poll(task_id, label="useapi", timeout=10800):
+    """Poll GET /tasks/{taskId} until SUCCEEDED or FAILED. Default 3h ceiling
+    because useapi explore mode can leave tasks THROTTLED in queue for hours
+    before they start rendering."""
     t0 = time.time()
     while True:
         if time.time() - t0 > timeout:
             raise TimeoutError(f"{label} task {task_id} timed out after {timeout}s")
         time.sleep(POLL_INTERVAL)
         r = requests.get(f"{BASE}/tasks/{task_id}", headers=HEADERS)
+        if r.status_code == 429:
+            # Polling itself got rate limited — back off and keep going
+            print(f"  {time.strftime('%H:%M:%S')} {label} … poll 429, sleeping {THROTTLE_WAIT}s", flush=True)
+            time.sleep(THROTTLE_WAIT)
+            continue
         body = r.json()
         # Response may be wrapped in a "task" key
         task = body.get("task") or body
@@ -115,25 +122,38 @@ def _poll(task_id, label="useapi", timeout=900):
             return {"status": "failed", "urls": [], "failMsg": task.get("error", ""), "raw": task}
 
 
-def _submit(payload, label, explore=None):
-    """POST /videos/create, return poll result. explore defaults to module-level _EXPLORE."""
+def _submit(payload, label, explore=None, max_429_retries=12):
+    """POST /videos/create, return poll result. explore defaults to module-level _EXPLORE.
+
+    Retries on 429 (rate limit / queue full) with linearly-growing sleep, up to
+    max_429_retries attempts. Useapi explore mode rejects new submits when the
+    account's queue depth exceeds ~2-3 tasks; the right response is to wait, not fail.
+    """
     if explore is None:
         explore = _EXPLORE
     payload["exploreMode"] = explore
 
-    r = requests.post(f"{BASE}/videos/create", headers={**HEADERS, "Content-Type": "application/json"}, json=payload)
-    if r.status_code == 429:
-        raise RuntimeError(f"{label}: rate limited (429) — reduce concurrency or wait.")
-    if r.status_code == 412:
-        raise RuntimeError(f"{label}: insufficient credits (412).")
-    body = r.json()
-    # taskId is inside body.task on success
-    task = body.get("task") or body
-    task_id = task.get("taskId") or task.get("id")
-    if not task_id:
-        raise RuntimeError(f"{label} create failed ({r.status_code}): {body}")
-    print(f"  {label} taskId: {task_id}", flush=True)
-    return _poll(task_id, label=label)
+    attempt = 0
+    while True:
+        r = requests.post(f"{BASE}/videos/create", headers={**HEADERS, "Content-Type": "application/json"}, json=payload)
+        if r.status_code == 429:
+            attempt += 1
+            if attempt > max_429_retries:
+                raise RuntimeError(f"{label}: 429 after {max_429_retries} retries — queue persistently full.")
+            wait = THROTTLE_WAIT * min(attempt, 6)  # 30, 60, 90, 120, 150, 180s, then plateau
+            print(f"  {time.strftime('%H:%M:%S')} {label}: submit 429 (attempt {attempt}), sleeping {wait}s", flush=True)
+            time.sleep(wait)
+            continue
+        if r.status_code == 412:
+            raise RuntimeError(f"{label}: insufficient credits (412).")
+        body = r.json()
+        # taskId is inside body.task on success
+        task = body.get("task") or body
+        task_id = task.get("taskId") or task.get("id")
+        if not task_id:
+            raise RuntimeError(f"{label} create failed ({r.status_code}): {body}")
+        print(f"  {label} taskId: {task_id}", flush=True)
+        return _poll(task_id, label=label)
 
 
 # ─── Seedance ────────────────────────────────────────────────────────

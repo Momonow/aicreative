@@ -19,6 +19,10 @@ from useapi_client import generate_seedance, download
 OUT_DIR = Path("outputs/illinois_jdc_power_broll")
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 
+# Slugs handled by jdc_power_broll_recover.py (in-flight task IDs on useapi).
+# Skip them here so we don't create duplicate tasks while the recovery polls.
+SKIP_SLUGS = {"03_peephole_observation", "18_jdc_exterior_night"}
+
 STYLE = (
     " Photoreal observational realism — reads like leaked corrections facility footage, "
     "CCTV, or a Frontline investigative documentary segment. No stylization. "
@@ -230,8 +234,10 @@ def gen(slug, prompt):
 
 def main():
     results = {}
+    todo = {s: p for s, p in PROMPTS.items() if s not in SKIP_SLUGS}
+    print(f"Generating {len(todo)} clips (skipping {sorted(SKIP_SLUGS)} — handled by recover script)", flush=True)
     with ThreadPoolExecutor(max_workers=2) as ex:
-        futures = {ex.submit(gen, s, p): s for s, p in PROMPTS.items()}
+        futures = {ex.submit(gen, s, p): s for s, p in todo.items()}
         for f in as_completed(futures):
             s = futures[f]
             try:
@@ -245,7 +251,7 @@ def main():
     print("\n=== SUMMARY ===")
     ok = [s for s, (st, _) in results.items() if st in ("success", "exists")]
     bad = [s for s, (st, _) in results.items() if st not in ("success", "exists")]
-    print(f"  ok:   {len(ok)}/{len(PROMPTS)}")
+    print(f"  ok:   {len(ok)}/{len(todo)}")
     print(f"  bad:  {len(bad)}")
     for s in bad:
         print(f"    [{s}] {results[s][0]}: {results[s][1][:200]}")

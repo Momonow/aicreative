@@ -296,6 +296,7 @@ ffmpeg/ffprobe on PATH (`brew install ffmpeg`). `KIE_API_KEY` and `ELEVENLABS_AP
 
 - Word limit ~100–260 for Seedance prompts. Kling allows 0–2500.
 - **Veo (Poyo / KIE)** accepts ~3,000+ characters comfortably — our standard Chowchilla per-clip prompts run ~3,100 chars / ~520 words with all locks (CHARACTER, SETTING, CAMERA, register, EYES_LOCK, MOUTH_LOCK_NEUTRAL, NO_TEXT_LOCK, PRONUNCIATION_LOCK, DIALOGUE_LOCK, SPOKEN DIALOGUE).
+- **Image-to-video prompts should be SHORT** — when an anchor is passed (FIRST_AND_LAST_FRAMES_2_VIDEO / frame / IMAGE_2_VIDEO modes), the scene/character/setting is already in the image. Don't re-describe them. Target **<100 words / <600 chars** per i2v prompt. REQUIRED fields (each <1 sentence): **GAZE** (where they're looking and how it changes), **BODY LANGUAGE** (head tilt, lean, blinks, micro-expressions), **VOICE STYLE** (pitch / age / register), **TONE** (emotional register — specific, not just "honest"), **SPEED** (target words-per-second). Plus boilerplate locks: AUDIO CRITICAL clause, PRONUNCIATION LOCK, DIALOGUE LOCK, NO-TEXT. DROP: character description, wardrobe, setting, framing, photo-realism boilerplate. Long prompts that re-describe in-image content sometimes confuse the model (it tries to reconcile prompt vs anchor and drifts). Long prompts are only needed for text-to-video (no anchor). Memory: `feedback_i2v_short_prompts.md`.
 - **Runway (Gen-4 / Aleph) hard-caps prompts at 2,500 characters.** When porting a Veo prompt over, compress in this order without losing fidelity: (1) consolidate EYES + MOUTH locks into one sentence, (2) trim adjectival redundancy in CHARACTER ("late 40s to early 50s" → "late 40s", "Throughout the entire clip" → drop), (3) shorten SETTING photo descriptions ("framed family photographs — a graduation portrait at left…" → "framed family photos — graduation at left…"), (4) drop the "no beauty mode, no retouching, no filter, no skin smoothing" tail if still over. **Never cut**: CHARACTER core identity, register, NO_TEXT_LOCK, PRONUNCIATION_LOCK, DIALOGUE_LOCK, SPOKEN DIALOGUE. Target ~2,300 chars to leave headroom. V2 clip 1 reference: 3,171 → 2,287 chars with all critical locks intact.
 - Reference images in Seedance prompts: `@(img1)`, `@(img2)` in order.
 - Reference elements in Kling prompts: `@element_name` (defined under `kling_elements`).
@@ -700,6 +701,25 @@ Workflow chain:
 
 ---
 
+## Presenting videos in chat — backticked paths only
+
+The user's chat client renders a video path as a **clickable inline preview ONLY when the path is wrapped in `` `backticks` ``** (markdown inline code). Any other format — plain text, table cell, markdown link syntax `[label](path)`, `file:///` URL, `http://localhost:<port>/` URL — does NOT trigger the preview.
+
+```
+✅ Source ad: `/Users/harry/Desktop/ad.mp4`
+✅ Clip 1 v2: `outputs/illinois_jdc_news_eltracks/clip1.mp4`
+
+❌ Source ad: /Users/harry/Desktop/ad.mp4               (no preview)
+❌ [clip](outputs/foo/clip.mp4)                         (no preview)
+❌ file:///Users/harry/.../clip.mp4                     (no preview)
+```
+
+Rule: every time you present a video file (generated clip, source upload, b-roll, composite, stitched final, aspect variant), wrap the path in backticks. Bulleted lists, tables, paragraphs — all fine, as long as the path itself is backticked. Same applies to absolute and relative paths.
+
+Does NOT apply to images (use the Read tool to show those inline). Audio paths don't render previews regardless, so plain text is fine for `.mp3` / `.wav`.
+
+---
+
 ## User skills (`~/.claude/skills/`)
 
 These auto-surface on relevant user phrases. Don't need to invoke manually — Claude does it.
@@ -823,3 +843,5 @@ High-quality (`quality="high"`) 1024×1536 or 1536×1024 renders take 60–120s.
 - **Skip `voice_consistency.py` when user reports voice changes** — `audio_match.py`'s ±20% centroid tolerance is too loose to catch what humans hear. Always run both detectors.
 - **Dissect multiple `clip1.mp4` files in one run** — they all overwrite `outputs/clip1/`. Copy to unique stems first: `outputs/illinois_jdc_<slug>_clip${idx}.mp4`.
 - **Keep submitting Poyo after 10min timeouts on known-good payloads** — that's a Poyo-wide outage. Switch to `kie_client.generate_veo` at $0.30/clip instead of burning budget on retries.
+- **Present video file paths as plain text** — the user's chat client only renders a clickable inline preview when the path is wrapped in `` `backticks` ``. Plain text paths, paths inside markdown table cells, paths in markdown link syntax `[label](path)`, `file:///` URLs, and `http://localhost:<port>/` URLs all FAIL to trigger the preview. Every video file (generated clip, source upload, b-roll, composite, stitched final, aspect variant) must be backticked. See the "Presenting videos in chat" section above.
+- **Use Veo 3.1 Quality (`veo3`) on KIE** — HARD RULE: NEVER. Always start with Veo 3.1 Lite (`veo3_lite`). Only fall back to Veo 3.1 Fast (`veo3_fast`) after 2-3 Lite failures on the same prompt for the same failure mode. If Fast also fails, stop and escalate to the user — do NOT use Quality. Memory: `feedback_veo_tier_routing.md`.

@@ -27,6 +27,38 @@ BASE = "https://api.poyo.ai/api"
 HEADERS = {"Authorization": f"Bearer {KEY}", "Content-Type": "application/json"}
 
 
+def upload_file(filepath, file_name=None):
+    """Upload a local image/video to Poyo's own storage (storage.poyo.ai).
+
+    Returns a public URL Poyo's Veo fetcher trusts reliably — no rate-limit
+    issues like third-party free hosts (catbox/imgur/0x0). Images live ~72h,
+    videos ~24h.
+
+    Endpoint: POST https://api.poyo.ai/api/common/upload/stream
+    """
+    fname = file_name or os.path.basename(filepath)
+    ext = pathlib.Path(fname).suffix.lower()
+    mime = {
+        ".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg",
+        ".gif": "image/gif", ".webp": "image/webp",
+        ".mp4": "video/mp4", ".webm": "video/webm", ".mov": "video/quicktime",
+    }.get(ext, "application/octet-stream")
+    with open(filepath, "rb") as f:
+        files = {"file": (fname, f, mime)}
+        data = {"file_name": fname}
+        r = requests.post(
+            f"{BASE}/common/upload/stream",
+            headers={"Authorization": HEADERS["Authorization"]},  # multipart -> no Content-Type
+            files=files,
+            data=data,
+            timeout=60,
+        )
+    body = r.json()
+    if not body.get("success"):
+        raise RuntimeError(f"Poyo upload failed: {body}")
+    return body["data"]["file_url"]
+
+
 def _poll(task_id, label="Poyo", interval=5, timeout=600):
     """Poll status endpoint until finished or failed. Returns the data dict."""
     t0 = time.time()

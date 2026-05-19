@@ -41,8 +41,58 @@ POLL_INTERVAL = 10
 
 # ─── Shared helpers ──────────────────────────────────────────────────
 
+def upload_imgur(filepath):
+    """Upload a local image to Imgur (anonymous, public, no auth needed by fetcher).
+
+    Returns clean URL like https://i.imgur.com/<hash>.png.
+    Use as fallback when catbox.moe is having issues.
+    Imgur is highly reliable and works for KIE/Poyo Veo image_urls.
+
+    NOTE: uses public Client-ID — has rate limits but fine for low-volume use.
+    Register your own at https://api.imgur.com/oauth2/addclient if hitting limits.
+    """
+    headers = {"Authorization": "Client-ID 546c25a59c58ad7"}
+    with open(filepath, "rb") as f:
+        files = {"image": f}
+        r = requests.post("https://api.imgur.com/3/image", headers=headers, files=files, timeout=60)
+    body = r.json()
+    if not body.get("success"):
+        raise RuntimeError(f"Imgur upload failed: {body}")
+    return body["data"]["link"]
+
+
+def upload_catbox(filepath):
+    """Upload a local file to catbox.moe (anonymous, no account, permanent URL).
+
+    Returns clean URL like https://files.catbox.moe/<hash>.<ext>.
+    Use this when KIE's own tempfile host is rate-limited (HTTP 429) — Veo's
+    fetcher reads catbox URLs reliably without rate-limit issues.
+    """
+    with open(filepath, "rb") as f:
+        files = {"fileToUpload": f}
+        data = {"reqtype": "fileupload"}
+        r = requests.post("https://catbox.moe/user/api.php", files=files, data=data, timeout=60)
+    if r.status_code != 200 or not r.text.startswith("https://"):
+        raise RuntimeError(f"Catbox upload failed: {r.status_code} {r.text[:200]}")
+    return r.text.strip()
+
+
 def upload_file(filepath, filetype=None):
-    """Upload a local file, return a public URL valid for 3 days."""
+    """Upload a local file, return a UNIQUE timestamped URL.
+
+    Uses /api/file-stream-upload which returns a URL with a unique
+    timestamp+hash path. This is REQUIRED to bypass Cloudflare per-URL
+    rate-limiting on tempfile.redpandaai.co — KIE Veo's fetcher will hit
+    HTTP 429 (retry-after 60s) if the same URL is requested too many times.
+
+    Each call to upload_file() returns a NEW unique URL even for the same
+    source file, which dodges the rate limit. Re-upload before each Veo
+    submission rather than caching the URL across submissions.
+
+    NOTE: file-base64-upload returns STABLE URLs (path-based, same per
+    filename) — DO NOT USE for Veo image_urls. The stable URL gets 429'd
+    permanently after the first few fetches.
+    """
     with open(filepath, "rb") as f:
         files = {"file": (os.path.basename(filepath), f, filetype)} if filetype else {"file": f}
         data = {"uploadPath": "aicreative"}
@@ -130,17 +180,34 @@ def generate_seedance(prompt, duration=10, aspect_ratio="9:16", ref_images=None,
     return _poll_jobs(task_id, "Seedance")
 
 
-def generate_kling(prompt, duration=5, aspect_ratio="9:16", image_urls=None, sound=True):
-    """Kling 3.0 at std (720p). duration is a string '3'..'15'."""
+def generate_kling(prompt, duration=5, aspect_ratio="9:16", image_urls=None,
+                   sound=True, mode="pro", kling_elements=None, multi_shots=False,
+                   multi_prompt=None):
+    """Kling 3.0 video. duration is a string '3'..'15'.
+
+    mode:           'std' (720p, cheaper) | 'pro' (better quality)
+    image_urls:     list of URLs for the scene baseline / first-frame anchor (i2v)
+    kling_elements: list of element dicts for the @element_name reference system.
+                    Each: {"name": "element_X", "description": "...", "element_input_urls": [url1, url2]}
+                    Up to 3 elements per task, 1-4 URLs per element.
+                    Prompt references them as @element_X.
+    multi_shots:    True to use multi-shot mode (then pass multi_prompt array).
+    multi_prompt:   list of {"prompt": "...", "duration": N} dicts for multi-shot.
+    """
     payload_input = {
         "prompt": prompt,
         "duration": str(duration),
         "aspect_ratio": aspect_ratio,
-        "mode": "std",
+        "mode": mode,
         "sound": sound,
+        "multi_shots": multi_shots,
     }
     if image_urls:
         payload_input["image_urls"] = image_urls
+    if kling_elements:
+        payload_input["kling_elements"] = kling_elements
+    if multi_prompt:
+        payload_input["multi_prompt"] = multi_prompt
     payload = {"model": "kling-3.0/video", "input": payload_input}
     r = requests.post(JOBS_CREATE, headers=HEADERS, json=payload)
     body = r.json()
@@ -151,18 +218,24 @@ def generate_kling(prompt, duration=5, aspect_ratio="9:16", image_urls=None, sou
     return _poll_jobs(task_id, "Kling")
 
 
-def generate_veo(prompt, aspect_ratio="9:16", image_urls=None, mode=None):
-    """Veo 3 Fast at 720p. Uses /api/v1/veo/generate (separate endpoint).
+def generate_veo(prompt, aspect_ratio="9:16", image_urls=None, mode=None, model="veo3_fast", resolution="720p"):
+    """Veo on KIE. Uses /api/v1/veo/generate (separate endpoint).
 
-    mode: 'IMAGE_2_VIDEO' uses image_urls[0] as the literal first frame (clip-1 anchor pattern).
-          'REFERENCE_2_VIDEO' uses images as style/subject reference (Veo renders its own first frame).
-          Default: TEXT_2_VIDEO if no images, REFERENCE_2_VIDEO if images.
+    model:      'veo3_lite' = Veo 3.1 Lite (DEFAULT for this project per memory rule)
+                'veo3_fast' = Veo 3.1 Fast (fallback only)
+                'veo3'      = Veo 3.1 Quality (NEVER use — project rule)
+                — pass the exact model id KIE expects.
+    resolution: '720p' (default) | '1080p' | '4k'
+    mode:       'IMAGE_2_VIDEO' = image_urls[0] as literal first frame (legacy Veo 3).
+                'FIRST_AND_LAST_FRAMES_2_VIDEO' = anchor mode for Veo 3.1 (pass anchor twice).
+                'REFERENCE_2_VIDEO' = images as style/subject ref.
+                Default: TEXT_2_VIDEO if no images, REFERENCE_2_VIDEO if images.
     """
     payload = {
         "prompt": prompt,
-        "model": "veo3_fast",
+        "model": model,
         "aspect_ratio": aspect_ratio,
-        "resolution": "720p",
+        "resolution": resolution,
     }
     if image_urls:
         payload["imageUrls"] = image_urls
