@@ -37,7 +37,7 @@ Burns **Submagic "Hormozi 3"** captions. Reverse-engineered + tuned frame-by-fra
 - Font: **Montserrat Black (900)**, ALL CAPS.
 - **Size is essentially FIXED at `font_ratio 0.0336`** (≈ a ~2-word line fills ~42% of frame width — measured directly off the reference). It is NOT fit-to-width/area growth — short and long cards are the **same glyph size** (Submagic's white-cap height is uniform ~2.2% of frame height). Font only shrinks if a single line/card overflows the width or 3 lines.
 - **Wrapping: ~2 words per line** (`words_per_line = 2`), with a width fallback so long single words drop to 1/line. This tight stacking is what keeps the size looking uniform and "not too big" (e.g. "I WAS / WRONG", "YOU SITTING / DOWN", "SIGNIFICANT / POTENTIAL / COMPENSATION").
-- Position: text-block center ~**0.64** of frame height — **upper chest, clearly a bit below the chin** (`vertical_pos` default 0.64). NOT lower-third, NOT crowding the throat. (0.70 was too low / 0.60 crowded the jaw; 0.64 user-approved 2026-05-21 for clean chin clearance.)
+- Position: text-block center ~**0.70** of frame height — **lower third, well clear below the chin** even when she leans/tilts (`vertical_pos` default 0.70). 0.60/0.64 still caught the jaw on some clips; 0.70 keeps the caption + its 'down' emoji clear of the face AND above the bottom disclaimer band (~0.88–1.0). User-approved 2026-05-21.
 
 **Color / stroke:**
 - Default word = WHITE `#FFFFFF`; the **active LINE** is the card's accent (whole line, not single word).

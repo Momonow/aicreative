@@ -206,7 +206,7 @@ The skill `hormozi3` documents this. Alex-Hormozi creator-caption look: Montserr
 **GLOBAL parametric rule (no word-specific hacks — any new video looks like Submagic):**
 - **Font: Montserrat Black (`assets/fonts/Montserrat-Black.ttf`), FIXED `font_ratio 0.0336`** — a ~2-word line fills ~42% of frame width; white-cap height is uniform ~2.2% of frame. **NOT fit-to-width/area growth** — that makes short cards too big. Font only shrinks if a line/card overflows.
 - **Wrapping: ~2 words per line** (`words_per_line = 2`), max 3 lines; width fallback drops long single words to their own line. Tight stacking = the Submagic look ("I WAS / WRONG", "SIGNIFICANT / POTENTIAL / COMPENSATION").
-- **Position: text-block center ~0.64 of frame height** (upper chest, clearly a bit below the chin) — NOT lower-third, NOT crowding the throat. `vertical_pos` defaults to 0.64 (user-approved 2026-05-21; 0.60 crowded the jaw).
+- **Position: text-block center ~0.70 of frame height** (lower third, well clear below the chin even when she leans/tilts). `vertical_pos` defaults to 0.70 (user-approved 2026-05-21; 0.60/0.64 still caught the jaw on some clips). Stays above the bottom disclaimer band (~0.88–1.0).
 - **Color:** white default; active LINE = card accent, rotating per card 🟡`#FCFB14`→🟢`#2AF82B`→🔴`#EE1916`. Stroke `0.06×fontsize`, subtle shadow, **no glow** (glow = newer Impact template).
 - **Animation:** captions stay ON continuously (no per-word flash); text pop 96%→105%→100% over 0.12s.
 - **Emoji motion = LOCKED-IN system (user-approved GO-TO, 2026-05-21):**
