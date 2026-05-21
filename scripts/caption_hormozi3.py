@@ -397,9 +397,10 @@ def burn(video, cards, work_dir, out, fontsize_ratio, vertical_pos, use_emoji, m
     slide_half = (_pb[2] - _pb[0]) / 2.0
     slide_v = int(_std_fs * 0.85)   # vertical travel for up/down/diagonal presets (<1 line → stays close to text)
     if vertical_pos is None:
-        # Caption block center at ~0.64 of frame height — sits on the upper chest, clearly a bit
-        # BELOW the chin (0.60 crowded the throat/jaw; user-approved 0.64 gives clean chin clearance).
-        vertical_pos = 0.64
+        # Caption block center at ~0.70 — lower-third, well clear BELOW the chin even when she
+        # leans/tilts (0.60/0.64 still caught the jaw on some clips), and high enough that the
+        # caption + its 'down' emoji stay above the bottom disclaimer band (~0.88-1.0).
+        vertical_pos = 0.70
     cy = int(vertical_pos * height)
     print(f"      vertical_pos={vertical_pos:.3f}  max_font={fontsize_ratio}  max_lines={max_lines}  fps={fps:.2f}", flush=True)
 
