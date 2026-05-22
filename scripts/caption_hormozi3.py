@@ -299,8 +299,15 @@ def probe_duration(video):
 
 
 def scribe_transcribe(video, biased):
-    from elevenlabs_client import scribe_whisper_compat
-    return scribe_whisper_compat(str(video), biased_keywords=biased, language_code="en")
+    import os
+    if os.getenv("ELEVENLABS_API_KEY"):
+        from elevenlabs_client import scribe_whisper_compat
+        return scribe_whisper_compat(str(video), biased_keywords=biased, language_code="en")
+    elif os.getenv("FAL_KEY"):
+        from fal_client import scribe_whisper_compat as fal_scribe
+        return fal_scribe(str(video), biased_keywords=biased, language_code="en")
+    else:
+        raise RuntimeError("Neither ELEVENLABS_API_KEY nor FAL_KEY set in .env")
 
 
 TEXT_POP_DUR = 0.12      # text scale-pop on card appearance (measured: 96->105->100% over ~0.12s)
