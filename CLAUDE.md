@@ -171,6 +171,16 @@ Visual-prompt language that triggers rejection, especially when combined with se
 
 **Rule change (2026-05-20):** the prior "OpenAI direct, never KIE" rule (which existed to avoid KIE's proxy cost markup) is **reversed**. The user prioritizes image quality + larger 2K/4K output over the markup. Route GPT Image through `kie_client.generate_gpt_image` at 2K. Memory: `feedback_image_gen_provider.md`.
 
+#### Upscaling a PICKED image to 4K — Real-ESRGAN, NOT gpt-image-2 i2i (2026-05-25)
+
+**`gpt-image-2` image-to-image REGENERATES the subject — it does NOT upscale.** Feeding a picked persona back in with a "same man, render at 4K" prompt produced a **completely different person** (a Black man with braids came back as a light-skinned Mediterranean man). i2i is conditioned loosely; it re-imagines. Never use it to "make this exact image higher-res."
+
+**For identity-preserving 4K, use Real-ESRGAN** (true pixel super-resolution — adds pixels, keeps the exact face): `replicate_client.upscale_image(path, scale=2, face_enhance=True)` → `nightmareai/real-esrgan`. Gotchas:
+- **GPU input cap ~2.09M px.** A 1152×2048 source (2.36M) is rejected → downscale input to **1080×1920** first, then `scale=2` → exactly **2160×3840** (true 4K 9:16). Pipeline: `scripts/jdc_pod_upscale_4k.py`.
+- `face_enhance=True` (GFPGAN) sharpens the face but **smooths skin slightly** (loses a little "documentary" texture) — fine for most, use `False` to keep more imperfection.
+- **Replicate throttles to 6 req/min (burst 1) while account < $5 credit** — run upscales one at a time, not in parallel, or you 429.
+- **4K does NOT improve the Veo video** (Veo outputs 720p; a 1152×2048 anchor is already 1.6× that). Upscale only for crisp source assets / when the user asks — say so.
+
 ---
 
 ## Voice (ElevenLabs direct)
@@ -197,6 +207,15 @@ ElevenLabs API is **synchronous** — no polling. Function blocks until audio is
 - **All KIE video models (Veo/Kling/Seedance) have non-deterministic voice/audio quality** — voice loudness can span 40dB across clips, mic character shifts, noise floor varies. The canonical fix is ElevenLabs.
 - `voice_changer()` is the default normalization: keeps the source's pacing/prosody (so lip-sync stays intact) but unifies voice timbre/loudness. See "Audio normalization" section.
 - `tts()` is for cases where you want to fully replace the audio script (different words than what was generated) and you're willing to redo lip-sync via Sync.so.
+
+#### voice_changer (STS) — when NOT to use it, and its hard limits (2026-05-25)
+
+- **Skip the voice_changer for SINGLE-PERSONA videos.** STS *re-synthesizes* — it always sounds slightly hotter/more processed than the Veo source (the user A/B'd it and preferred **raw Veo**). VC's only real job is fixing voice drift **across clips that aren't the same person/seed**, or unifying a host who recurs **across multiple videos**. When all clips of one video are seeded from the **same persona anchor**, Veo's voice is already consistent → VC is pure quality loss. Instead: keep raw Veo audio, **per-clip static-gain to even Veo's clip-to-clip loudness**, concat, one true-peak limiter (Veo source often peaks **over 0 dBFS** — see Veo gotchas). Reference: `scripts/jdc_pod_winner_gen.py` (no-VC path).
+- **STS has NO output-loudness/volume parameter.** It always normalizes hot (~-0.5 dBFS peak) regardless of input level — *this* is why VC always comes back louder than Veo. To match the source loudness, do it in **post** (gain the VC output to the source clip's measured LUFS). No `stability`/`similarity_boost` value changes loudness.
+- **Settable params** (`elevenlabs_client.voice_changer`): `model_id` (we use **`eleven_english_sts_v2`** — crisper on English than multilingual), `stability` (0.5 — consistency vs expressiveness), `similarity_boost` (0.70 — adherence to clone timbre; high values amplify a dull clone → muffled), `style` (0.0), `use_speaker_boost` (**defaults ON** = more presence/louder/pushed; OFF = less aggressive — the only loudness-ish lever), `remove_background_noise` (default OFF). None set loudness.
+- **For a more NATURAL conversion (alternative to STS):** Replicate RVC (`zsxkib/realistic-voice-cloning`) is a different algorithm that preserves more source character. fal.ai hosts the same ElevenLabs STS with lossless PCM but only fal-account voices (not our clones).
+
+**ElevenLabs voice-slot limit = 30 (Creator tier).** Clones hit the cap fast across campaigns. When `/v1/voices/add` 400s, it's the slot limit — free slots by **deleting voices from completed campaigns** (`DELETE /v1/voices/{id}`); the source clips still exist locally to re-clone if ever needed. Check usage: `GET /v1/user/subscription` → `voice_slots_used`/`voice_limit`.
 
 ---
 
@@ -594,6 +613,15 @@ that fills the foreground.
 ```
 Then `loudnorm=I=-16` in the stitch pass unifies all clips to -16 LUFS broadcast standard. Belt-and-suspenders: prompt clause gets you close, loudnorm finishes the job.
 
+### "Full projection" + announcer register overshoots 0 dBFS — limiter is mandatory (2026-05-25)
+The `AUDIO CRITICAL: FULL projection` clause makes Veo's TTS **overshoot full-scale** — measured source peaks of **+1 to +2.4 dBFS** (over 0) on most clips. A **direct-to-camera announcer** register is louder/more "in your face" than an intimate confession at the same LUFS, so the user perceives it as "red / talking too close" even when the final measures clean. Fixes: (1) **always run a true-peak limiter** on the master (`alimiter=limit=0.71:level=disabled:asc=1`) — it tames the over-0 source; (2) if it still feels hot, **master quieter** (-18 LUFS reads far less aggressive than -16 for the announcer register — but confirm with the user, they may prefer -16); (3) for less shouty delivery, soften the prompt to `clear relaxed conversational, NOT shouting` instead of "full projection." Note: a clip can have a peak >0 dBFS yet `flat factor 0` (mp3 float decode) — the over-0 still distorts on fixed-point playback, so don't trust flat-factor alone.
+
+### Veo TTS mangles slang interjections ("Ayo") and stacked short bursts (2026-05-25)
+Veo 3 renders **"Ayo" / "Aye yo" badly** — it came out as "Uh, yo" and blended into the next word. Stacking three short bursts ("Ayo, Illinois, real quick" = greeting + place + aside) makes it worse; Veo runs them together. **Lead with ONE clean opening clause.** "Yo" alone renders fine; a plain imperative ("Listen up, Illinois.") or a question hook ("You from Illinois? Listen.") is cleanest. Same proper-noun rule as always: Veo mangled "**Pere Marquette**" → "Pere Martel" — for legal ads naming a wrong/non-existent facility is a real problem, so prefer well-known facilities (Cook County, St. Charles) or phonetically respell.
+
+### Podcast format — keep "mm-hmm/yeah" reactions, just don't caption them (2026-05-25)
+In a podcast/interview register, Veo's interjected "mm-hmm"/"yeah" between sentences read as **natural reactions from others in the room** — the user wants them KEPT (audible), not re-rolled out. Just filter them from the burned captions (filler-word filter in `caption_hormozi3.py`). A "mm-hmm" filling what was dead silence (e.g. "...not you. Mm-hmm. Period.") actually improves pacing. This is the opposite of the confession/UGC rule where fillers are defects — register-dependent.
+
 ### Pace consistency across clips — match word count, split long lines with overlap
 Veo fits whatever dialogue you give it into the clip duration, so a 28-word clip rushes (~3.5 wps) while a 12-word clip drags (~1.5 wps) — stitched together they feel jerky. **Target a consistent ~2.4 words/sec across all clips** (add `PACE LOCK: ~2.4 words per second. Slow, deliberate, each word given weight.` to the prompt). If a sentence is too long to fit at that pace, **split it across two clips with an overlapping bridge phrase**: clip A ends with "…Just found out." and clip B starts with "Just found out Illinois is paying…". At stitch time, keep clip A whole and trim clip B's duplicate opening phrase (Scribe auto-detects the overlap words and moves the trim-in point — see `scripts/jdc_ugc_p08_stitch.py` `overlap_trim_start`). Net result: full sentence delivered at consistent pace, seamless splice.
 
@@ -671,6 +699,19 @@ ffmpeg -y -i clipN_trimmed.mp4 \
 
 EBU R128 loudness normalization. Brings voice loudness within ~2.5dB across clips. Lip-sync intact. **No API cost.** Use this as the default normalization step in the production pipeline (between trim and crop).
 
+#### ⚠️ loudnorm PUMPS — use STATIC gain for the final pass (IL JDC, 2026-05-22)
+
+**Single-pass `loudnorm` runs in DYNAMIC mode** — it rides the gain over time (boosts quiet gaps, ducks loud words). On short UGC speech this is audible as **"the volume cuts off / pumps,"** and it can read as clipping. **`linear=true` does NOT fix it**: two-pass linear loudnorm silently **falls back to dynamic** whenever the content's loudness range exceeds the target LRA (a multi-clip ad almost always does). Confirmed on this campaign — the user flagged the pump immediately.
+
+**Fix — measure integrated loudness, apply ONE constant `volume` gain + a true-peak limiter** (transparent, no gain-riding, preserves natural dynamics). Do it ONCE on the **whole concatenated ad**, not per-clip:
+```python
+# measure integrated loudness of the concatenated ad
+input_i = json.loads(ffmpeg loudnorm=...:print_format=json on the concat)["input_i"]
+gain = -16.0 - input_i
+ffmpeg -i concat.mp4 -af f"volume={gain:.2f}dB,alimiter=limit=0.794:asc=1" ...  # 0.794 ≈ -2.0 dBFS
+```
+Verify: `astats` Flat factor must be `0.000000` (no clipping) and peak ≤ ~-1 dB. Reference: `scripts/jdc_finalize_v2.py` (step 4b) + standalone `scripts/jdc_refinish.py` (re-applies audio from saved STS without new API calls). **Also: ElevenLabs STS output is HOT (~-0.6 dBFS peak)** — never stack another normalization on top without a limiter.
+
 ### Tier 2: ElevenLabs voice_changer (when timbre/mic-character drifts)
 
 `loudnorm` only fixes LOUDNESS. If one clip sounds "from a different mic" (different spectral centroid, different noise floor) compared to the others — that's a timbre problem, not a loudness problem. Use voice_changer.
@@ -682,6 +723,8 @@ EBU R128 loudness normalization. Brings voice loudness within ~2.5dB across clip
 - Don't bother voice-changing if `audio_match.py` only flags a few clips on LOUDNESS — `loudnorm` alone is enough. Only invoke voice_changer when CENTROID or NOISE differs significantly (>10%/4dB), OR when `voice_consistency.py` flags speaker similarity <0.85.
 - **voice_changer also STRIPS background music / room bleed (Chowchilla w05 session).** STS re-synthesizes ONLY the voice, so a clip with hallucinated instrumental music or "(paper rustling)" comes out clean after the VC pass. So the voice-change pass doubles as music removal — no separate de-noise step needed.
 - **Clone the persona's voice ONCE and reuse the `voice_id` across ALL variation ads** (e.g., w05 E/D/A/C all used one cloned voice → every ad sounds like the same woman). Cache the id (`outputs/<persona>/<persona>_voice_id.txt`). Clone from a ~12s concat of a few clean clips, not one 4s clip.
+- **Clone from the CLEANEST clips, ranked — the #1 fix for a muffled clone (IL JDC, 2026-05-22).** Veo audio quality varies clip-to-clip; an instant clone built from dull/compressed clips comes out muffled/boxy. **Rank ALL of a persona's clips across ALL their ads by spectral centroid (brightness) and clone from the crispest 2-3.** Then **audio-isolate** that clone source first (`POST /v1/audio-isolation` — available on Creator tier; strips Veo's room-tone/compression hiss → brighter clone; note it 400s on very short <~4s clips, fall back to raw). Use **`eleven_english_sts_v2` + `similarity_boost=0.70`** (crisper than `multilingual_sts_v2` + 0.85; high similarity_boost makes a dull clone dominate). Verify with spectral centroid: the clean-clone output should track or exceed the original's centroid. Pipeline: `scripts/jdc_persona_clone.py` (one clone per persona) → `scripts/jdc_finalize_v2.py --voice-id <persona clone>`.
+- **ElevenLabs output-format ceiling is tier-gated:** `pcm_*` (lossless) needs **Pro tier**; Creator caps at **`mp3_44100_192`** (still a big step up from the `mp3_44100_128` default — always pass 192 explicitly). **fal.ai hosts the ElevenLabs voice-changer** (`fal-ai/elevenlabs/voice-changer`, `FAL_KEY`) and exposes **lossless `pcm_44100`/`pcm_48000` regardless of our tier** (billed via fal's account) — BUT its `voice` param only accepts voices on **fal's** account (presets like "Adam"/"Brian" + public library by name), NOT our private clones (`422 Voice not found`). So fal = lossless + generic/library voice; our direct API = persona's own clone @ 192k. We chose the persona clone (voice match > the marginal 192k→lossless gain for social-feed playback).
 
 ### Multi-clip finalize pipeline (Chowchilla w05, canonical)
 
