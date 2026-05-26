@@ -7,5 +7,4 @@ outputs/
 
 # auto-fetched emoji cache (regenerated on demand)
 assets/emoji/
-SESSION_LOG.txt
 *.log
