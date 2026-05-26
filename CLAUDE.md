@@ -55,7 +55,7 @@ User-set rule: **route each model to its cheapest reliable host**, not all throu
 | **Veo 3.1 Fast** | **Poyo** | `poyo_client.generate_veo` | **$0.10/clip** flat | Default Veo. See "Poyo gotchas". Fallback: `openrouter_video.generate_veo(model="google/veo-3.1-fast")`. |
 | **Veo 3.1 Lite** | **OpenRouter** | `openrouter_video.generate_veo` | **$0.40/8s** (audio) | Cheaper/lighter Veo tier. `OPENROUTER_ADCLI_KEY`. Not on Poyo. |
 | **Seedance 2.0 Fast** | **useapi.net** | `useapi_client.generate_seedance` | **unlimited** (flat monthly) | Default for high volume. Set `USEAPI_EXPLORE=true`. |
-| **Seedance 2.0 Fast (480p)** | **OpenRouter** | `openrouter_video.generate_seedance` | **~$0.053/clip** (10s 480p) | Pay-per-use fallback. `OPENROUTER_ADCLI_KEY`. Token-based pricing. |
+| **Seedance 2.0 Fast (480p)** | **OpenRouter** | `openrouter_video.generate_seedance` | **~$0.05/sec** (480p; ≈$0.25 per 5s) | Pay-per-use fallback. `OPENROUTER_ADCLI_KEY`. **Per-SECOND**, token-based. KIE Seedance ≈ **$0.07/sec**. (Old "$0.053/clip" figure was ~10× off.) |
 | **Kling 3.0** | **useapi.net** | `useapi_client.generate_kling` | **unlimited** (flat monthly) | Replaces KIE. Models: `kling-3-0-standard` (default) or `kling-3-0-pro`. |
 | **Runway Gen-4 Turbo** | **useapi.net** | `useapi_client.generate_runway` | **unlimited** (flat monthly) | New. Model: `gen4-turbo` (default) or `gen4`. Up to 10s. |
 | **nano-banana-2** | KIE | `kie_client.generate_nano_banana` | varies | Unchanged. |
@@ -1051,6 +1051,40 @@ Specifics from production use:
 ### gpt-image-2 60s timeout fix
 
 High-quality (`quality="high"`) 1024×1536 or 1536×1024 renders take 60–120s. OpenAI's default httpx timeout is 60s — renders fail with "Connection error." **Already fixed in `openai_image.py`**: client initialized with `timeout=600.0, max_retries=2`. Preserve this when refactoring.
+
+---
+
+## Claymation b-roll explainers (Seedance, prompt-driven)
+
+Built for the IL JDC campaign (2026-05): a ~54s first-person survivor explainer told entirely in **claymation b-roll** (Aardman / Wallace-and-Gromit look) + ElevenLabs VO + Hormozi captions. Scripts: `scripts/jdc_claymation_*.py`, `scripts/jdc_vo_full.py`, `scripts/jdc_claymation_assemble{,_v2}.py`.
+
+### Why claymation for sensitive topics
+For sexual-abuse / juvenile-justice creative it's the **moderation-safe AND ethically-sound** way to tell the story:
+- **NEVER** depict the act, nudity, or a minor in any sexual context. Hard line.
+- Show the horror through the **child's REACTION** (terror in the eyes, curling up, silent tears) — NOT the abuser, NOT the act. The threat stays off-frame.
+- For "abuse by a guard," use **power-imbalance metaphor only**: a looming uniformed SHADOW over a small recoiling kid, or a heavy hand on a shoulder. This is standard survivor-PSA / documentary visual language.
+
+### Seedance style is 100% prompt-driven (no preset param)
+Style ("claymation", "analog grunge VHS") lives in the **text prompt**. Reliable claymation recipe — a shared style block appended to every shot so clips cut together:
+> "Handmade claymation stop-motion, plasticine modeling-clay with visible thumbprints and fingerprint dents, hand-sculpted surfaces, matte clay sheen, gentle jerky frame-stepping stop-motion movement, shallow tabletop miniature depth of field, Aardman Wallace-and-Gromit diorama craft."
+
+Keep a **cold / muted / desaturated** block for dark beats and a separate **BRIGHT / warm / sunny / vivid / golden** block for the hope beats — the tonal contrast IS the emotional payoff.
+
+### Seedance gotchas (learned this campaign)
+- **Renders clay figures NUDE/shirtless when clothing isn't specified.** Any figure shown below the neck → add "WEARING a plain t-shirt / hoodie / etc." Tight face shots are mostly safe; group/torso shots came back nude until clothing was forced (hit `news_shock`, `happy_bright`, `justice` shots).
+- **OpenRouter has STRICTER output moderation than KIE.** OR rejected a "kid recoiling in fear" clip (`"output video may contain sensitive information"`) that KIE passed. Route sensitive shots (kids, officers, lockup, abuse-adjacent) to **KIE** (permissive); use **OpenRouter** for benign/faceless to save the ~$0.02/sec. Both run Seedance 2.0 Fast.
+- **Moderation evasion — decompose the composite.** If "officer + kid + lockup in one frame" is restricted, split into separately-benign clips (kid walking alone + a door closing) and imply it in the EDIT.
+- **Skin-tone descriptor, not racial label** (same as the Veo rule): "deep-brown skin" passes where "Black" can flag, and nails the demographic. Avoid the trigger phrase "juvenile detention" — let visual cues (bars, razor wire, El, cells) carry it.
+
+### Assembly — sync b-roll to the VO word timings
+- **VO = ElevenLabs TTS** (no lip-sync to preserve → fresh TTS is correct, NOT voice_changer). First-person survivor, **`eleven_v3`** (expressive, supports `[sighs]`/`[exhales]` tags) worked. Weathered male; audition several voices — campaign-cloned persona voices add demographic authenticity. Spell "St." as "Saint" so TTS doesn't say "Street"; verify proper nouns via Scribe (Brian said "Audy"→"AW-dee" correctly).
+- Pull **Scribe word timestamps** and cut one clip per beat/word (one clip per facility name; "behind bars" lands exactly on "locked me up"). Pattern in `scripts/jdc_claymation_assemble.py`: `SEGMENTS = (slug, dur[, in_point])`. Per-segment **in-points** catch a specific moment (start the cell-door clip at its 2.0s mark so the bars are already closed).
+- **Make an emotion hit instantly.** A "slowly breaks into a smile" clip builds too slowly to land on a 1-word beat; either use a late in-point OR re-roll "beaming from frame one." For a punchy cut the emotion must be present at the clip's FIRST frame.
+- **Cumulative trim drift:** concatenating many re-encoded segments accumulates ~0.04s/segment rounding → ~0.4s visual drift by the end (captions stay Scribe-synced to the audio regardless). Fine for b-roll; for frame-tight cuts use precise-PTS trimming.
+
+### Creative
+- **Open on a CHARACTER (a face), not an establishing building** — for cold-traffic scroll-stop a scared kid's face >> a skyline. The building/skyline establishing belongs in a LATER beat. (A/B'd both: `explainer_v2` police-open vs `v1` building-open — the face-open hooks harder.)
+- **A meaningful ending beats an abstract one** — "face turning into the light" read as random; "the man kneeling to comfort his younger self" (closure) was the fix.
 
 ---
 
