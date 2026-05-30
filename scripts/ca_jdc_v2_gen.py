@@ -1,7 +1,8 @@
 """
-CA JDC V2 — "People hear lawsuit"
+CA JDC V2b — "People hear lawsuit"
 Persona C v4 (Black male 27, painted exterior wall)
 5 clips × 8s via useapi.net Google Flow veo-3.1-lite
+v2b: no crossed arms; natural selfie hold; gaze never leaves lens
 """
 import os, time, requests
 from pathlib import Path
@@ -10,24 +11,26 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 TOKEN = os.environ.get("USEAPI_TOKEN", "user:2478-GVIbsJwTLOJXBFuSQRV3a")
 HEADERS = {"Authorization": f"Bearer {TOKEN}", "Content-Type": "application/json"}
 ANCHOR = "user:2478-email:666c6f776d6f6d6f6d6564696140676d61696c2e636f6d-image:2b26477d-07dd-438e-aa22-4a2cd3769a6a"
-OUT = Path("outputs/ca_jdc_v2_c")
+OUT = Path("outputs/ca_jdc_v2_c_b")
 OUT.mkdir(parents=True, exist_ok=True)
 
 CLIPS = [
     {
         "n": 1,
         "prompt": (
-            "GAZE: Heavy and direct from frame one. Locked onto the lens like he already knows "
-            "what the viewer is thinking. The look of someone correcting a wrong assumption.\n"
-            "BODY LANGUAGE: Shoulder leaning into the wall. Arms loosely crossed. Completely still. "
-            "One brief slow blink after 'bucks' — then locked back on camera. Head level, no tilt.\n"
+            "GAZE: Heavy and locked onto the lens from frame one — NEVER leaves the lens for the "
+            "ENTIRE clip. The look of someone correcting a wrong assumption. Eyes stay on camera always.\n"
+            "BODY LANGUAGE: Natural selfie stance — one arm extended forward holding the phone, "
+            "other arm relaxed at side. Shoulder leaning slightly into the wall. Head level. "
+            "NO crossed arms. One slow blink after 'bucks' — eyes reopen immediately back on the lens.\n"
             "VOICE STYLE: Low, measured, early-to-mid 20s. Quiet authority. Not performing — stating.\n"
             "TONE: Quiet correction. Naming a misunderstanding everyone has. No drama — just weight.\n"
             "SPEED: ~1.6 wps. Full pause after 'bucks.' 'This is not that.' lands as three separate beats.\n\n"
             "AUDIO CRITICAL: Speaks CLEARLY AUDIBLY at FULL conversational projection. "
             "NOT whispered. NO filler sounds. ONLY the exact scripted words.\n\n"
-            "CRITICAL — EYES OPEN AND ON CAMERA: Warm dark-brown eyes stay OPEN looking DIRECTLY "
-            "at the lens throughout. Does NOT close eyes.\n\n"
+            "CRITICAL — EYES ON LENS AT ALL TIMES: Warm dark-brown eyes stay OPEN looking DIRECTLY "
+            "into the camera lens for the COMPLETE duration. Does NOT look away, does NOT look down, "
+            "does NOT look to the side. Eyes are ALWAYS on the lens.\n\n"
             "CRITICAL — NO SMILE EVER: Mouth stays in a flat controlled neutral line. ZERO upturned corners.\n\n"
             "CRITICAL — DIALOGUE LOCK: English only. No filler words. No extra words inserted. "
             "No trailing words. Speak ONLY the EXACT words below in order and STOP after the final word.\n\n"
@@ -38,17 +41,19 @@ CLIPS = [
     {
         "n": 2,
         "prompt": (
-            "GAZE: Eyes steady and forward. Holding the lens with quiet authority. "
-            "Letting the words carry the weight — he doesn't need to perform.\n"
-            "BODY LANGUAGE: Arms crossed at chest. Very still. Shoulder still against the wall. "
-            "No head movement. No nodding. Completely grounded.\n"
+            "GAZE: Eyes locked forward on the lens for the ENTIRE clip — NEVER looks away, "
+            "NEVER glances down or to the side. Holding the camera with steady eye contact throughout.\n"
+            "BODY LANGUAGE: Natural selfie stance — one arm forward holding the phone, "
+            "other arm relaxed at side or in hoodie pocket. NO crossed arms. "
+            "Very still. Shoulder against wall. No head movement. No nodding.\n"
             "VOICE STYLE: Same low voice, half a register flatter. Factual. Reading a verdict.\n"
             "TONE: The weight of what this actually is. Not drama — just naming it plainly.\n"
             "SPEED: ~2.1 wps. Even and steady through the full sentence. 'So-called' lands with mild emphasis.\n\n"
             "AUDIO CRITICAL: FULL projection. ZERO fillers. ONLY the exact words.\n\n"
             "PRONUNCIATION LOCK: California = Cal-ih-FOR-nee-uh. juvenile = JOO-ven-ile. "
             "facilities = fuh-SIL-ih-teez. pat-downs = PAT-downz.\n\n"
-            "CRITICAL — EYES OPEN AND ON CAMERA: Eyes stay OPEN on the lens throughout.\n\n"
+            "CRITICAL — EYES ON LENS AT ALL TIMES: Eyes stay OPEN and LOCKED on the lens throughout "
+            "the ENTIRE clip. Does NOT look away at any point.\n\n"
             "CRITICAL — NO SMILE EVER: ZERO upturned corners. ZERO smile.\n\n"
             "CRITICAL — DIALOGUE LOCK: English only. No extra words. No trailing word. "
             "Speak ONLY the EXACT words below and STOP after the final word.\n\n"
@@ -59,16 +64,18 @@ CLIPS = [
     {
         "n": 3,
         "prompt": (
-            "GAZE: Slight forward presence — making sure this lands. Eyes find the viewer more directly. "
-            "He wants this next part heard.\n"
-            "BODY LANGUAGE: Arms still crossed. Very small weight shift forward on 'significant.' "
-            "Then completely still again. Head stays level. NO nodding.\n"
+            "GAZE: Eyes on the lens the ENTIRE time — direct, steady, NEVER breaking contact. "
+            "Slight forward presence making sure this lands. Eyes do NOT drift, do NOT look away.\n"
+            "BODY LANGUAGE: Natural selfie posture — one arm extended holding phone toward camera, "
+            "other hand relaxed at side. NO crossed arms. Very small weight shift forward on 'significant.' "
+            "Then completely still. Head level. NO nodding.\n"
             "VOICE STYLE: Same low voice. Slight uptick of presence — not salesy, just present.\n"
             "TONE: A door opening. Quiet delivery of important news. Calm certainty.\n"
             "SPEED: ~2.1 wps. Steady through the first sentence. "
             "'Six figures, in some cases.' delivered slower with space around it.\n\n"
             "AUDIO CRITICAL: FULL projection. ZERO non-verbal sounds between sentences. ONLY the exact words.\n\n"
-            "CRITICAL — EYES OPEN AND ON CAMERA: Eyes stay OPEN looking DIRECTLY at lens throughout.\n\n"
+            "CRITICAL — EYES ON LENS AT ALL TIMES: Eyes stay OPEN and LOCKED directly on the camera "
+            "lens for the ENTIRE clip. Does NOT look away for even a moment.\n\n"
             "CRITICAL — NO SMILE EVER: ZERO upturned corners. ZERO smile.\n\n"
             "CRITICAL — DIALOGUE LOCK: English only. No fillers. No added words. "
             "Speak ONLY the EXACT words below in order and STOP after the final word.\n\n"
@@ -79,14 +86,17 @@ CLIPS = [
     {
         "n": 4,
         "prompt": (
-            "GAZE: Eye contact deepens. He means this. Talking to one specific person in the lens.\n"
-            "BODY LANGUAGE: Arms uncross slightly — posture opens a small amount. Head level and still. "
-            "ONE small forward lean on 'you owe it to yourself.' Then still through the short closing sentences.\n"
+            "GAZE: Eye contact deepens and HOLDS. Eyes locked on the lens the ENTIRE clip. "
+            "Talking to one specific person. NEVER breaks eye contact, NEVER looks away.\n"
+            "BODY LANGUAGE: Natural selfie stance — one arm forward holding phone, "
+            "other arm relaxed at side. NO crossed arms. Head level and completely still. "
+            "ONE small forward lean on 'you owe it to yourself.' Otherwise still.\n"
             "VOICE STYLE: Same low voice, slightly warmer but grounded. Not pitching — insisting.\n"
             "TONE: Direct and personal. Quiet urgency. The kind of thing a trusted friend says once.\n"
             "SPEED: ~2.6 wps. 'It costs nothing.' and 'It stays private.' land flat and final with brief pauses between.\n\n"
             "AUDIO CRITICAL: FULL projection. ABSOLUTELY NO non-verbal sounds between sentences. ONLY the exact words.\n\n"
-            "CRITICAL — EYES OPEN AND ON CAMERA: Eyes stay OPEN on the lens throughout. Does NOT close eyes.\n\n"
+            "CRITICAL — EYES ON LENS AT ALL TIMES: Eyes stay OPEN and LOCKED on the lens for the "
+            "ENTIRE clip. Does NOT close eyes, does NOT look away at any moment.\n\n"
             "CRITICAL — NO SMILE EVER: ZERO smile in face or voice. ZERO upturned corners.\n\n"
             "CRITICAL — DIALOGUE LOCK: English only. No fillers. No trailing words. "
             "Each sentence spoken ONCE only. "
@@ -98,16 +108,19 @@ CLIPS = [
     {
         "n": 5,
         "prompt": (
-            "GAZE: The softest, most direct look in the video. Quiet and certain. This is just the offer.\n"
-            "BODY LANGUAGE: Arms loosely crossed, posture calm and still. "
-            "Everything has been said. No movement, no lean. Just there.\n"
+            "GAZE: Softest, most direct look in the video — eyes quietly locked on the lens. "
+            "NEVER looks away. This is the final offer, delivered straight into the camera.\n"
+            "BODY LANGUAGE: Natural selfie posture — one arm forward holding phone toward camera, "
+            "other hand relaxed at side or in pocket. NO crossed arms. Completely still. "
+            "Everything has been said.\n"
             "VOICE STYLE: Same voice, even and practical. A friend making it simple. No enthusiasm.\n"
             "TONE: Removing every barrier. Each phrase is a door opening. Plain and final.\n"
             "SPEED: ~1.4 wps. Each phrase has space around it. 'See your number.' lands clean and flat.\n\n"
             "AUDIO CRITICAL: Speaks CLEARLY AUDIBLY despite quiet tone. NOT inaudible. "
             "NO fillers. ONLY the exact words.\n\n"
             "PRONUNCIATION LOCK: 30-second = THIR-tee SEK-und.\n\n"
-            "CRITICAL — EYES OPEN AND ON CAMERA: Eyes stay OPEN looking DIRECTLY at lens throughout.\n\n"
+            "CRITICAL — EYES ON LENS AT ALL TIMES: Eyes stay OPEN looking DIRECTLY into the lens "
+            "for the COMPLETE clip. Does NOT look away at any point.\n\n"
             "CRITICAL — NO SMILE EVER: ZERO smile in face or voice.\n\n"
             "CRITICAL — DIALOGUE LOCK: English only. No fillers. No trailing words. "
             "Do NOT add anything after 'your number.' "
@@ -181,7 +194,7 @@ def gen(clip):
 
 
 if __name__ == "__main__":
-    print(f"CA JDC V2 — 'People hear lawsuit'")
+    print(f"CA JDC V2b — 'People hear lawsuit'")
     print(f"Persona: C_v4 | Model: veo-3.1-lite | {len(CLIPS)} clips → {OUT}\n")
 
     results = {}
