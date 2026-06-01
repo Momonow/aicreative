@@ -19,6 +19,7 @@ Usage:
       [--font-ratio 0.035] [--vertical-pos 0.70] [--max-words 3] [--no-emoji] [--end N]
 """
 import argparse
+import json
 import sys
 import tempfile
 import urllib.request
@@ -27,7 +28,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 from scripts.caption_styled import (extract_audio, probe_size, chunk_words, auto_vertical_pos, run,
-                                     render_disclaimer, find_font, DEFAULT_DISCLAIMER)
+                                     render_disclaimer, find_font, DEFAULT_DISCLAIMER, apply_subs)
 
 FONT = str(ROOT / "assets/fonts/Montserrat-Black.ttf")
 EMOJI_DIR = ROOT / "assets/emoji"
@@ -190,14 +191,109 @@ def pick_emoji(words, exclude=None):
     return None
 
 
-def compute_layout(words, width, height, fontsize_ratio, vertical_pos, max_lines):
+def build_cards(segments, max_words=3, min_pause=0.35):
+    """Sentence-aware card chunker. Breaks a card on a long pause, at max_words, AND right
+    after a sentence-ending word (. ? !) — so a card never straddles two sentences
+    (e.g. the old 'RIGHT BELOW. FILL'). The next sentence starts a fresh, well-grouped card."""
+    cards, cur, last_end = [], [], None
+    def flush():
+        nonlocal cur
+        if cur:
+            cards.append({"start": cur[0]["start"], "end": cur[-1]["end"], "words": cur})
+            cur = []
+    for seg in segments:
+        for w in seg.get("words", []):
+            text = (w.get("word") or "").strip()
+            if not text:
+                continue
+            text = apply_subs(text.upper())
+            start, end = w["start"], w["end"]
+            if cur and (start - last_end > min_pause or len(cur) >= max_words):
+                flush()
+            cur.append({"text": text, "start": start, "end": end})
+            last_end = end
+            if text[-1] in ".?!":          # sentence end → start a fresh card
+                flush()
+    flush()
+    return cards
+
+
+def build_cards_from_submagic_seq(segments, submagic_cards):
+    """Match Submagic's grouping by aligning its extracted word SEQUENCE to OUR Scribe words
+    by TEXT (robust to OCR timing noise), then transferring Submagic's card breaks onto our
+    words. Our correct text is used; only WHICH words group together comes from Submagic."""
+    import difflib, re
+    def nz(s):
+        return re.sub(r"[^a-z0-9]", "", s.lower())
+    SW, scard = [], []
+    for ci, c in enumerate(submagic_cards):
+        for w in c.get("words", []):
+            n = nz(w)
+            if n:
+                SW.append(n); scard.append(ci)
+    ow = []
+    for seg in segments:
+        for w in seg.get("words", []):
+            t = (w.get("word") or "").strip()
+            if not t:
+                continue
+            ow.append({"text": apply_subs(t.upper()), "start": w["start"], "end": w["end"], "n": nz(t)})
+    ON = [x["n"] for x in ow]
+    # map each SW position -> our word index
+    map_our = [-1] * len(SW)
+    for tag, i1, i2, j1, j2 in difflib.SequenceMatcher(None, ON, SW, autojunk=False).get_opcodes():
+        if tag == "equal":
+            for k in range(i2 - i1):
+                map_our[j1 + k] = i1 + k
+    # assign each OUR word to a Submagic CARD (first SM word that maps to it wins), carry through gaps
+    our_sm = [-1] * len(ow)
+    for j in range(len(SW)):
+        oi = map_our[j]
+        if oi >= 0 and our_sm[oi] == -1:
+            our_sm[oi] = scard[j]
+    last = -1
+    for i in range(len(ow)):                       # forward-fill gaps
+        if our_sm[i] == -1:
+            our_sm[i] = last
+        else:
+            last = our_sm[i]
+    nxt = our_sm[-1] if ow else -1
+    for i in range(len(ow) - 1, -1, -1):           # back-fill any leading unassigned
+        if our_sm[i] == -1:
+            our_sm[i] = nxt
+        else:
+            nxt = our_sm[i]
+    # group consecutive our words sharing a Submagic card -> one card per Submagic card (1:1)
+    groups, cur, curc = [], [], None
+    for i, w in enumerate(ow):
+        sc = our_sm[i]
+        if curc is None:
+            curc = sc
+        if sc != curc and cur:
+            groups.append((curc, cur)); cur = []; curc = sc
+        cur.append({"text": w["text"], "start": w["start"], "end": w["end"]})
+    if cur:
+        groups.append((curc, cur))
+    # carry Submagic's START TIME and N_LINES so the text (and the emoji riding it) lines up
+    # frame-for-frame with Submagic; guard monotonic starts.
+    cards, prev = [], -1.0
+    for sc, words in groups:
+        smc = submagic_cards[sc] if 0 <= sc < len(submagic_cards) else None
+        start = smc["start"] if (smc and smc.get("start") is not None) else words[0]["start"]
+        start = max(start, prev + 0.04); prev = start
+        cards.append({"start": start, "end": words[-1]["end"], "words": words,
+                      "n_lines": (smc.get("n_lines") if smc else None)})
+    return cards
+
+
+def compute_layout(words, width, height, fontsize_ratio, vertical_pos, max_lines, force_lines=None):
     """Submagic-style FIT-TO-WIDTH sizing: start at the max font (fontsize_ratio) and shrink
     ONLY until the card wraps to <= max_lines AND the widest line fits target width. Short
     cards stay big; long cards shrink. fontsize_ratio is the MAX/starting size, not fixed."""
     from PIL import ImageFont, ImageDraw, Image
     draw = ImageDraw.Draw(Image.new("RGBA", (10, 10)))
     max_w = int(width * 0.60)     # width safety (long single words break here)
-    words_per_line = 2            # Submagic stacks ~2 words/line → uniform, tight look
+    import itertools
     box_h = int(height * 0.30)    # height guard (rarely binds); long cards wrap to 3 lines
     fontsize = _font_px(width, fontsize_ratio)  # WIDTH-relative → same physical size across aspects
     floor = _font_px(width, 0.028)
@@ -206,23 +302,57 @@ def compute_layout(words, width, height, fontsize_ratio, vertical_pos, max_lines
         b = draw.textbbox((0, 0), t, font=f, stroke_width=ol)
         return b[2] - b[0], b[3] - b[1]
 
+    def balanced_wrap(measured, space_w):
+        """Split words (order preserved) into the FEWEST lines (<=max_lines) that fit max_w,
+        and among those, the most width-balanced split — minimizing the widest line. This kills
+        widows (a lone short word on its own row) and groups phrases like Submagic does. Allows
+        up to 3 words/line when they fit. Falls back to greedy if nothing fits (font then shrinks)."""
+        n = len(measured)
+        def lw(part):
+            return sum(m["_w"] for m in part) + space_w * (len(part) - 1)
+        # Fewest lines that fit width, balanced (min widest line) -> no widows. With ~4-word
+        # cards this naturally yields a balanced 2-line look (2+2) like Submagic, while genuinely
+        # short cards (2-3 words) stay on one clean line. max_lines caps it at 2 (no 3-line cards).
+        # force_lines (from Submagic's n_lines) → wrap to EXACTLY that many lines, balanced;
+        # else fewest lines that fit (≤ max_lines). Capped at word count.
+        if force_lines:
+            Ls = [min(force_lines, n)]
+        else:
+            Ls = list(range(1, min(max_lines, n) + 1))
+        for L in Ls:
+            best, best_score = None, None
+            for cuts in itertools.combinations(range(1, n), L - 1):
+                idx = [0, *cuts, n]
+                parts = [measured[idx[k]:idx[k + 1]] for k in range(L)]
+                wmax = max(lw(p) for p in parts)
+                if wmax <= max_w and (best_score is None or wmax < best_score):
+                    best_score, best = wmax, parts
+            if best is not None:
+                return best
+        lines, cur, cur_w = [], [], 0          # greedy fallback (too long for max_lines @ this font)
+        for m in measured:
+            trial = cur_w + (space_w if cur else 0) + m["_w"]
+            if cur and trial > max_w:
+                lines.append(cur); cur = [m]; cur_w = m["_w"]
+            else:
+                cur.append(m); cur_w = trial
+        if cur:
+            lines.append(cur)
+        return lines
+
     for _ in range(22):
         font = ImageFont.truetype(FONT, fontsize)
         outline = max(2, int(fontsize * 0.06))
         space_w, _ = meas(" ", font, outline)
-        lines, cur, cur_w = [], [], 0
+        measured = []
         for w in words:
             ww, hh = meas(w["text"], font, outline)
-            trial = cur_w + (space_w if cur else 0) + ww
-            if cur and (trial > max_w or len(cur) >= words_per_line):
-                lines.append(cur); cur = [dict(w, _w=ww, _h=hh)]; cur_w = ww
-            else:
-                cur.append(dict(w, _w=ww, _h=hh)); cur_w = trial
-        if cur:
-            lines.append(cur)
+            measured.append(dict(w, _w=ww, _h=hh))
+        lines = balanced_wrap(measured, space_w)
         widest = max((sum(m["_w"] for m in ln) + space_w * (len(ln) - 1)) for ln in lines)
         total_h = len(lines) * int(fontsize * 1.16) + (len(lines) - 1) * int(fontsize * 0.10)
-        if (len(lines) <= max_lines and widest <= max_w and total_h <= box_h) or fontsize <= floor:
+        line_cap = max(max_lines, force_lines or 0)
+        if (len(lines) <= line_cap and widest <= max_w and total_h <= box_h) or fontsize <= floor:
             break
         fontsize = int(fontsize * 0.93)
 
@@ -327,6 +457,106 @@ def _smooth(p):
     return p * p * (3 - 2 * p)
 
 
+EMOJI_POP_DUR = 0.33     # measured (multi-scale track vs Submagic): entrance ~0.33s (~7-8 frames), then static
+EMOJI_POP_DROP = 10      # measured: emoji settles DOWN ~8-12px during the pop
+EMOJI_POP_START = 0.45   # measured Submagic start scale (~0.45 -> 1.0 ease-out)
+EMOJI_POP_PEAK = 1.03    # small overshoot then settle to 1.0
+
+
+def _emoji_pop(elapsed):
+    """Submagic emoji entrance, matched frame-by-frame: scale-pops EMOJI_POP_START -> ~1.03
+    (small overshoot) -> 1.00 with EASE-OUT (fast then decelerating) over EMOJI_POP_DUR, then holds."""
+    if elapsed >= EMOJI_POP_DUR:
+        return 1.0
+    p = elapsed / EMOJI_POP_DUR
+    e = 1 - (1 - p) ** 1.7                          # EASE-OUT (gentler than quad — matches Submagic's rise)
+    peak = 0.82
+    if e < peak:
+        return EMOJI_POP_START + (EMOJI_POP_PEAK - EMOJI_POP_START) * (e / peak)
+    return EMOJI_POP_PEAK - (EMOJI_POP_PEAK - 1.00) * ((e - peak) / (1 - peak))
+
+
+def _emoji_drop(elapsed):
+    """Vertical settle: emoji starts ~DROP px high and eases DOWN to its resting y over the pop."""
+    if elapsed >= EMOJI_POP_DUR:
+        return 0
+    e = 1 - (1 - elapsed / EMOJI_POP_DUR) ** 2
+    return int(-EMOJI_POP_DROP * (1 - e))
+
+
+def _emoji_traj(elapsed, traj):
+    """Replay a captured Submagic emoji trajectory: keyframes [[t_rel, dx, dy, scale], ...]
+    (dx,dy = px offset from resting pos). Linear-interp at `elapsed`; hold rest (0,0,1.0) after."""
+    if not traj:
+        return 0, 0, 1.0
+    if elapsed <= traj[0][0]:
+        k = traj[0]; return int(k[1]), int(k[2]), float(k[3])
+    if elapsed >= traj[-1][0]:
+        return 0, 0, 1.0
+    for i in range(1, len(traj)):
+        if elapsed < traj[i][0]:
+            a, b = traj[i - 1], traj[i]
+            f = (elapsed - a[0]) / max(1e-4, b[0] - a[0])
+            return (int(a[1] + (b[1] - a[1]) * f), int(a[2] + (b[2] - a[2]) * f),
+                    float(a[3] + (b[3] - a[3]) * f))
+    return 0, 0, 1.0
+
+
+def _emoji_entrance(elapsed, motion):
+    """Clean parametric emoji entrance matching Submagic's REAL motions (measured frame-by-frame by
+    diffing the captioned video vs the master). Returns (dx, dy, scale). After `dur`, holds (0,0,1.0).
+
+    Submagic's pop = SNAPPY: the emoji reaches ~full size within ~1 frame, OVERSHOOTS to ~`peak`,
+    then settles to 1.0 (a tiny bounce). Only 🦸 grows GRADUALLY (linear over ~0.3s). So:
+      scale rises s0 -> peak over the first `ramp` fraction of `dur` (ease-out), then peak -> 1.0.
+    motion = {type: pop|drop|slide_l|slide_r|static, s0, dur, dist, peak, ramp}
+      pop  — overshoot-pop in place (default; e.g. 🔢, 📖, 🚫)
+      drop — enters ~dist px ABOVE, eases DOWN to rest + pop (e.g. 😴)
+      slide_l/slide_r — enters ~dist px to the side, eases to rest + pop
+      static — full size immediately, no motion"""
+    if not motion or motion.get("type") == "static":
+        return 0, 0, 1.0
+    dur = motion.get("dur", 0.13)
+    traj = motion.get("traj")                          # captured per-frame [[t_rel,dx,dy],...] from Submagic
+    slide = motion.get("slide")                        # parametric fallback [sdx,sdy]
+    sdur = motion.get("sdur", 0.28)
+    traj_end = traj[-1][0] if traj else 0
+    done_t = max(dur, traj_end if traj else (sdur if slide else 0))
+    if elapsed >= done_t:
+        return 0, 0, 1.0
+    # --- scale pop (snappy overshoot -> settle) ---
+    p = max(0.0, min(1.0, elapsed / dur))
+    s0 = motion.get("s0", 0.4)
+    peak = motion.get("peak", 1.10)
+    ramp = motion.get("ramp", 0.55)
+    if p < ramp:
+        e = 1 - (1 - p / ramp) ** 1.8
+        scale = s0 + (peak - s0) * e
+    else:
+        q = (p - ramp) / (1 - ramp)
+        scale = peak - (peak - 1.0) * q
+    # --- translation: REPLAY the exact captured Submagic trajectory (frame-by-frame match) ---
+    dx = dy = 0
+    if traj:
+        if elapsed <= traj[0][0]:
+            dx, dy = traj[0][1], traj[0][2]
+        else:
+            for i in range(1, len(traj)):
+                if elapsed < traj[i][0]:
+                    a, b = traj[i - 1], traj[i]
+                    f = (elapsed - a[0]) / max(1e-4, b[0] - a[0])
+                    dx = int(a[1] + (b[1] - a[1]) * f)
+                    dy = int(a[2] + (b[2] - a[2]) * f)
+                    break
+            else:
+                dx = dy = 0
+    elif slide:                                        # parametric ease-out fallback
+        ps = max(0.0, min(1.0, elapsed / sdur))
+        es = 1 - (1 - ps) ** 2.4
+        dx = int(slide[0] * (1 - es)); dy = int(slide[1] * (1 - es))
+    return dx, dy, scale
+
+
 def _text_scale(elapsed):
     """Subtle pop matching the reference: 96% -> 105% peak (~+0.04s) -> 100% (~0.12s)."""
     if elapsed >= TEXT_POP_DUR:
@@ -353,7 +583,7 @@ def _ease_out(p):
 #    "down" rests ~1 line below.
 #  - Motion is EASE-IN-OUT (accelerate then decelerate, like a car) over a FIXED duration
 #    (SLIDE_ENTER_DUR — same speed every time, NOT card-relative), then HOLDS at the destination.
-EMOJI_PRESETS = ["right", "up_right", "up", "up_left", "left", "down", "static", "down_right", "down_left"]
+EMOJI_PRESETS = ["right", "up", "left", "down", "static"]  # diagonals removed (looked bad) — only H/V + static
 
 
 def _emoji_offsets(preset, h, v):
@@ -422,7 +652,7 @@ def find_boring_window(video, length=6.0, edge=4.0):
 
 
 def burn(video, cards, work_dir, out, fontsize_ratio, vertical_pos, use_emoji, max_lines=3,
-         disc_text=None, disc_start=0.0, disc_end=0.0):
+         disc_text=None, disc_start=0.0, disc_end=0.0, emoji_plan=None):
     """Pre-composite the whole caption track (text + animated emoji w/ motion) to a PNG
     sequence, then overlay it in ONE ffmpeg pass (fast regardless of card count)."""
     import shutil
@@ -447,7 +677,22 @@ def burn(video, cards, work_dir, out, fontsize_ratio, vertical_pos, use_emoji, m
     cy = int(vertical_pos * height)
     print(f"      vertical_pos={vertical_pos:.3f}  max_font={fontsize_ratio}  max_lines={max_lines}  fps={fps:.2f}", flush=True)
 
+    import os as _os
+    _dbg = _os.environ.get("EMOJI_DEBUG")
     disp_end = [cards[i + 1]["start"] for i in range(len(cards) - 1)] + [cards[-1]["end"] + 0.4]
+    # Bind each Submagic emoji to the card DISPLAYED at its appearance time (contains-rule on the
+    # display window), with a small forward LEAD so an emoji landing a hair before a card boundary
+    # snaps to the next card (fixes ±0.3s drift: 🔢 t=22.10 → "lost count" card @22.20, not "eight times").
+    # Mid-card emojis (🦸 appears ~1.5s into a long card) stay on their card — no nearest-start drop.
+    card_emoji = {}
+    if emoji_plan is not None:
+        wins = [(cards[i]["start"], disp_end[i]) for i in range(len(cards))]
+        LEAD = 0.30   # bind by the keyword-card (Submagic↔our timeline ±0.3s skew); e_start uses exact appear
+        for pe in emoji_plan:
+            tp = pe["t"] + LEAD
+            ci = next((i for i, (a, b) in enumerate(wins) if a <= tp < b), None)
+            if ci is not None and ci not in card_emoji:
+                card_emoji[ci] = pe
     emoji_cache = {}
     cd = []          # text cards only
     emoji_raw = []   # emoji overlays (decoupled from cards, so they can linger)
@@ -455,15 +700,36 @@ def burn(video, cards, work_dir, out, fontsize_ratio, vertical_pos, use_emoji, m
     last_emoji = None   # last PLACED glyph — never repeat it back-to-back
     for ci, card in enumerate(cards):
         accent = ACCENTS[ci % len(ACCENTS)]
-        lay = compute_layout(card["words"], width, height, fontsize_ratio, vertical_pos, max_lines)
+        lay = compute_layout(card["words"], width, height, fontsize_ratio, vertical_pos, max_lines,
+                             force_lines=card.get("n_lines"))
         cap = int(lay["fontsize"] * 0.72)
         d0, d1 = card["start"], disp_end[ci]
         bounds = [d0] + [lay["line_starts"][li] for li in range(1, lay["nlines"])] + [d1]
         line_imgs = [render_text_image(lay, li, accent, width, height) for li in range(lay["nlines"])]
         cd.append({"d0": d0, "d1": d1, "bounds": bounds, "lines": line_imgs})
-        emoji = pick_emoji(card["words"], exclude=last_emoji) if use_emoji else None
-        if emoji and (not emoji_raw or d0 - emoji_raw[-1]["start"] >= EMOJI_MIN_GAP):
-            es = int(cap * 1.7); ex = (width - es) // 2; ey = lay["emoji_y"]
+        emoji = None; epos = "center"; placeable = True; emotion = None; e_start = d0; ecx = None; ecy = None
+        if emoji_plan is not None:                 # match Submagic: exact glyph on the card displayed at its time
+            pe = card_emoji.get(ci)
+            if pe:
+                emoji = pe["emoji"]; epos = pe.get("pos", "center"); emotion = pe.get("motion")
+                ecx = pe.get("cx"); ecy = pe.get("cy")
+                # appearance + slide begin at the EXACT captured Submagic frame, so ours animates
+                # frame-for-frame in absolute time. Only guard against absurd out-of-card values.
+                ap = pe.get("appear") or pe["t"]
+                e_start = ap if (d0 - 0.4 <= ap <= d1 + 0.05) else min(max(ap, d0 - 0.12), d1 - 0.12)
+        elif use_emoji:
+            emoji = pick_emoji(card["words"], exclude=last_emoji)
+            placeable = (not emoji_raw or d0 - emoji_raw[-1]["start"] >= EMOJI_MIN_GAP)
+        if emoji and placeable:
+            # Submagic: ~constant ~68px emoji (NOT scaled per card); centered or at keyword column; ~below text
+            es = int(width * 0.095)
+            # explicit per-emoji cx (measured from Submagic, since our grouping matches it) overrides the preset
+            cxpos = ecx if ecx is not None else \
+                {"center": width // 2, "left": int(width * 0.38), "right": int(width * 0.64)}.get(epos, width // 2)
+            ex = cxpos - es // 2
+            # emoji sits BELOW MY text block (relative to my subtitle) so it never overlaps the words —
+            # Submagic's absolute cy can't be pinned because my caption is positioned lower than theirs.
+            ey = int(lay["y0"] + lay["text_h"] + 16)   # top ~16px below my text bottom (clear gap)
             key = (emoji, es)
             if key not in emoji_cache:
                 emoji_cache[key] = render_emoji_frames(emoji, es)
@@ -472,11 +738,15 @@ def burn(video, cards, work_dir, out, fontsize_ratio, vertical_pos, use_emoji, m
                 preset = EMOJI_PRESETS[emoji_idx % len(EMOJI_PRESETS)]; emoji_idx += 1
                 sdx, sdy, rdx, rdy = _emoji_offsets(preset, slide_half, slide_v)
                 # end = this card's d1 → emoji disappears the instant the text advances to the next card
-                emoji_raw.append({"start": d0, "end": d1, "ex": ex, "ey": ey, "es": es,
+                e_end = max(d1, e_start + 0.45)        # keep visible through its motion if it appeared late
+                emoji_raw.append({"start": e_start, "end": e_end, "ex": ex, "ey": ey, "es": es,
                                   "frames": frames, "durs": durs, "glyph": emoji,
                                   "sdx": sdx, "sdy": sdy, "rdx": rdx, "rdy": rdy,
-                                  "edur": SLIDE_ENTER_DUR})
+                                  "edur": SLIDE_ENTER_DUR, "motion": emotion})
                 last_emoji = emoji   # block this glyph from repeating on the next placement
+                if _dbg:
+                    print(f"  [emoji] {emoji} card_d0={d0:.2f} d1={d1:.2f} ex={ex} ey={ey} pos={epos} "
+                          f"motion={emotion.get('type') if emotion else 'pop(default)'}", flush=True)
 
     print(f"      {len(emoji_raw)} emojis placed across {len(cards)} cards: "
           f"{''.join(e['glyph'] for e in emoji_raw)}", flush=True)
@@ -515,7 +785,10 @@ def burn(video, cards, work_dir, out, fontsize_ratio, vertical_pos, use_emoji, m
                         efi = k; break
                 if efi is None:
                     efi = len(aem["frames"]) - 1
-            edx, edy = _emoji_xform(eel, aem["edur"], aem["sdx"], aem["sdy"], aem["rdx"], aem["rdy"])
+            if aem.get("motion"):         # clean parametric Submagic entrance (pop / drop / slide)
+                edx, edy, escale = _emoji_entrance(eel, aem["motion"])
+            else:                          # fallback: scale grow-in pop (Submagic's dominant motion)
+                escale = _emoji_pop(eel); edx = 0; edy = _emoji_drop(eel)
         if active is None and aem is None and not disc_on:
             key = ("blank",)
         else:
@@ -531,8 +804,8 @@ def burn(video, cards, work_dir, out, fontsize_ratio, vertical_pos, use_emoji, m
                 img = Image.alpha_composite(img, txt)
             if aem is not None and efi is not None:
                 em = aem["frames"][efi]
-                if escale < 0.999:
-                    ns = max(2, int(aem["es"] * escale))
+                if abs(escale - 1.0) > 0.01:     # scale-pop entrance (can be <1 or >1), recenter
+                    ns = max(2, int(round(aem["es"] * escale)))
                     em = em.resize((ns, ns), Image.LANCZOS)
                     ox = aem["ex"] + (aem["es"] - ns) // 2 + edx
                     oy = aem["ey"] + (aem["es"] - ns) // 2 + edy
@@ -557,9 +830,12 @@ def main():
     ap.add_argument("--font-ratio", type=float, default=0.0336,
                     help="Font as fraction of frame height. 0.0336 matches Submagic ref (a ~2-word line is ~42%% of width). Shrinks only if a line/card overflows.")
     ap.add_argument("--vertical-pos", type=float, default=None)
-    ap.add_argument("--max-words", type=int, default=3)
-    ap.add_argument("--max-lines", type=int, default=3)
+    ap.add_argument("--max-words", type=int, default=4)  # ~4 words/card → consistent 2-line Submagic look
+    ap.add_argument("--submagic-cards", default=None, help="JSON of extracted Submagic cards; match its grouping")
+    ap.add_argument("--max-lines", type=int, default=2)  # Submagic caps at 2 lines
     ap.add_argument("--no-emoji", action="store_true")
+    ap.add_argument("--submagic-emojis", default=None,
+                    help="JSON inventory (submagic_emoji_inventory.json) — place its exact emoji types/positions on the cards holding each timestamp, to match Submagic.")
     ap.add_argument("--biased", default="Chowchilla:3.0,CCWF:2.0",
                     help="comma-sep Scribe biased keywords (proper nouns). Empty for generic text.")
     ap.add_argument("--disclaimer", action="store_true",
@@ -592,7 +868,13 @@ def main():
             _seg["words"] = [w for w in _seg.get("words", [])
                              if _re.sub(r"[^a-z]", "", w.get("word", "").lower()) not in _FILLERS]
         print("[3/4] chunking", flush=True)
-        cards = chunk_words(result["segments"], max_words=args.max_words)
+        if args.submagic_cards:
+            import json as _json
+            sc = _json.load(open(args.submagic_cards))
+            cards = build_cards_from_submagic_seq(result["segments"], sc)
+            print(f"      matching Submagic grouping (seq-align): {len(sc)} sm-cards -> {len(cards)} cards", flush=True)
+        else:
+            cards = build_cards(result["segments"], max_words=args.max_words)
         if args.end is not None:
             cards = [c for c in cards if c["start"] < args.end]
         print(f"      {len(cards)} cards, {sum(len(c['words']) for c in cards)} words", flush=True)
@@ -604,10 +886,19 @@ def main():
                 disc_start, _ = find_boring_window(video, length=args.disclaimer_secs)
             disc_end = disc_start + args.disclaimer_secs
             disc_text = args.disclaimer_text
+        emoji_plan = None
+        if args.submagic_emojis:
+            inv = json.load(open(args.submagic_emojis))
+            emoji_plan = [{"t": e["t"], "emoji": e["emoji"], "pos": e.get("pos", "center"),
+                           "motion": e.get("motion"), "cx": e.get("cx"), "cy": e.get("cy"),
+                           "appear": e.get("_appear")}
+                          for e in inv.get("emojis", inv)]
+            print(f"      emoji plan: {len(emoji_plan)} Submagic emojis to place", flush=True)
         print("[4/4] render + burn", flush=True)
         burn(video, cards, td, out, args.font_ratio, args.vertical_pos,
              use_emoji=not args.no_emoji, max_lines=args.max_lines,
-             disc_text=disc_text, disc_start=disc_start or 0.0, disc_end=disc_end or 0.0)
+             disc_text=disc_text, disc_start=disc_start or 0.0, disc_end=disc_end or 0.0,
+             emoji_plan=emoji_plan)
     print(f"\nDONE → {out}", flush=True)
 
 

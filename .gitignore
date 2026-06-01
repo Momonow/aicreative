@@ -8,3 +8,6 @@ outputs/
 # auto-fetched emoji cache (regenerated on demand)
 assets/emoji/
 *.log
+
+# AdMachin per-campaign targeting configs (hold Facebook ad-account/campaign ids)
+admachin_targets/

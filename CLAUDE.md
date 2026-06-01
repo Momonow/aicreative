@@ -53,7 +53,8 @@ User-set rule: **route each model to its cheapest reliable host**, not all throu
 | Model | Provider | Module | Cost | Notes |
 |---|---|---|---|---|
 | **Veo 3.1 Fast** | **Poyo** | `poyo_client.generate_veo` | **$0.10/clip** flat | Default Veo. See "Poyo gotchas". Fallback: `openrouter_video.generate_veo(model="google/veo-3.1-fast")`. |
-| **Veo 3.1 Lite** | **OpenRouter** | `openrouter_video.generate_veo` | **$0.40/8s** (audio) | Cheaper/lighter Veo tier. `OPENROUTER_ADCLI_KEY`. Not on Poyo. |
+| **Veo 3.1 Lite (FREE)** | **useapi google-flow** | `googleflow_client.generate_veo` | **$0 — free, no credit** | **DEFAULT for Veo Lite.** Model `veo-3.1-lite-low-priority`, ultra-low-priority queue (SLOW but free). `startImage` i2v persona lock. `USEAPI_TOKEN`, EMAIL `flowmomomedia@gmail.com`. See `feedback_veo_lite_free_path` memory + `scripts/podcast_omni_produce.py`. |
+| **Veo 3.1 Lite** | **OpenRouter** | `openrouter_video.generate_veo` | **$0.40/8s** (audio) | Paid fallback when the free queue is too slow. `OPENROUTER_ADCLI_KEY`. Not on Poyo. (KIE `veo3_lite` also paid — spends points, hourly cap.) |
 | **Seedance 2.0 Fast** | **useapi.net** | `useapi_client.generate_seedance` | **unlimited** (flat monthly) | Default for high volume. Set `USEAPI_EXPLORE=true`. |
 | **Seedance 2.0 Fast (480p)** | **OpenRouter** | `openrouter_video.generate_seedance` | **~$0.05/sec** (480p; ≈$0.25 per 5s) | Pay-per-use fallback. `OPENROUTER_ADCLI_KEY`. **Per-SECOND**, token-based. KIE Seedance ≈ **$0.07/sec**. (Old "$0.053/clip" figure was ~10× off.) |
 | **Kling 3.0** | **useapi.net** | `useapi_client.generate_kling` | **unlimited** (flat monthly) | Replaces KIE. Models: `kling-3-0-standard` (default) or `kling-3-0-pro`. |
@@ -74,6 +75,8 @@ Memory: `project_video_provider_routing.md` — confirm before bulk-running new 
 | `generate_veo` | `veo3_fast` | `/veo/generate` | 720p (720×1280), 9:16. **NOT preferred — route to Poyo for $0.10/clip vs $0.30.** |
 
 All return `{"status": "success"|"failed", "urls": [...], "raw": {...}}`. KIE Veo polls a different endpoint (`/veo/record-info`) — handled internally.
+
+**KIE jobs run server-side once submitted — killing the local process does NOT cancel them (image AND video).** As soon as `createTask` / `/veo/generate` returns a task id, KIE produces (and bills) the job on its own infrastructure, independent of your local script. Ctrl-C / `pkill` / killing a background task only stops local **polling + download** — the output is still generated server-side and the points are still spent. So there is no point killing a batch mid-flight to "save points" or "stop generation"; it does neither. Just let it finish, or stop polling and rely on **skip-if-exists** to pick the finished files up on a re-run (re-running re-polls the same in-flight task and downloads it). Applies to every KIE model: `generate_gpt_image`, `generate_nano_banana`, `generate_veo`, `generate_kling`, `generate_seedance`. (Poyo is the same — submit returns a `task_id` that completes regardless of the local poller.)
 
 **KIE upload endpoint stays useful** for hosting reference images:
 ```
@@ -1088,9 +1091,48 @@ Keep a **cold / muted / desaturated** block for dark beats and a separate **BRIG
 
 ---
 
+## Publishing to AdMachin (upload + launch)
+
+Once an ad is finished, push it into **AdMachin** (the user's own ad platform — `github.com/harrymomomedia/admachin`, REST v1 at `https://admachin.com/api/v1`). Two ways in, both wired up:
+
+### Python client + push script (the automation)
+
+- **`admachin_client.py`** — thin REST wrapper, mirrors the other `*_client.py` modules. Reads `ADMACHIN_PAT` + `ADMACHIN_API_BASE` from `.env`. Auto-sends an `Idempotency-Key` on every POST/PATCH (server dedups 24h). Raises `AdMachinError` with `.code` (`FORBIDDEN` = PAT missing a scope, `UNAUTHENTICATED` = bad token, etc.). Functions: `upload_creative`, `create_ad_copy`, `create_ad`, `generate_combos`, `create_link`, `launch_ad`, `pause_launch`, `resume_launch`, plus read helpers (`list_workspaces`, `list_ad_plans`, `list_creatives`, `get_creative`, `get_ad`, `get_launch`).
+- **`scripts/admachin_push.py`** — orchestrates **upload → assemble → (gated) launch**:
+  ```bash
+  # upload + assemble a DRAFT ad, NO spend (stops here by default):
+  .venv/bin/python scripts/admachin_push.py outputs/<campaign>/final.mp4 \
+    --project-id <uuid> --headline "..." --primary "..." --ad-type my-campaign-2026-06-01
+  # go live on Facebook (⚠ SPENDS REAL MONEY) — gated:
+  .venv/bin/python scripts/admachin_push.py final.mp4 --campaign <name> --launch        # prompts: type LAUNCH
+  .venv/bin/python scripts/admachin_push.py final.mp4 --campaign <name> --launch --yes   # automation (no prompt)
+  ```
+
+### API contract gotchas (baked into the client — don't re-learn the hard way)
+
+- **`POST /creatives` is the ONLY multipart endpoint.** ≤200 MiB; MIME must be jpeg/png/webp/gif/mp4/quicktime. Bytes go to Supabase Storage first, then the DB row. Everything else is JSON.
+- **Ads have NO link field.** The destination URL is supplied at LAUNCH time as `landing_url` — NOT attached to the ad. `/links` is a separate tracking-link library (`POST /links` needs `name`+`url`); there is **no** `/links/find-or-create` despite the recipe page. So the assemble flow is just creative → copy → ad.
+- **No `/projects` or `/me` endpoint yet.** Find `project_id` via `list_ad_plans()` or the web UI. PAT scopes can't be introspected up front — a missing scope only surfaces as `FORBIDDEN` at call time.
+- **`launch_ad` needs FB ids that must already exist:** `ad_account_id` (`act_…`), `campaign_id`, `adset_id`, `page_id`, `cta_type` (e.g. `LEARN_MORE`), `landing_url`. Requires the `launch:meta` scope. The client passes a **stable** idempotency key (`launch-<ad_id>`) so a re-run within 24h won't double-spend.
+
+### Launch safety (user-locked rule)
+
+**Launch is gated, never the default.** A plain `admachin_push.py <video>` run stops at a draft ad and prints the id. Launching requires `--launch` AND confirmation: an interactive `type LAUNCH` prompt, or `--yes` for automation. With no TTY and no `--yes`, the launch is **refused** (never silently spends). Per-campaign FB targeting lives in **`admachin_targets/<name>.json`** (gitignored — holds FB ad-account/campaign ids), selected with `--campaign <name>`; CLI flags override. Print a template with `--print-config-template`.
+
+### Secrets
+
+`ADMACHIN_PAT` is in gitignored `.env` (and in `~/.claude.json` for the MCP server). **Never** commit it or put it in `admachin_targets/`. PATs are shown once and look like `admachin_pat_<43 chars>`.
+
+### MCP server (interactive — 75 tools)
+
+The AdMachin MCP server is built at `/Users/harry/admachin-mcp/packages/mcp-server/dist/index.js` (an isolated git worktree of the admachin repo at `origin/main`, since the main checkout predates it) and registered with Claude Code at **user scope** (`claude mcp add admachin -s user`). It exposes all 75 v1 tools (`upload_creative`, `create_ad`, `launch_ad`, insights, etc.) for interactive use. **MCP config is read on cold start — restart Claude Code to load the tools.** Rebuild after a repo update: `cd /Users/harry/admachin-mcp && git fetch && git checkout origin/main -- packages/mcp-server && (cd packages/mcp-server && npm i --no-save --legacy-peer-deps typescript@5 @types/node && npm run build)`.
+
+---
+
 ## Do Not
 
 - Combine `reference_image_urls` and `reference_video_urls` in one Seedance call.
+- **Kill a KIE/Poyo gen process mid-request thinking it cancels the job — it does NOT.** Once submitted, the job is produced and billed server-side regardless of the local poller (image AND video). Killing only stops local polling/download; it saves zero points and stops zero generation. Let it finish or rely on skip-if-exists on re-run. See the KIE section note.
 - Commit `outputs/` or `.env` (both gitignored).
 - Hardcode API keys — always from `.env`.
 - Invent visual details. If the dissect frames don't show it, don't write it into the analysis.
@@ -1121,3 +1163,5 @@ Keep a **cold / muted / desaturated** block for dark beats and a separate **BRIG
 - **Keep submitting Poyo after 10min timeouts on known-good payloads** — that's a Poyo-wide outage. Switch to `kie_client.generate_veo` at $0.30/clip instead of burning budget on retries.
 - **Present video file paths as plain text** — the user's chat client only renders a clickable inline preview when the path is wrapped in `` `backticks` ``. Plain text paths, paths inside markdown table cells, paths in markdown link syntax `[label](path)`, `file:///` URLs, and `http://localhost:<port>/` URLs all FAIL to trigger the preview. Every video file (generated clip, source upload, b-roll, composite, stitched final, aspect variant) must be backticked. See the "Presenting videos in chat" section above.
 - **Use Veo 3.1 Quality (`veo3`) on KIE** — HARD RULE: NEVER. Always start with Veo 3.1 Lite (`veo3_lite`). Only fall back to Veo 3.1 Fast (`veo3_fast`) after 2-3 Lite failures on the same prompt for the same failure mode. If Fast also fails, stop and escalate to the user — do NOT use Quality. Memory: `feedback_veo_tier_routing.md`.
+- **Call `admachin_client.launch_ad` / `POST /launches` without the `--launch` gate** — launching SPENDS REAL MONEY on Facebook. Always go through `scripts/admachin_push.py`; launch is gated behind `--launch` + confirmation (`type LAUNCH`, or `--yes` for automation). No TTY and no `--yes` = refuse, never silently spend. See "Publishing to AdMachin".
+- **Commit the `ADMACHIN_PAT` or `admachin_targets/`** — the PAT lives in gitignored `.env` (+ `~/.claude.json` for MCP); the per-campaign FB targeting configs are gitignored. Never hardcode the PAT or paste it into a tracked file.
