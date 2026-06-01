@@ -102,6 +102,7 @@ if __name__ == "__main__":
         slid = mag > 8 and len(tr) >= 3
         e["cx"] = rx
         e["_appear"] = r["appear"]
+        e.setdefault("motion", {})
         e["motion"]["traj"] = tr if slid else None
         if not slid:
             e["motion"]["slide"] = [0, 0]

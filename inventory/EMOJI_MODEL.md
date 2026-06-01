@@ -40,11 +40,16 @@ travels there*. A subtle slide parked far off-center reads as a broken "off-cent
 3. `caption_hormozi3.py --submagic-cards <cards.json> --submagic-emojis <inventory.json>` replays it.
 4. Verify: `scripts/emoji_match_report.py` (position/scale per frame) + `scripts/emoji_diff_track.py`.
 
-## OPEN ITEM — emoji RATE + missing glyphs (flagged 2026-06)
+## Emoji RATE + glyph choices (rebuilt 2026-06)
 
-A full-video scan found **Submagic uses ~29 emojis (~14/min); our inventory only has 14 (~7/min)** —
-about HALF. ~15 are missing (≈0:00, 0:20, 0:25, 0:28, 0:42, 0:45, 0:55, 1:05, 1:10, 1:12, 1:23, 1:34,
-1:45, 1:49, 1:53, 1:56, 1:58), and a few glyphs are wrong (e.g. 0:10 should be **😔/🥺**, not 😴;
-missing **🧘** 0:42, **👩‍💼** 1:23, **⏳** 1:49). TODO: rebuild the inventory to all ~29 with correct
-glyphs so the rate + choices match Submagic. Scan tooling: the full-scan loop in this session +
-`scripts/analyze_submagic_emojis.py` / `scripts/track_emojis.py`.
+Rebuilt to **29 emojis (~14/min)** to match Submagic's rate (was 14 ≈ half). Full glyph list:
+🛡️ 💰 😔 🚫 🚪 😣 🔢 😩 🕳️ 🏆 😤 🧘 📝 📊 📍 ✅ 🦸 💵 💔 🔒 💸 👩‍💼 📋 🏛️ 🤫 ⏳ 👀 👇 📝.
+
+- Glyphs identified directly from the Submagic export where the crop was readable (💰 😔 🚫 🚪 🔢 🏆
+  😤 🧘 📝 📊 ✅ 🦸 💸 👩‍💼 ⏳ 🏛️ + more); for events where the caption text obscured the emoji, the
+  glyph is **keyword-appropriate** (e.g. 🕳️ "the hole", 🔒 "locked up", ⚖️/🏛️ "courtroom", 👇 "tap the
+  button", 📋 "paperwork") — matching how Submagic picks emojis.
+- A handful are best-guess (😣 😩 📍 💔 🤫 👀) — refine against the export if a specific one looks off.
+- Fixed glyph error: 0:10 is **😔** (sad), not 😴.
+- Re-run the full scan: the per-frame emoji-event scan loop (diff vs master, segment events) +
+  `scripts/rederive_emoji.py` to recapture positions/motions.
