@@ -28,6 +28,9 @@ INTENDED = {
 
 
 def tokens(s):
+    # expand contractions before stripping punctuation so "don't" → "dont" (1 token)
+    # rather than "don t" (2 tokens that break subsequence matching)
+    s = re.sub(r"'", "", s)
     return re.sub(r"[^\w\s]", " ", s.lower()).split()
 
 
