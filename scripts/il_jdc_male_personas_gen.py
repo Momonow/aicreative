@@ -119,14 +119,31 @@ def generate(p):
     if not media:
         raise RuntimeError(f"{pid}: no media in response — {data}")
 
-    fife_url = media[0].get("fifeUrl", "")
-    media_id = media[0].get("mediaGenerationId", "")
+    # response nests image data under media[i]["image"]["generatedImage"]
+    gen = media[0].get("image", {}).get("generatedImage", {})
+    fife_url = gen.get("fifeUrl", "")
+    media_id = gen.get("mediaGenerationId", "")
 
-    # download image
-    img_r = requests.get(fife_url + "=s2048", timeout=60)
-    img_r.raise_for_status()
-    out_path.write_bytes(img_r.content)
-    print(f"  {pid}: saved {out_path.stat().st_size//1024}KB → {out_path}  [{p['label']}]")
+    if not fife_url:
+        raise RuntimeError(f"{pid}: no fifeUrl — {gen}")
+
+    # save all variants
+    for i, m in enumerate(media):
+        g = m.get("image", {}).get("generatedImage", {})
+        url = g.get("fifeUrl", "")
+        mid = g.get("mediaGenerationId", "")
+        if not url:
+            continue
+        vpath = OUT / f"{pid}_v{i+1}.jpg"
+        img_r = requests.get(url, timeout=60)
+        img_r.raise_for_status()
+        vpath.write_bytes(img_r.content)
+        print(f"  {pid}_v{i+1}: saved {vpath.stat().st_size//1024}KB  mediaId: {mid}")
+
+    # primary = v1
+    import shutil
+    shutil.copy(OUT / f"{pid}_v1.jpg", out_path)
+    print(f"✓ {pid}: {out_path}  [{p['label']}]")
     return pid, str(out_path), media_id
 
 
