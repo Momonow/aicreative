@@ -1,4 +1,4 @@
-# CLAUDE.md — aicreative
+# AGENTS.md — aicreative
 
 End-to-end UGC ad cloning. Four halves:
 
@@ -59,6 +59,7 @@ User-set rule: **route each model to its cheapest reliable host**, not all throu
 | **Seedance 2.0 Fast (480p)** | **OpenRouter** | `openrouter_video.generate_seedance` | **~$0.05/sec** (480p; ≈$0.25 per 5s) | Pay-per-use fallback. `OPENROUTER_ADCLI_KEY`. **Per-SECOND**, token-based. KIE Seedance ≈ **$0.07/sec**. (Old "$0.053/clip" figure was ~10× off.) |
 | **Kling 3.0** | **useapi.net** | `useapi_client.generate_kling` | **unlimited** (flat monthly) | Replaces KIE. Models: `kling-3-0-standard` (default) or `kling-3-0-pro`. |
 | **Runway Gen-4 Turbo** | **useapi.net** | `useapi_client.generate_runway` | **unlimited** (flat monthly) | New. Model: `gen4-turbo` (default) or `gen4`. Up to 10s. |
+| **prunaai/p-video** | **Replicate** | `replicate.Client(...).predictions.create(model=("prunaai","p-video"))` | token-based | I2V fallback for policy-heavy talking-head/reporter clips. Use 10s chunks, image input only, native audio; see "Replicate p-video gotchas". |
 | **nano-banana-2** | KIE | `kie_client.generate_nano_banana` | varies | Unchanged. |
 | **gpt-image-2** (t2i / i2i) | **KIE** | `kie_client.generate_gpt_image` | per-image (2K) | **Default image provider** (changed 2026-05-20). `resolution="2K"`, `aspect_ratio="9:16"`. OpenAI direct DROPPED — lower quality + caps at 1024×1536. |
 | **ElevenLabs** (TTS / clone / voice_changer) | ElevenLabs direct | `elevenlabs_client` | per-character | 5 concurrent max — throttle when batching. |
@@ -128,6 +129,20 @@ Hard gotchas (all hit this session):
 - **Poyo flaky-error signatures (all transient — re-roll or fall back to KIE):** besides "Server exception" and 600s timeouts, Poyo also returns **`"Please enter a prompt and try again"`** on perfectly valid non-empty payloads (the SAME prompt succeeds on retry). Don't treat it as a real "empty prompt" error. If it recurs across a batch alongside timeouts, it's the outage signal → switch to KIE `veo3_fast`. **KIE `veo3_fast` has its own transient `"Internal Error, Please try again later"`** — also just a re-roll (hit ~3/30 clips this session). Build skip-if-exists into batch scripts so re-running only regenerates the failures.
 
 **Resolution mismatch warning:** Seedance 480p (496×864) won't concat cleanly with Veo/Kling 720p (720×1280). Pick one model per ad, or rescale.
+
+### Replicate p-video gotchas (PrunaAI, verified 2026-06-06)
+
+Use this only when the user explicitly asks for Replicate `prunaai/p-video` or when Veo policy blocks keep stopping a simple talking-head/reporter ad. Reference script: `scripts/ca_jdc_replicate_pvideo_chunks.py`.
+
+- **Use image-to-video only for talking-head tests.** Passing an audio file caused poor lip-sync and the model silently capped a 40s audio-conditioned request around 20s. Let `p-video` generate native audio from the prompt instead.
+- **Chunk at 10 seconds.** The model's public duration control tops out at 20s, but 10s chunks are more controllable for speech, camera, and no-screen-text behavior. Stitch accepted original chunks afterward; do not generate one 40s clip.
+- **Keep prompts short.** Long negative/over-specified prompts confused the model. Best current CA JDC reporter prompt:
+  `Vertical 9:16 photorealistic fixed camera shot. Fixed frame shot. No zooming. No panning. No camera movement and no crop change. Keep the exact first-frame composition for the whole clip. Use the reference woman exactly, same framing and same camera distance. She speaks seriously into the handheld microphone with natural mouth movement and small blinks. No screen text, no graphics, no labels, no logos. Clean native audio.`
+- **Dialogue is a separate audio-only instruction.** Append: `Audio-only speech instruction: the following words are heard from her voice only, never shown visually. She says aloud in clear English, then stops: "<chunk script>"`.
+- **Screen text is the main failure mode.** The model repeatedly hallucinated subtitle/lower-third boxes when prompted with news/broadcast framing or audio conditioning. Keep "No screen text..." in the short prompt and avoid heavy TV-news language if text appears.
+- **Camera still "breathes."** Even with "fixed camera / no zooming / no panning / no crop change," `p-video` may subtly reframe or scale the person. The user accepted this as a model limit for now. Do not fight it with long prompts.
+- **No post stabilization unless explicitly approved.** Do not use ffmpeg `deshake`, freeze frames, or speed changes to repair `p-video` camera breathing unless the user explicitly confirms that specific post process. Prefer re-prompting or accept the model limitation.
+- **Post every generated video link before QA/post.** As soon as a chunk/final lands, post a clickable file link in chat before visual verification, transcript checks, stitching, captions, or other post-production.
 
 ### useapi.net (Seedance / Kling / Runway — unlimited)
 
@@ -290,18 +305,6 @@ The skill `hormozi3` documents this. Alex-Hormozi creator-caption look: Montserr
 - **Multi-part glyphs** (💰 money-bag, 📊 bar-chart, 💸) render as several colored blobs; the position capture can lock onto one part and read off-center — verify the TRUE center (they're centered in Submagic, not off-center). `rederive_emoji.py` guards: a big-slide needs **≥3 captured frames** (a spurious 1-frame capture is NOT a slide).
 - **Rate control:** `--emoji-gap <sec>` thins the AUTO-placed (non-Submagic) emoji rate toward Submagic's ~10/min (≈4.5s gives ~10/min). Default stays emoji-heavy. Glyph fixes verified: the "JUST A KID" emoji is 😔 (sad), not 😴; the courtroom emoji is 🏛️, not 🔒.
 - `rederive_emoji.py` is the ONE-SHOT builder: dissect → capture rest/appear/trajectory → apply the placement rules → ready-to-render inventory.
-
-### `scripts/caption_nick.py` — Submagic "Nick" style (reverse-engineered 2026-06-04, internal)
-
-In-house clone of Submagic's **"Nick"** caption template — **white sentence-case Helvetica Neue Bold on a semi-transparent dark rounded box, no color accent, no emoji**. Reverse-engineered frame-by-frame (diff captioned-vs-master) from a real Submagic Nick export and matched 1:1. **Use this instead of the Submagic API for the Nick look** — it's free and uses OUR verbatim Scribe text (Submagic auto-transcribes and can reformat the regulated "significant potential compensation" line or split cards oddly).
-
-```bash
-.venv/bin/python scripts/caption_nick.py <in.mp4> --out <out.mp4>
-#   --font helvetica|arial   --biased "Chowchilla:3.0,Chino:2.0"   --max-words 2   --vertical-pos 0.754
-.venv/bin/python scripts/burn_disclaimer.py <out.mp4> <out_disclaimer.mp4>   # combo (disclaimer is a separate layer)
-```
-
-Locked spec (do NOT re-derive): text white `#F8F8F8` **sentence-case** (preserve case — NOT all-caps); box fill `rgb(45,45,42)` @ **0.58** opacity, corner radius ~0.20×box_h, pad_x 0.32 / pad_y 0.14 ×font_px; **font px ≈ 0.044×H** (cap-height ~0.031×H); box center **vpos 0.754**; ~2 words/card single centered line; trailing punctuation stripped (keeps apostrophes); subtle scale-pop 0.94→1.0 over 0.12s. Same single-pass PNG-sequence + one-overlay render as `caption_hormozi3.py` (reuses its `scribe_transcribe`/`probe_*`). Skill: `caption-disclaimer` (Nick subsection).
 
 ### `scripts/caption.py` — legacy classic captions
 
@@ -932,6 +935,8 @@ The user's chat client renders a video path as a **clickable inline preview ONLY
 
 Rule: every time you present a video file (generated clip, source upload, b-roll, composite, stitched final, aspect variant), wrap the path in backticks. Bulleted lists, tables, paragraphs — all fine, as long as the path itself is backticked. Same applies to absolute and relative paths.
 
+**Generated-video sequencing rule (2026-06-06):** when a video generation finishes, post the video in chat immediately **before** verification, transcript checks, contact sheets, stitching, captions, or any post-production. If the user asks for clickable links, include a clickable markdown file link first; if preview rendering is needed too, also include the backticked path.
+
 Does NOT apply to images (use the Read tool to show those inline). Audio paths don't render previews regardless, so plain text is fine for `.mp3` / `.wav`.
 
 ---
@@ -961,9 +966,9 @@ How the hormozi3 look was reverse-engineered + tuned against the reference, and 
 
 ---
 
-## User skills (`~/.claude/skills/`)
+## User skills (`~/.Codex/skills/`)
 
-These auto-surface on relevant user phrases. Don't need to invoke manually — Claude does it.
+These auto-surface on relevant user phrases. Don't need to invoke manually — Codex does it.
 
 | Skill | Triggers | What it knows |
 |---|---|---|
@@ -1145,11 +1150,11 @@ Once an ad is finished, push it into **AdMachin** (the user's own ad platform �
 
 ### Secrets
 
-`ADMACHIN_PAT` is in gitignored `.env` (and in `~/.claude.json` for the MCP server). **Never** commit it or put it in `admachin_targets/`. PATs are shown once and look like `admachin_pat_<43 chars>`.
+`ADMACHIN_PAT` is in gitignored `.env` (and in `~/.Codex.json` for the MCP server). **Never** commit it or put it in `admachin_targets/`. PATs are shown once and look like `admachin_pat_<43 chars>`.
 
 ### MCP server (interactive — 75 tools)
 
-The AdMachin MCP server is distributed as the private GitHub Packages npm package `@harrymomomedia/admachin-mcp-server`. Consumer repos like this one should use that installed MCP runtime, not paths into the AdMachin builder checkout. On Harry's Mac, the current local fallback runtime is `/Users/harry/admachin-mcp/dist/index.js` and is registered with Claude Code at **user scope**. It exposes the v1 tools (`upload_creative`, `create_ad`, `launch_ad`, insights, etc.) for interactive use. **MCP config is read on cold start — restart Claude Code to load config changes.**
+The AdMachin MCP server is distributed as the private GitHub Packages npm package `@harrymomomedia/admachin-mcp-server`. Consumer repos like this one should use that installed MCP runtime, not paths into the AdMachin builder checkout. On Harry's Mac, the current local fallback runtime is `/Users/harry/admachin-mcp/dist/index.js` and is registered with Codex at **user scope**. It exposes the v1 tools (`upload_creative`, `create_ad`, `launch_ad`, insights, etc.) for interactive use. **MCP config is read on cold start — restart Codex to load config changes.**
 
 ### MCP limits learned (2026-06) — projects/subprojects are UUID-only
 
@@ -1192,7 +1197,7 @@ The AdMachin MCP server is distributed as the private GitHub Packages npm packag
 - **Skip `voice_consistency.py` when user reports voice changes** — `audio_match.py`'s ±20% centroid tolerance is too loose to catch what humans hear. Always run both detectors.
 - **Dissect multiple `clip1.mp4` files in one run** — they all overwrite `outputs/clip1/`. Copy to unique stems first: `outputs/illinois_jdc_<slug>_clip${idx}.mp4`.
 - **Keep submitting Poyo after 10min timeouts on known-good payloads** — that's a Poyo-wide outage. Switch to `kie_client.generate_veo` at $0.30/clip instead of burning budget on retries.
-- **Present video file paths as plain text** — the user's chat client only renders a clickable inline preview when the path is wrapped in `` `backticks` ``. Plain text paths, paths inside markdown table cells, paths in markdown link syntax `[label](path)`, `file:///` URLs, and `http://localhost:<port>/` URLs all FAIL to trigger the preview. Every video file (generated clip, source upload, b-roll, composite, stitched final, aspect variant) must be backticked. See the "Presenting videos in chat" section above.
+- **Do QA/post-production before posting a generated video link** — every generated clip/final must be posted in chat immediately after it lands, before verification or post work. Use a clickable markdown file link when the user asks to click it; include a backticked path too if inline preview rendering is needed.
 - **Use Veo 3.1 Quality (`veo3`) on KIE** — HARD RULE: NEVER. Always start with Veo 3.1 Lite (`veo3_lite`). Only fall back to Veo 3.1 Fast (`veo3_fast`) after 2-3 Lite failures on the same prompt for the same failure mode. If Fast also fails, stop and escalate to the user — do NOT use Quality. Memory: `feedback_veo_tier_routing.md`.
 - **Call `admachin_client.launch_ad` / `POST /launches` without the `--launch` gate** — launching SPENDS REAL MONEY on Facebook. Always go through `scripts/admachin_push.py`; launch is gated behind `--launch` + confirmation (`type LAUNCH`, or `--yes` for automation). No TTY and no `--yes` = refuse, never silently spend. See "Publishing to AdMachin".
-- **Commit the `ADMACHIN_PAT` or `admachin_targets/`** — the PAT lives in gitignored `.env` (+ `~/.claude.json` for MCP); the per-campaign FB targeting configs are gitignored. Never hardcode the PAT or paste it into a tracked file.
+- **Commit the `ADMACHIN_PAT` or `admachin_targets/`** — the PAT lives in gitignored `.env` (+ `~/.Codex.json` for MCP); the per-campaign FB targeting configs are gitignored. Never hardcode the PAT or paste it into a tracked file.
