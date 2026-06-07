@@ -69,7 +69,7 @@ PHASE 4 — EXPAND SCOPE TO INCLUDE GENERATION
 USER: "we need kie integration for generating seed dance 2.0 videos, and
 also add in kling and veo3"
 
-USER provided KIE_API_KEY: fea93185e556181b7e784c3cc5682a25
+USER provided KIE_API_KEY: [REDACTED-KIE-KEY]
 ASSISTANT saved to .env (gitignored).
 
 Decisions locked through Q&A:
@@ -103,7 +103,7 @@ MiniMax but offers ElevenLabs (text-to-speech-turbo-2-5,
 text-to-speech-multilingual-v2, text-to-dialogue-v3).
 
 USER provided direct ElevenLabs API key:
-  ec26bb312648cef74f59432ebd353d49b68347ca068f81e995bed2da88ec4678
+  [REDACTED-ELEVENLABS-KEY]
 
 USER chose to use ElevenLabs direct API (not via KIE).
 

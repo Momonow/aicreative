@@ -1,9 +1,12 @@
+
+# AdMachin per-campaign targeting configs (hold Facebook ad-account/campaign ids)
+# auto-fetched emoji cache (regenerated on demand)
+*.log
+*.pyc
+.DS_Store
+.env
 .venv/
 __pycache__/
-*.pyc
-.env
-outputs/
-.DS_Store
-
-# auto-fetched emoji cache (regenerated on demand)
+admachin_targets/
 assets/emoji/
+outputs/
