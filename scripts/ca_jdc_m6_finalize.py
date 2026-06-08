@@ -1,6 +1,7 @@
 """
 CA JDC M6 finalize:
   word-aware trim → voice clone (clip1) → voice_changer → loudnorm → stitch
+9 clips: clips 1-2 = "Count the Hours" hook, clips 3-9 = facility/legal/CTA
 """
 import json, os, re, subprocess, sys, time
 from pathlib import Path
@@ -14,14 +15,15 @@ DISSECT = Path("outputs")
 VOICE_ID_FILE = OUT / "voice_id.txt"
 
 INTENDED = {
-    1: "you used to count the hours until morning because you knew certain nights certain guards",
-    2: "in a california juvenile facility you knew their shift schedule you knew their footsteps",
-    3: "and when they abuse you they called it a check a routine their job",
-    4: "but you were a child in a california juvenile facility and what they did to you was not their job",
-    5: "right now survivors are coming forward california is facing active legal claims",
-    6: "and you may be owed significant potential compensation no proof no police report",
-    7: "this is completely private and confidential no one in your life finds out not one person",
-    8: "tap below the form takes sixty seconds find out what you qualify for before the window closes",
+    1: "you used to count the hours until morning",
+    2: "because you knew certain nights certain guards what was coming",
+    3: "in a california juvenile facility you knew their shift schedule you knew their footsteps",
+    4: "and when they abuse you they called it a check a routine their job",
+    5: "but you were a child in a california juvenile facility and what they did to you was not their job",
+    6: "right now survivors are coming forward california is facing active legal claims",
+    7: "and you may be owed significant potential compensation no proof no police report",
+    8: "this is completely private and confidential no one in your life finds out not one person",
+    9: "tap below the form takes sixty seconds find out what you qualify for before the window closes",
 }
 
 
@@ -55,10 +57,11 @@ def word_trim(n):
     itoks = tokens(INTENDED[n])
     wtoks = [tokens(w["word"])[0] if tokens(w["word"]) else "" for w in all_words]
 
+    # Use 0.30s lead-in before first word so voice_changer never drops it
     start_t = all_words[0]["start"]
     for i, wt in enumerate(wtoks):
         if wt == itoks[0]:
-            start_t = max(0.0, all_words[i]["start"] - 0.05)
+            start_t = max(0.0, all_words[i]["start"] - 0.30)
             break
 
     j = 0
@@ -102,7 +105,7 @@ if __name__ == "__main__":
     print("\n[1/4] Word-aware trim")
     trimmed = {}
     with ThreadPoolExecutor(max_workers=4) as ex:
-        futs = {ex.submit(word_trim, n): n for n in range(1, 9)}
+        futs = {ex.submit(word_trim, n): n for n in range(1, 10)}
         for fut in as_completed(futs):
             n = futs[fut]
             try:
@@ -159,7 +162,7 @@ if __name__ == "__main__":
 
     normed = {}
     with ThreadPoolExecutor(max_workers=4) as ex:
-        futs = {ex.submit(vc_clip, n): n for n in range(1, 9)}
+        futs = {ex.submit(vc_clip, n): n for n in range(1, 10)}
         for fut in as_completed(futs):
             n = futs[fut]
             try:

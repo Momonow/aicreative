@@ -1,6 +1,9 @@
 """
 CA JDC — Persona M6 (Basketball Court / Longer Beard) | "Count the Hours" script
-8 clips × 8s | useapi.net Google Flow veo-3.1-lite | low priority
+9 clips × 8s | useapi.net Google Flow veo-3.1-lite | low priority
+Clip 1: "You used to count the hours until morning."
+Clip 2: "Because you knew. Certain nights. Certain guards. What was coming."
+Clips 3-9: facility / abuse / legal / CTA beats
 """
 import os, time, requests
 from pathlib import Path
@@ -17,21 +20,38 @@ CLIPS = [
     {
         "n": 1,
         "prompt": (
-            "GAZE: Eyes locked directly into the lens. Still. Heavy. Like a man remembering something he has never said out loud. Never blinks. Never looks away.\n"
+            "GAZE: Eyes locked directly into the lens from the very first frame. Still. Heavy. Never blinks. Never drifts.\n"
             "BODY LANGUAGE: Standing completely still. Head level. Arms at sides. No movement at all.\n"
-            "VOICE STYLE: Low, late 30s, plain and controlled. NOT a narrator. Like quietly telling one person the heaviest thing he knows.\n"
-            "TONE: Quiet dread. Weight on every single word. The first sentence spoken as one slow, heavy thought — not rushed, not punchy.\n"
-            "SPEED: ~1.4 wps. VERY slow. Each phrase its own long moment with silence after it. 'You used to count the hours until morning' takes 4-5 full seconds. Long beat of silence after 'morning' before 'Because you knew.' Long silence after 'Because you knew.' 'Certain nights.' its own separate beat. 'Certain guards.' its own long final beat.\n\n"
-            "AUDIO CRITICAL: Speaks CLEARLY AUDIBLY at full quiet projection. NOT whispered. NOT announcer-voiced. Every word crystal clear despite the slow pace.\n\n"
+            "VOICE STYLE: Low, late 30s, plain and controlled. Like quietly telling one person the heaviest thing he knows.\n"
+            "TONE: Quiet dread. Each word carries weight. Unhurried. Nothing rushed.\n"
+            "SPEED: ~1.2 wps. EXTREMELY slow. 'You' is the very first sound — spoken immediately at full projection, clear, no lead-in breath. Long pause after 'morning.' Silence held before clip ends.\n\n"
+            "FIRST WORD LOCK: 'You' must be the FIRST clear audible word — spoken at full volume from the first moment. NOT faded in. NOT soft. Crystal clear.\n\n"
+            "AUDIO CRITICAL: Speaks CLEARLY AUDIBLY at full quiet projection. NOT whispered. NOT announcer-voiced. Every word distinct.\n\n"
             "EYES LOCK: Warm dark-brown eyes stay OPEN and looking DIRECTLY into the lens throughout. Never close. Never drift.\n\n"
             "CRITICAL — NO SMILE: ZERO upturned corners throughout.\n\n"
             "CRITICAL — DIALOGUE LOCK: English only. No fillers. No extra words. STOP after final word.\n\n"
-            'SPOKEN DIALOGUE: "You used to count the hours until morning. Because you knew. Certain nights. Certain guards."\n\n'
+            'SPOKEN DIALOGUE: "You used to count the hours until morning."\n\n'
             "No on-screen text, no captions, no subtitles, no watermarks."
         ),
     },
     {
         "n": 2,
+        "prompt": (
+            "GAZE: Eyes on camera. Same weight. Continuing a thought the viewer already knows is heavy.\n"
+            "BODY LANGUAGE: Standing completely still. Head level. Arms at sides. Absolutely no movement.\n"
+            "VOICE STYLE: Same low plain voice. Each short phrase its own separate moment.\n"
+            "TONE: Quiet naming of a known truth. 'Because you knew' spoken plain, not dramatic. Then 'Certain nights.' is its own beat. 'Certain guards.' its own beat. 'What was coming.' its own final beat — said like something that can't be unsaid.\n"
+            "SPEED: ~1.3 wps. VERY slow. 1-second silence between each phrase. Each phrase lands separately before the next begins.\n\n"
+            "AUDIO CRITICAL: FULL quiet projection. NOT whispered. NOT announcer-voiced. Every word crystal clear.\n\n"
+            "EYES LOCK: Warm dark-brown eyes stay OPEN and on the lens throughout. Never close. Never drift.\n\n"
+            "CRITICAL — NO SMILE: ZERO upturned corners.\n\n"
+            "CRITICAL — DIALOGUE LOCK: English only. No fillers. No trailing words. STOP after final word.\n\n"
+            'SPOKEN DIALOGUE: "Because you knew. Certain nights. Certain guards. What was coming."\n\n'
+            "No on-screen text, no captions, no subtitles, no watermarks."
+        ),
+    },
+    {
+        "n": 3,
         "prompt": (
             "GAZE: Eyes on camera. Still and direct. Recalling something specific.\n"
             "BODY LANGUAGE: Standing still. Head level. Arms at sides. Very still.\n"
@@ -47,7 +67,7 @@ CLIPS = [
         ),
     },
     {
-        "n": 3,
+        "n": 4,
         "prompt": (
             "GAZE: Eyes on camera. Jaw set. Naming what happened — plain, not dramatic.\n"
             "BODY LANGUAGE: Standing still. Head level. Slight tension in the jaw. Arms at sides.\n"
@@ -63,7 +83,7 @@ CLIPS = [
         ),
     },
     {
-        "n": 4,
+        "n": 5,
         "prompt": (
             "GAZE: Eyes on camera. Calm certainty. The pivot — naming the truth plainly.\n"
             "BODY LANGUAGE: Standing still. Very slight forward settle on 'But you were a child.' Head level. Arms still.\n"
@@ -79,7 +99,7 @@ CLIPS = [
         ),
     },
     {
-        "n": 5,
+        "n": 6,
         "prompt": (
             "GAZE: Eyes on camera. Head lifts slightly. Factual pivot to present.\n"
             "BODY LANGUAGE: Standing still. Very slight head lift on 'Right now.' Arms at sides.\n"
@@ -95,7 +115,7 @@ CLIPS = [
         ),
     },
     {
-        "n": 6,
+        "n": 7,
         "prompt": (
             "GAZE: Eyes on camera. Direct and calm. Removing barriers one by one.\n"
             "BODY LANGUAGE: Standing still. Head level. Arms at sides. Completely still.\n"
@@ -111,7 +131,7 @@ CLIPS = [
         ),
     },
     {
-        "n": 7,
+        "n": 8,
         "prompt": (
             "GAZE: Eyes on camera. Steady. Delivering the privacy guarantee plainly.\n"
             "BODY LANGUAGE: Standing still. Head level. Still. Arms at sides.\n"
@@ -127,7 +147,7 @@ CLIPS = [
         ),
     },
     {
-        "n": 8,
+        "n": 9,
         "prompt": (
             "GAZE: Eyes on camera. Direct and calm. Quiet closing — NOT urgent, NOT salesy.\n"
             "BODY LANGUAGE: Standing still. Head level. Arms at sides. Very slight exhale on 'Tap below.'\n"
