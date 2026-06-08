@@ -17,16 +17,16 @@ CLIPS = [
     {
         "n": 1,
         "prompt": (
-            "GAZE: Eyes locked directly into the lens. Still. Heavy. Like carrying a weight the viewer can feel.\n"
-            "BODY LANGUAGE: Standing completely still. Head level. Arms at sides. No movement.\n"
-            "VOICE STYLE: Low, late 30s, plain and controlled. NOT a narrator. Like quietly telling one person something serious.\n"
-            "TONE: Quiet dread. Each short phrase lands separately — 'Certain nights.' 'Certain guards.' each get their own beat.\n"
-            "SPEED: ~2.0 wps. Deliberate. No rushing. Each phrase its own moment.\n\n"
-            "AUDIO CRITICAL: Speaks CLEARLY AUDIBLY at full quiet projection. NOT whispered. NOT announcer-voiced.\n\n"
+            "GAZE: Eyes locked directly into the lens. Still. Heavy. Like a man remembering something he has never said out loud. Never blinks. Never looks away.\n"
+            "BODY LANGUAGE: Standing completely still. Head level. Arms at sides. No movement at all.\n"
+            "VOICE STYLE: Low, late 30s, plain and controlled. NOT a narrator. Like quietly telling one person the heaviest thing he knows.\n"
+            "TONE: Quiet dread. Weight on every single word. The first sentence spoken as one slow, heavy thought — not rushed, not punchy.\n"
+            "SPEED: ~1.4 wps. VERY slow. Each phrase its own long moment with silence after it. 'You used to count the hours until morning' takes 4-5 full seconds. Long beat of silence after 'morning' before 'Because you knew.' Long silence after 'Because you knew.' 'Certain nights.' its own separate beat. 'Certain guards.' its own long final beat.\n\n"
+            "AUDIO CRITICAL: Speaks CLEARLY AUDIBLY at full quiet projection. NOT whispered. NOT announcer-voiced. Every word crystal clear despite the slow pace.\n\n"
             "EYES LOCK: Warm dark-brown eyes stay OPEN and looking DIRECTLY into the lens throughout. Never close. Never drift.\n\n"
             "CRITICAL — NO SMILE: ZERO upturned corners throughout.\n\n"
             "CRITICAL — DIALOGUE LOCK: English only. No fillers. No extra words. STOP after final word.\n\n"
-            'SPOKEN DIALOGUE: "You used to count the hours until morning. Because you knew. Certain nights. Certain guards. You knew what was coming."\n\n'
+            'SPOKEN DIALOGUE: "You used to count the hours until morning. Because you knew. Certain nights. Certain guards."\n\n'
             "No on-screen text, no captions, no subtitles, no watermarks."
         ),
     },
