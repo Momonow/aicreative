@@ -95,7 +95,7 @@ CLIPS = [
             "EYES LOCK: Warm dark-brown eyes stay OPEN and on the lens throughout.\n\n"
             "CRITICAL — NO SMILE: ZERO smile.\n\n"
             "CRITICAL — DIALOGUE LOCK: English only. No fillers. No trailing words. STOP after final word.\n\n"
-            'SPOKEN DIALOGUE: "The facilities knew. And they did nothing. That is why this is moving so fast."\n\n'
+            'SPOKEN DIALOGUE: "They knew. And they did nothing. That is why this is moving so fast."\n\n'
             "No on-screen text, no captions, no subtitles, no watermarks."
         ),
     },

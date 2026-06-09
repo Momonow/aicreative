@@ -19,7 +19,7 @@ INTENDED = {
     2: "the records were supposed to stay buried they didnt",
     3: "hundreds of cases are being filed right now by people who were children in those centers",
     4: "the claim is the same in case after case staff used their power to sexually abuse the people in their care",
-    5: "the facilities knew and they did nothing that is why this is moving so fast",
+    5: "they knew and they did nothing that is why this is moving so fast",
     6: "it is not one persons word anymore it is a pattern on the record",
     7: "if this happened to you in one of these facilities you are not too late you are not alone",
     8: "you may qualify for significant potential compensation the check is free completely confidential and takes less than a minute",
