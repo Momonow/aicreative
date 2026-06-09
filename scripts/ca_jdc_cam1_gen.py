@@ -13,8 +13,8 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 
 TOKEN = os.environ.get("USEAPI_TOKEN", "user:2478-GVIbsJwTLOJXBFuSQRV3a")
 HEADERS = {"Authorization": f"Bearer {TOKEN}", "Content-Type": "application/json"}
-# CA_M1_v4 — Venice Beach boardwalk, 31yo, taper fade, stubble, white tee
-ANCHOR = "user:2478-email:666c6f776d6f6d6f6d6564696140676d61696c2e636f6d-image:064ca43c-adcd-4c4c-8eb8-d059b8855406"
+# CA_M1_v4 — Venice Beach boardwalk, 31yo, taper fade, stubble, white tee (refreshed 2026-06-09)
+ANCHOR = "user:2478-email:666c6f776d6f6d6f6d6564696140676d61696c2e636f6d-image:cc46a60f-5e9e-45c3-80e3-7610f89043e1"
 OUT = Path("outputs/ca_jdc_cam1")
 OUT.mkdir(parents=True, exist_ok=True)
 
