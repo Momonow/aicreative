@@ -84,31 +84,31 @@ CLIPS = [
         "n": 5,
         "prompt": (
             "GAZE: Eyes on lens. Direct. This sentence is addressed to one person.\n"
-            "BODY LANGUAGE: Still. A very slight forward lean on 'something happened to you.'\n"
-            "VOICE STYLE: Same flat voice, slight quieting on 'something happened to you.'\n"
-            "TONE: Precise and personal. The conditional is real.\n"
+            "BODY LANGUAGE: Still. A very slight forward lean on 'sexually abused you.'\n"
+            "VOICE STYLE: Same flat voice. 'Sexually abused you' spoken plain, not whispered, not dramatized.\n"
+            "TONE: Precise, factual. Naming the act plainly as a legal qualifier.\n"
             "SPEED: ~2.1 wps. Even. Natural pause after 'facility.'\n\n"
             "AUDIO CRITICAL: Full projection. ONLY exact words.\n\n"
             "EYES LOCK: Warm dark-brown eyes OPEN and on lens.\n\n"
             "CRITICAL — NO SMILE: ZERO upturned corners.\n\n"
             "CRITICAL — DIALOGUE LOCK: English only. No fillers. STOP after final word.\n\n"
-            'SPOKEN DIALOGUE: "If you were incarcerated at Chowchilla, Chino, or another California women\'s facility, and something happened to you."\n\n'
+            'SPOKEN DIALOGUE: "If you were incarcerated at Chowchilla, Chino, or another California women\'s facility and a guard, a staff member, someone in a position of authority sexually abused you."\n\n'
             "No on-screen text, no captions, no subtitles, no watermarks."
         ),
     },
     {
         "n": 6,
         "prompt": (
-            "GAZE: Eyes on lens. Direct. Each example named flat and separate.\n"
-            "BODY LANGUAGE: Still. 'A guard. A staff member.' each its own beat.\n"
-            "VOICE STYLE: Same flat voice. 'Significant potential compensation' plain, not hyped.\n"
-            "TONE: Specificity without drama. Naming who did it, naming what it means.\n"
-            "SPEED: ~2.1 wps. Pause after each 'A guard.' and 'A staff member.'\n\n"
+            "GAZE: Eyes on lens. Direct and level. The offer stated plain.\n"
+            "BODY LANGUAGE: Still. Head level. 'Significant potential compensation' without emphasis.\n"
+            "VOICE STYLE: Same flat voice. Plain and certain.\n"
+            "TONE: Quiet information. The answer to the qualifying question.\n"
+            "SPEED: ~2.0 wps. Even.\n\n"
             "AUDIO CRITICAL: Full projection. ONLY exact words.\n\n"
             "EYES LOCK: Warm dark-brown eyes OPEN and on lens.\n\n"
             "CRITICAL — NO SMILE: ZERO upturned corners.\n\n"
             "CRITICAL — DIALOGUE LOCK: English only. No fillers. STOP after final word.\n\n"
-            'SPOKEN DIALOGUE: "A guard. A staff member. Someone in a position of authority. You may qualify for significant potential compensation from those same settlements."\n\n'
+            'SPOKEN DIALOGUE: "You may qualify for significant potential compensation from those same settlements."\n\n'
             "No on-screen text, no captions, no subtitles, no watermarks."
         ),
     },
@@ -119,12 +119,12 @@ CLIPS = [
             "BODY LANGUAGE: Still. Each 'You don't need' flat and separate.\n"
             "VOICE STYLE: Same flat voice. 'You don't need' repeated — not emphatic, just plain.\n"
             "TONE: Simple removal of obstacles. No urgency. Just fact.\n"
-            "SPEED: ~2.2 wps. Brief pause after each item.\n\n"
+            "SPEED: ~2.2 wps. Brief pause after 'proof.'\n\n"
             "AUDIO CRITICAL: Full projection. ONLY exact words.\n\n"
             "EYES LOCK: Warm dark-brown eyes OPEN and on lens.\n\n"
             "CRITICAL — NO SMILE: ZERO upturned corners.\n\n"
             "CRITICAL — DIALOGUE LOCK: English only. No fillers. STOP after final word.\n\n"
-            'SPOKEN DIALOGUE: "You don\'t need records. You don\'t need proof. You don\'t need a previous attorney."\n\n'
+            'SPOKEN DIALOGUE: "You don\'t need proof. You don\'t need a previous attorney."\n\n'
             "No on-screen text, no captions, no subtitles, no watermarks."
         ),
     },
