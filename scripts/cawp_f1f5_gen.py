@@ -65,8 +65,9 @@ F1_BODY_POINT = ("slight handheld sway like a held phone, natural blinks. Once d
                  "free hand comes up ALREADY FORMED as a pointing finger aimed straight UP above "
                  "her head toward the headline above her, holds a beat, then lowers. The hand never "
                  "covers her face.")
-F5_BODY = ("seated in the driver's seat, slight lean toward the lens, a small emphatic hand gesture "
-           "rising into frame now and then, natural blinks.")
+F5_BODY = ("seated in the PARKED car, engine off, the scene outside the windows completely STILL, "
+           "slight lean toward the lens, a small emphatic hand gesture rising into frame now and "
+           "then, natural blinks.")
 
 GAZE_LENS = "locked on the camera lens the entire clip."
 GAZE_GLANCE = ("on the camera lens; once, on a reference to the headline, a quick glance up and "

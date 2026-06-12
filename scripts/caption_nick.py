@@ -35,13 +35,18 @@ def build_cards_nick(segments, max_words=2, min_pause=0.35):
     words = []
     for sg in segments:
         for w in sg.get("words", []):
-            # strip sentence punctuation (Submagic Nick drops .,!?;:" — keeps internal apostrophes)
-            txt = (w.get("word") or w.get("text", "")).strip().strip('.,!?;:"')
+            raw = (w.get("word") or w.get("text", "")).strip()
+            # strip sentence punctuation (verified vs the real Submagic Nick export 2026-06-10:
+            # it drops ALL .,!?;:" even at sentence ends — keeps internal apostrophes) but REMEMBER
+            # sentence-final punctuation so cards never straddle a sentence boundary.
+            txt = raw.strip('.,!?;:"')
             if txt:
-                words.append({"text": txt, "start": w["start"], "end": w["end"]})
+                words.append({"text": txt, "start": w["start"], "end": w["end"],
+                              "eos": raw.rstrip('"').endswith((".", "?", "!"))})
     cards, cur = [], []
     for w in words:
-        if cur and (len(cur) >= max_words or w["start"] - cur[-1]["end"] > min_pause):
+        if cur and (len(cur) >= max_words or w["start"] - cur[-1]["end"] > min_pause
+                    or cur[-1].get("eos")):
             cards.append(cur); cur = []
         cur.append(w)
     if cur:
