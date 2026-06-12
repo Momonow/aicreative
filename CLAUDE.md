@@ -316,21 +316,29 @@ The skill `hormozi3` documents this. Alex-Hormozi creator-caption look: Montserr
 
 **Measurement lesson:** match RELATIVE proportions (% of frame width/height), not absolute px. Pixel masks are noisy — emoji color contaminates text measurements; measure a clean no-emoji card's widest-line WIDTH as % of frame.
 
-### `scripts/caption_nick.py` — Submagic "Nick" style (internal clone)
+### Submagic emoji-match — the in-house emoji track (built 2026-06)
 
-Use this when the user wants the calmer dark-pill creator subtitle look instead of Hormozi or yellow-text. This is our **in-house** Nick clone, reverse-engineered from a real Submagic Nick export, so we keep exact wording control through Scribe and avoid Submagic transcription drift on regulated legal lines.
+`caption_hormozi3.py --submagic-emojis <inventory.json>` reproduces Submagic's animated emoji track. Full model + tooling in **`inventory/EMOJI_MODEL.md`**. The hard-won rules (each cost real time this session — do NOT relearn):
+
+- **MEASURE by dissecting EVERY 24fps frame** — DIFF the captioned video vs the clean master to isolate the emoji (compact blob below the text). **Template matching FAILS during the scale-in entrance** (it mis-locks while the glyph grows); the diff works at any scale. Tools: `scripts/emoji_diff_track.py`, `emoji_match_report.py`, `rederive_emoji.py`, `capture_clean_traj.py`.
+- **The emoji SET must be VISUALLY verified — never trust blob counts.** Auto-detection is noisy BOTH ways: it OVER-counts (brief caption-text fragments register as phantom emoji "events") AND MISSES real ones whose glyph the wrapped text covers in the crop. Submagic's true rate on the 2-min e_b14 ad was **~10/min (21 emojis)** — not the 14 or 29 the auto-scan claimed at different settings. Eyeball each candidate's lower-caption region at its appear frame.
+- **Placement (user-locked):** statics → CENTERED; **subtle sliders (<~80px travel) → rest CENTERED** (they still slide IN, just settle centered); only **big horizontal sliders (>~200px, a clear fly-in) rest OFF-CENTER** under their keyword. A subtle slide parked far off-center reads as a broken "off-center static" (user flagged 🔢/🏆 for exactly this).
+- **Vertical: emoji sits ~16px BELOW OUR text block** (`ey = y0 + text_h + 16`). **NEVER pin Submagic's absolute cy** — our caption sits lower than theirs, so an absolute-cy pin lands the emoji ON our words and blocks the subtitle (this caused the "emoji covering the text" bug).
+- **Multi-part glyphs** (💰 money-bag, 📊 bar-chart, 💸) render as several colored blobs; the position capture can lock onto one part and read off-center — verify the TRUE center (they're centered in Submagic, not off-center). `rederive_emoji.py` guards: a big-slide needs **≥3 captured frames** (a spurious 1-frame capture is NOT a slide).
+- **Rate control:** `--emoji-gap <sec>` thins the AUTO-placed (non-Submagic) emoji rate toward Submagic's ~10/min (≈4.5s gives ~10/min). Default stays emoji-heavy. Glyph fixes verified: the "JUST A KID" emoji is 😔 (sad), not 😴; the courtroom emoji is 🏛️, not 🔒.
+- `rederive_emoji.py` is the ONE-SHOT builder: dissect → capture rest/appear/trajectory → apply the placement rules → ready-to-render inventory.
+
+### `scripts/caption_nick.py` — Submagic "Nick" style (reverse-engineered 2026-06-04, internal)
+
+In-house clone of Submagic's **"Nick"** caption template — **white sentence-case Helvetica Neue Bold on a semi-transparent dark rounded box, no color accent, no emoji**. Reverse-engineered frame-by-frame (diff captioned-vs-master) from a real Submagic Nick export and matched 1:1. **Use this instead of the Submagic API for the Nick look** — it's free and uses OUR verbatim Scribe text (Submagic auto-transcribes and can reformat the regulated "significant potential compensation" line or split cards oddly).
 
 ```bash
 .venv/bin/python scripts/caption_nick.py <in.mp4> --out <out.mp4>
-.venv/bin/python scripts/burn_disclaimer.py <captions.mp4> <combo.mp4>
+#   --font helvetica|arial   --biased "Chowchilla:3.0,Chino:2.0"   --max-words 2   --vertical-pos 0.754
+.venv/bin/python scripts/burn_disclaimer.py <out.mp4> <out_disclaimer.mp4>   # combo (disclaimer is a separate layer)
 ```
 
-**Look/spec:**
-- **Sentence-case, not all-caps.** Preserve original casing; strip only trailing sentence punctuation.
-- **White bold sans on a semi-transparent dark rounded box** (`Helvetica Neue Bold`, white `#F8F8F8`, box `rgb(45,45,42)` at ~0.58 opacity).
-- **~2 words per card, single centered line, lower-third** (box center ~0.754 of frame height).
-- **No emoji, no color rotation, no yellow active-word flash.** If the user wants that louder creator look, use `caption_hormozi3.py` or `caption_styled.py` instead.
-- **Subtle pop only** (~0.94→1.0 on entry over ~0.12s).
+Locked spec (do NOT re-derive): text white `#F8F8F8` **sentence-case** (preserve case — NOT all-caps); box fill `rgb(45,45,42)` @ **0.58** opacity, corner radius ~0.20×box_h, pad_x 0.32 / pad_y 0.14 ×font_px; **font px ≈ 0.044×H** (cap-height ~0.031×H); box center **vpos 0.754**; ~2 words/card single centered line; trailing punctuation stripped (keeps apostrophes); subtle scale-pop 0.94→1.0 over 0.12s. Same single-pass PNG-sequence + one-overlay render as `caption_hormozi3.py` (reuses its `scribe_transcribe`/`probe_*`). Skill: `caption-disclaimer` (Nick subsection).
 
 **Default use case:** sensitive legal ads where the user references **Submagic Nick** but needs verbatim control. For the women's-prison campaign, pair it with `burn_disclaimer.py` or the `pulaski-jones-disclaimer` skill for the final combo file.
 
@@ -1240,7 +1248,14 @@ Once an ad is finished, push it into **AdMachin** (the user's own ad platform �
 
 ### MCP server (interactive — 75 tools)
 
-The AdMachin MCP server is built at `/Users/harry/admachin-mcp/packages/mcp-server/dist/index.js` (an isolated git worktree of the admachin repo at `origin/main`, since the main checkout predates it) and registered with Claude Code at **user scope** (`claude mcp add admachin -s user`). It exposes all 75 v1 tools (`upload_creative`, `create_ad`, `launch_ad`, insights, etc.) for interactive use. **MCP config is read on cold start — restart Claude Code to load the tools.** Rebuild after a repo update: `cd /Users/harry/admachin-mcp && git fetch && git checkout origin/main -- packages/mcp-server && (cd packages/mcp-server && npm i --no-save --legacy-peer-deps typescript@5 @types/node && npm run build)`.
+The AdMachin MCP server is distributed as the private GitHub Packages npm package `@harrymomomedia/admachin-mcp-server`. Consumer repos like this one should use that installed MCP runtime, not paths into the AdMachin builder checkout. On Harry's Mac, the current local fallback runtime is `/Users/harry/admachin-mcp/dist/index.js` and is registered with Claude Code at **user scope**. It exposes the v1 tools (`upload_creative`, `create_ad`, `launch_ad`, insights, etc.) for interactive use. **MCP config is read on cold start — restart Claude Code to load config changes.**
+
+### MCP limits learned (2026-06) — projects/subprojects are UUID-only
+
+- **No project/subproject NAME lookup exists.** Projects & subprojects are only ever referenced by UUID; there is no `list_projects`/`get_project`. You can only *infer* projects from `list_ad_plans` — and a project/subproject with **no ad plans is invisible to the API**. You also **cannot create** a project/subproject via the MCP (UI-owned). To file creatives under a named project/subproject (e.g. "tort / IL JDC"), get the UUIDs from the **web-UI URL** of that subproject page, or identify the right project by listing its existing `ad_copies`/`creatives` and matching the campaign content.
+- `upload_creative` lands in the **default (null) project** if no `project_id` is passed. **`update_creative_metadata` MOVES a creative between projects/subprojects** (re-tag, no re-upload needed) — use it to fix mis-filed uploads.
+- `list_ad_plans` / `list_ad_copies` return **huge payloads** (saved to a tool-results file) — query with `jq`, don't dump.
+- `find_or_create_ad_plan` is idempotent (key = project_id + subproject_id + title). Upload is free/safe; **launch SPENDS — keep it gated.**
 
 ---
 
@@ -1286,7 +1301,7 @@ For AdSwipe analysis, tort/legal UGC scripts, women's-prison campaigns, CIW/CCWF
 - Commit `outputs/` or `.env` (both gitignored).
 - Hardcode API keys — always from `.env`.
 - Invent visual details. If the dissect frames don't show it, don't write it into the analysis.
-- For legal services lead-gen (prison-abuse compensation campaigns): use the phrase **"significant potential compensation"** when referring to the recovery. Don't say "compensation" alone, "damages", "settlement", "money owed", or "payout" — unify on "significant potential compensation" across all variations of the same campaign.
+- For legal services lead-gen (prison-abuse compensation campaigns): use the phrase **"significant potential compensation"** when referring to the recovery. Don't say "compensation" alone, "damages", "settlement", "money owed", or "payout" — unify on "significant potential compensation" across all variations of the same campaign. **Exception — IL JDC (2026-06): the user OK'd dropping "potential" — "significant compensation" is acceptable on that campaign.** "Illinois is paying" is compliant; "paid"/"owed"/"settlement" re the *viewer's* recovery are not (a factual "LA County paid $4B" comparison is allowed but needs firm sign-off + the disclaimer).
 - Mix output resolutions across clips of the same ad (Seedance 480p + Veo 720p won't concat clean).
 - **Use 720p or 1080p for Seedance** — HARD RULE: always 480p. Seedance is per-second pricing ($0.07/s t2v at 480p vs $0.14/s at 720p), so 720p doubles cost for marginal-at-best gain on social-feed-sized playback. Pass `resolution="480p"` on every Seedance call regardless of provider (Poyo / useapi / OpenRouter).
 - **Quote Seedance pricing as "per clip"** — it's per-SECOND. A 10s 480p t2v clip on Poyo costs $0.70 ($0.07/s × 10s), not $0.07. Only Veo 3.1 Fast on Poyo is true flat-rate ($0.10/clip flat, fixed 8s).
