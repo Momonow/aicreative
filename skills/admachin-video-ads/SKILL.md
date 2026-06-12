@@ -33,6 +33,16 @@ For sexual abuse, prison abuse, juvenile detention, medical injury, or other tra
 - Connect abuse to action clearly: "If staff sexually abused you, you may qualify for significant potential compensation."
 - Do not make every concept a testimonial. Rotate formats: direct notice, comment debate, news-style explainer, advocate PSA, checklist, myth-busting, family member, case-worker tone, overheard conversation, "things no one told you."
 
+## Prompting And Creative Development
+
+- Start from the user's persuasion goal, not from the first format suggested. If the user says the ads sound the same, change the speaker, frame, and visual format.
+- Write hooks as complete 2-3 sentence openings when the user is choosing concepts; a title alone is not enough to judge a 40-second ad.
+- Use structure diversity for tests: direct eligibility notice, story cold open, comments/debate UI, document/checklist, faux local commentary, family-member perspective, advocate/case-worker perspective, myth-busting, "what they did not tell you," and facility-specific notice.
+- Keep the compensation point close to the abuse point. Do not let story texture bury the action: "sex abuse -> may qualify for significant potential compensation."
+- For dialect or community voice, aim for plainness, cadence, and local directness. Do not overdo slang or write a caricature.
+- If a model repeatedly mispronounces or mishears a phrase, prompt around the meaning instead of forcing the same phrase.
+- For sensitive legal prompts, avoid piling multiple moderation-sensitive details into the same generation. Split age/minor references, sexual-abuse wording, lawsuit wording, and intense visual descriptors across clips when needed.
+
 ## Persona Image QA
 
 - Pick animation-safe anchors: medium close-up or chest-up, face visible, mouth unobstructed, hands low or out of frame.
@@ -42,11 +52,12 @@ For sexual abuse, prison abuse, juvenile detention, medical injury, or other tra
 ## Veo / Clip Workflow
 
 - For Veo Lite/free Google Flow, route through `googleflow_client.generate_veo` with `model="veo-3.1-lite-low-priority"` unless the user requests otherwise.
-- Verify clip 1 before generating the rest: check face, voice, framing, pronunciation, tone, and legal phrasing.
+- Verify clip 1 before generating the rest: check face, voice, framing, pronunciation, tone, lip-sync, and legal phrasing.
 - Once clip 1 passes, generate clips 2-N in parallel if the user wants speed.
 - Use clip-1 anchor rotation for multi-clip talking-head ads. Choose eyes-open, forward-gaze anchor frames.
 - Dense 8-second dialogue can cause end-of-clip wobble. Shorten the line rather than trying to hide the transition.
 - Check the last 0.5-1.0 seconds of every clip for trailing words, face morphs, ghost tails, and silent drift.
+- Build clip scripts on natural speech breaks. Do not cram too many questions into one 8-second clip when legal wording must stay clear.
 
 ## Stitching And QA
 
@@ -65,3 +76,5 @@ When a mistake costs time, money, or quality, write it down in one of these plac
 - `inventory/<campaign>_learnings.md` for campaign-specific language, selected persona, rejected styles, final asset paths, and QA findings.
 
 Keep an explicit "do not repeat" note for rejected outputs, not just approved settings.
+
+When the user asks to save learnings from a finished session, use the `session-memory-pass` skill to decide what belongs in campaign memory, global project rules, or reusable skills.

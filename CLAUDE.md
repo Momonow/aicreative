@@ -1129,6 +1129,12 @@ The AdMachin MCP server is built at `/Users/harry/admachin-mcp/packages/mcp-serv
 
 ---
 
+## Session Memory Pass
+
+When the user asks to update learnings, save memory, create rules/skills from a completed session, or prevent the same mistakes in future sessions, use the `session-memory-pass` skill. Use judgment: save only durable lessons that are likely to matter again, including user preferences, rejected directions, wording constraints, prompting lessons, model/provider gotchas, production QA findings, scripts/assets/final outputs, and "do not repeat" patterns. Put campaign-only details in `inventory/` or `outputs/<campaign>/`, broad project rules in `CLAUDE.md`, and reusable workflows in `~/.codex/skills/` mirrored to repo `skills/`. Commit/push only the memory/rule changes and leave unrelated dirty files alone.
+
+---
+
 ## AdMachin Tort / Sensitive UGC Rules
 
 For AdSwipe analysis, tort/legal UGC scripts, women's-prison campaigns, CIW/CCWF ads, Veo talking-head production, or legal captions, use the `admachin-video-ads` skill. Core rules:

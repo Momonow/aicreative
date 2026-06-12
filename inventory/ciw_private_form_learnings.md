@@ -13,8 +13,17 @@ Date: 2026-06-10
 ## Script / Speech
 
 - Keep the compensation hook in the first line: sexual abuse + CIW Chino / California women's prison + significant potential compensation.
+- For this campaign, do not let story texture delay the offer. The first 5 seconds should establish that this is for former CIW Chino / California women's-prison inmates and that staff sexual abuse may qualify for significant potential compensation.
 - Veo/Scribe repeatedly confused "form" with "forum" on this ad. If the spoken word matters, either test it directly or dodge with a clearer phrase such as "page" or "private questions."
 - Avoid "private check" for eligibility-page copy because it can sound like a payment/check instead of a private eligibility form.
+- When the user wants "Black LA voice" or community-specific voice, keep the language plain, direct, and spoken. Do not overdo slang; the realism comes from cadence and simplicity.
+
+## Creative / Prompting
+
+- The user rejected too many same-sounding testimonial formats. Future concept batches should vary the format and speaker: direct eligibility notice, comment debate, story cold open, checklist/document angle, family-member perspective, advocate/case-worker tone, and commentary/news-adjacent formats.
+- When pitching concepts for a 35-55 second ad, include at least the first 2-3 sentences of the hook so the user can judge the opening, not just the title.
+- Mention the women's-prison context early. Concepts that do not say the ad is about women's prisons can lose people before the compensation point lands.
+- For video-model prompting, avoid forcing words that the model keeps mishearing. Rewrite around the concept instead of burning repeated generations.
 
 ## Captions
 
