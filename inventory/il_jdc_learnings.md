@@ -46,3 +46,20 @@ Durable notes for Tort / IL JDC legal lead-gen work.
 - Hormozi 3 Submagic-match captions are available for creator-style videos, but
   avoid flashy per-word styles by default on trauma/legal ads unless requested.
 
+## Podcast / Winner-Style Learnings
+
+- Confession-podcast reads should feel like one person talking to someone else
+  in the room: off-camera gaze, conversational rhythm, natural room-response.
+- Winner/announcer reads should be direct-to-lens. Do not put a hype
+  direct-response script on an off-camera confession visual.
+- `mm-hmm` / `yeah` reactions are acceptable in podcast format. Keep them in
+  audio if they feel natural, but do not caption them.
+- `Ayo` renders badly in Veo. Prefer one clean opener such as `Yo, Illinois.
+  Listen up.` or `Listen up, Illinois.`
+- Use well-known Illinois facilities or phonetic guidance. Obscure names can
+  mangle (`Pere Marquette` came back wrong).
+- If every clip uses the same approved persona anchor, keep raw Veo audio by
+  default. Use voice changer only when it solves actual cross-clip drift or
+  multi-video host consistency.
+- If headphones or a mic suddenly appear, inspect the prompt first. In this
+  batch the recurring prop problem came from the prompt, not the source image.

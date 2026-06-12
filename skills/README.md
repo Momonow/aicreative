@@ -9,6 +9,7 @@ control / backup. Personal or non-aicreative skills should stay live-only in
 | Skill | Purpose |
 |---|---|
 | `hormozi3` | Submagic "Hormozi 3" captions (`scripts/caption_hormozi3.py`). |
+| `nick-subtitle` | Submagic "Nick" captions via the internal `scripts/caption_nick.py` renderer. |
 | `pulaski-jones-disclaimer` | Verbatim Pulaski/Jones legal disclaimer text + overlay (auto "most boring window" placement). |
 | `yellow-text-sub` | Per-word yellow-text captions (`scripts/caption_styled.py`). |
 | `feed-4x5` | 4:5 feed crop with letterbox auto-detection (`scripts/crop_4x5.py`). |

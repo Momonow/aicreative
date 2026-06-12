@@ -25,10 +25,12 @@ Choose the smallest durable home that will make the lesson useful later:
 
 - Campaign-specific notes: `inventory/<campaign>_learnings.md` or a learnings file in the relevant `outputs/<campaign>/` folder.
 - Project-wide behavior: `CLAUDE.md`.
+- Codex project/default behavior: repo `AGENTS.md` and, when needed, `~/.codex/AGENTS.md`.
 - Reusable workflow: a skill under `~/.codex/skills/<skill-name>/SKILL.md`, mirrored into repo `skills/<skill-name>/SKILL.md`.
 - Tool/style inventory: the relevant inventory file, README, script docstring, or style registry.
 
 If a live skill is updated, mirror the same change into the repo `skills/` copy before committing.
+If Codex's live `~/.codex/AGENTS.md` is updated for a project-specific rule, mirror the project version into repo `AGENTS.md` too so the rulebook is versioned.
 
 ## Memory Quality
 
