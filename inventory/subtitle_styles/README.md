@@ -8,7 +8,10 @@ This folder is the central list of subtitle/caption styles we have built or used
 
 ## Current CA JDC News Choice
 
-Use `news_bbc_left` unless the user chooses another style.
+Use `news_bbc_center_medium` for the current CA JDC cobalt lower-third news
+batch unless the user chooses another style. `news_bbc_left` is still an
+approved alternate; the user liked the left-aligned version visually, but the
+approved ad02-ad08 render batch used `BBC Center Medium`.
 
 ## Sensitive Legal UGC Choice
 
@@ -29,7 +32,7 @@ For CA JDC reporter videos, the normal render order is:
 
 1. Start from a clean master with no burned captions and no lower-third.
 2. Apply the cobalt broadcast lower-third.
-3. Apply `news_bbc_left` subtitles.
+3. Apply `news_bbc_center_medium` subtitles.
 4. Apply the legal disclaimer at the top for 6 seconds.
 
 ```bash
@@ -40,11 +43,11 @@ ffmpeg -y -i <clean.mp4> \
   <tmp_bluebar.mp4>
 
 .venv/bin/python scripts/caption_news_subtitle.py <tmp_bluebar.mp4> \
-  --out <tmp_bluebar_bbc_left.mp4> \
-  --style bbc-left --vertical-pos 0.585 --font-ratio 0.037 \
-  --max-width-ratio 0.78 --max-words 8
+  --out <tmp_bluebar_bbc_center_medium.mp4> \
+  --style bbc --vertical-pos 0.585 --font-ratio 0.035 \
+  --max-width-ratio 0.78 --max-words 8 --font-index 10
 
-.venv/bin/python scripts/burn_disclaimer.py <tmp_bluebar_bbc_left.mp4> <final.mp4> \
+.venv/bin/python scripts/burn_disclaimer.py <tmp_bluebar_bbc_center_medium.mp4> <final.mp4> \
   --vertical-pos 0.17 --secs 6.0
 ```
 

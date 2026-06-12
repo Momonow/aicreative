@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "updated": "2026-06-09",
-  "default_for_ca_jdc_news": "news_bbc_left",
+  "updated": "2026-06-12",
+  "default_for_ca_jdc_news": "news_bbc_center_medium",
   "styles": [
     {
       "id": "news_bbc_left",

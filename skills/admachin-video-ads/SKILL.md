@@ -11,6 +11,7 @@ Use this skill to avoid re-learning hard-won production lessons from AdMachin ad
 
 - For AdSwipe, analyze transcript-first. Viral metrics are sparse; do not overfit to the few ads that show them.
 - For tort/legal lead-gen, the first 5 seconds must say: who it is for, what happened, and that the person may qualify for significant potential compensation.
+- For JDC sexual-abuse lead-gen, do not say only "abuse" when describing the qualifying harm. The qualifying topic must be explicit: "sexual abuse" or "sexually abused."
 - Use legally careful language: "may qualify," "could be eligible," "potential compensation," or "significant potential compensation." Never guarantee money, payouts, settlements, or outcomes.
 - Keep UGC copy spoken-simple: short lines, one idea per sentence, no legalese, no over-polished AI voice.
 - When the user asks for a specific community voice, capture rhythm and directness without caricature or exaggerated slang.
@@ -31,6 +32,7 @@ For sexual abuse, prison abuse, juvenile detention, medical injury, or other tra
 - Avoid "private check"; it can sound like a payment/check. Prefer "private form," "private page," "free case review," or "private questions."
 - If Veo/Scribe keeps confusing a spoken word, rewrite around it. Example: if "form" becomes "forum," use "private page" or "answer a few private questions."
 - Connect abuse to action clearly: "If staff sexually abused you, you may qualify for significant potential compensation."
+- If the user is testing scripts, do not make every ad the same structure with different wording. Change the premise, speaker role, opening logic, proof type, and CTA framing.
 - Do not make every concept a testimonial. Rotate formats: direct notice, comment debate, news-style explainer, advocate PSA, checklist, myth-busting, family member, case-worker tone, overheard conversation, "things no one told you."
 
 ## Prompting And Creative Development
@@ -58,6 +60,26 @@ For sexual abuse, prison abuse, juvenile detention, medical injury, or other tra
 - Dense 8-second dialogue can cause end-of-clip wobble. Shorten the line rather than trying to hide the transition.
 - Check the last 0.5-1.0 seconds of every clip for trailing words, face morphs, ghost tails, and silent drift.
 - Build clip scripts on natural speech breaks. Do not cram too many questions into one 8-second clip when legal wording must stay clear.
+- Do not fix cut-off words, dead air, repeated audio, disappearing props, or bad gestures with frozen frames, speed changes, stabilization, or frame holds unless the user explicitly approves that exact post process. Re-trim at original speed or re-roll the failing clip.
+
+## Seedance / useapi B-Roll Workflow
+
+- For high-volume Seedance b-roll, use `useapi_client.generate_seedance` with `model="seedance-2"`, `resolution="480p"`, `aspect_ratio="9:16"`, and short 4-second clips when the user wants fast atmospheric coverage.
+- useapi's `/runwayml/` endpoint is just the platform namespace; `model="seedance-2"` is still ByteDance Seedance, not Runway Gen-4.
+- Explore mode can sit `THROTTLED` for hours and has a shallow queue. Keep polling for hours, persist task IDs, and use submit-side 429 backoff instead of treating 429s as final failures.
+- For juvenile detention / JDC abuse-adjacent b-roll, avoid prompt combinations that pair youth/minor language with body-search, shower/towel, bunk/bed proximity, or an adult guard physically looming over a minor. Seedance commonly rejects these as `SAFETY.INPUT.TEXT` / `CHILDREN`.
+- Safer implication shots for JDC sexual-abuse-adjacent b-roll: closed office doors, doorway silhouettes, peepholes, CCTV shadows, logbooks, personnel files, empty clothing on a bunk, laundry evidence, untouched trays, exterior night, stairwells, yard corner whispers, and redacted court documents.
+
+## Replicate p-video Fallback
+
+Use `prunaai/p-video` only when the user asks for it or Veo policy blocks a simple talking-head/reporter ad.
+
+- Use image-to-video with native model audio for talking heads. Do not pass external audio by default.
+- Chunk at about 10 seconds. The model can attempt 20s, but 10s chunks gave better lips, pacing, and fewer odd sounds.
+- Keep prompts short: fixed camera, fixed frame, no zooming, no panning, no screen text, no graphics, clean native audio.
+- If it hallucinates subtitles or lower-third text, re-prompt shorter with "No screen text, no graphics, no labels, no captions, no subtitles."
+- The camera may still breathe slightly. The user accepted this as a model limit; do not try to hide it with ffmpeg unless explicitly approved.
+- Post every generated chunk/final video link before QA, verification, stitching, captions, or other post-production.
 
 ## Stitching And QA
 

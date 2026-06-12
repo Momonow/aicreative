@@ -56,9 +56,10 @@ User-set rule: **route each model to its cheapest reliable host**, not all throu
 | **Veo 3.1 Lite (FREE)** | **useapi google-flow** | `googleflow_client.generate_veo` | **$0 — free, no credit** | **DEFAULT for Veo Lite.** Model `veo-3.1-lite-low-priority`, ultra-low-priority queue (SLOW but free). `startImage` i2v persona lock. `USEAPI_TOKEN`, EMAIL `flowmomomedia@gmail.com`. See `feedback_veo_lite_free_path` memory + `scripts/podcast_omni_produce.py`. |
 | **Veo 3.1 Lite** | **OpenRouter** | `openrouter_video.generate_veo` | **$0.40/8s** (audio) | Paid fallback when the free queue is too slow. `OPENROUTER_ADCLI_KEY`. Not on Poyo. (KIE `veo3_lite` also paid — spends points, hourly cap.) |
 | **Seedance 2.0 Fast** | **useapi.net** | `useapi_client.generate_seedance` | **unlimited** (flat monthly) | Default for high volume. Set `USEAPI_EXPLORE=true`. |
-| **Seedance 2.0 Fast (480p)** | **OpenRouter** | `openrouter_video.generate_seedance` | **~$0.05/sec** (480p; ≈$0.25 per 5s) | Pay-per-use fallback. `OPENROUTER_ADCLI_KEY`. **Per-SECOND**, token-based. KIE Seedance ≈ **$0.07/sec**. (Old "$0.053/clip" figure was ~10× off.) |
-| **Kling 3.0** | **useapi.net** | `useapi_client.generate_kling` | **unlimited** (flat monthly) | Replaces KIE. Models: `kling-3-0-standard` (default) or `kling-3-0-pro`. |
+| **Seedance 2.0 Fast (480p)** | **OpenRouter** | `openrouter_video.generate_seedance` | **~$0.053/10s clip** (480p, token-based) | Cheap pay-per-use fallback when useapi is down or the unlimited queue is too slow. `OPENROUTER_ADCLI_KEY`. Do not confuse this with Runway; OpenRouter video API has Seedance/Kling/Veo/Sora/Wan, not Runway Gen-4. |
+| **Kling 3.0** | **useapi.net** | `useapi_client.generate_kling` | **unlimited** (flat monthly) | Replaces KIE. Models: `kling-3.0-standard` (default) or `kling-3.0-pro`. |
 | **Runway Gen-4 Turbo** | **useapi.net** | `useapi_client.generate_runway` | **unlimited** (flat monthly) | New. Model: `gen4-turbo` (default) or `gen4`. Up to 10s. |
+| **prunaai/p-video** | **Replicate** | `replicate.Client(...).predictions.create(model=("prunaai","p-video"))` | token-based | Image-to-video fallback for policy-heavy talking-head/reporter clips. Use native audio, 10s chunks, short prompts, and post links before QA. |
 | **nano-banana-2** | KIE | `kie_client.generate_nano_banana` | varies | Unchanged. |
 | **gpt-image-2** (t2i / i2i) | **KIE** | `kie_client.generate_gpt_image` | per-image (2K) | **Default image provider** (changed 2026-05-20). `resolution="2K"`, `aspect_ratio="9:16"`. OpenAI direct DROPPED — lower quality + caps at 1024×1536. |
 | **ElevenLabs** (TTS / clone / voice_changer) | ElevenLabs direct | `elevenlabs_client` | per-character | 5 concurrent max — throttle when batching. |
@@ -71,7 +72,7 @@ Memory: `project_video_provider_routing.md` — confirm before bulk-running new 
 |---|---|---|---|
 | `generate_kling` | `kling-3.0/video` | `/jobs/createTask` | mode `std` (720p), 9:16 |
 | `generate_nano_banana` | `nano-banana-2` | `/jobs/createTask` | — |
-| `generate_seedance` | `bytedance/seedance-2-fast` | `/jobs/createTask` | 480p (496×864), 9:16, audio on, **min 4s, max 15s**. **NOT preferred — route to OpenRouter per user rule.** |
+| `generate_seedance` | `bytedance/seedance-2-fast` | `/jobs/createTask` | 480p (496×864), 9:16, audio on, **min 4s, max 15s**. **NOT preferred — route high-volume jobs to useapi.net, or OpenRouter for cheap 480p pay-per-use fallback.** |
 | `generate_veo` | `veo3_fast` | `/veo/generate` | 720p (720×1280), 9:16. **NOT preferred — route to Poyo for $0.10/clip vs $0.30.** |
 
 All return `{"status": "success"|"failed", "urls": [...], "raw": {...}}`. KIE Veo polls a different endpoint (`/veo/record-info`) — handled internally.
@@ -148,11 +149,37 @@ Client: `useapi_client.py`. Auth: `USEAPI_TOKEN` in `.env`.
 
 **`exploreMode=True`** (default) — Unlimited plan, no credits consumed, lower priority. ~10 min for Seedance/Gen-4.5. Gen-4 Turbo ~1-2 min even in explore. **NOT supported by `veo-3.1`.** Set `USEAPI_EXPLORE=false` in `.env` for credit mode / higher priority.
 
+**Account setup gotcha (hit 2026-06-12):** A valid `USEAPI_TOKEN` is not enough for RunwayML-backed models. First register at least one Runway account:
+```
+POST https://api.useapi.net/v1/runwayml/accounts/{email}
+Authorization: Bearer $USEAPI_TOKEN
+Content-Type: application/json
+
+{"email":"same@email.com","password":"...","maxJobs":3}
+```
+Do not URL-encode the `@` in the path for this API; include the same `email` in the JSON body. Omitting the account gives `Please configure at least one account`; omitting `maxJobs` gives `Required param maxJobs is missing or empty`.
+
+**Verified smoke test (2026-06-12):** `useapi_client.generate_seedance(..., duration=5, aspect_ratio="9:16")` submitted, polled, and downloaded successfully to `outputs/test_seedance.mp4` in ~2 minutes with explore mode enabled.
+
+**Explore-mode queue is intentionally slow and shallow.** For bulk Seedance jobs, assume tasks can sit `THROTTLED` for hours, not minutes. Do not use 15-minute poll ceilings. Use multi-hour polling (3h+) and 429 submit backoff; a 429 usually means the useapi account queue is full, not that the prompt failed. For long runs, persist task IDs as soon as they submit so completed outputs can be recovered if local polling dies.
+
+**Seedance juvenile/JDC moderation pattern (verified 2026-05 JDC b-roll batch).** `seedance-2` on useapi rejects prompts that combine juvenile/youth detention with body-search, shower/towel, bunk/bedroom proximity, or adult-guard-over-minor framing, returning `SAFETY.INPUT.TEXT` / `CHILDREN`. Do not keep rerolling these; rewrite more indirectly, remove child-age descriptors, move the implication into props/CCTV/logbooks/corridors/documents, or route to another model. Shots that passed: doorway silhouettes, corridor escort, peephole observation, closed office door, empty cell clothing, laundry evidence, CCTV wall shadows, yard corner whisper, stairwell escort, logbook, personnel file, untouched tray, solitary aftermath, exterior night, empty corridor, redacted court docs.
+
+### OpenRouter video (Seedance/Kling/Veo/Sora/Wan — pay-per-use)
+
+Client: `openrouter_video.py`. Auth: prefer `OPENROUTER_ADCLI_KEY`, fallback `OPENROUTER_API_KEY`. Endpoint: `POST https://openrouter.ai/api/v1/videos`; model discovery: `GET /videos/models`.
+
+**Do not repeat:** OpenRouter does **not** provide Runway Gen-4 models here. It does provide `bytedance/seedance-2.0-fast`, `kwaivgi/kling-v3.0-std`, `google/veo-3.1-lite`, `google/veo-3.1-fast`, `openai/sora-2-pro`, and Wan models. Keep Runway Gen-4 on useapi.net's RunwayML wrapper.
+
+**Seedance 2.0 Fast 480p:** use `openrouter_video.generate_seedance(resolution="480p", model="bytedance/seedance-2.0-fast")` as cheap pay-per-use fallback. User correction: the memorable figure is about **$0.053 per 10s 480p clip**, token-based, not "Runway at $0.05" and not per-second pricing.
+
+**Veo:** OpenRouter Veo 3.1 Lite is paid fallback (`google/veo-3.1-lite`, ~$0.40/8s audio at 720p). Poyo remains default for Veo Fast at $0.10/clip flat.
+
 **Status flow:** `PENDING → PROCESSING → SUCCEEDED / FAILED`. Response wrapped in `task: { taskId, status, progressRatio, estimatedTimeToStartSeconds, artifacts[] }`.
 
 **Output resolution:** Seedance on useapi defaults to 720p (supports 480p/720p/1080p). **HARD RULE — always use 480p for Seedance.** The user has set this as a project default: 720p costs 2× per second and 1080p ~3× per second for marginal quality gain at social-feed playback size. Pass `resolution="480p"` explicitly even on useapi.net (where price doesn't bite since it's flat-rate, but the rule is consistent so output specs match across providers and Veo/Kling 720p clips can be downscaled to 480p for clean concat — NOT the other way around).
 
-**Seedance is per-second pricing, not per-clip.** Poyo Seedance 2-Fast: 480p i2v $0.04/s, 480p t2v $0.07/s, 720p i2v $0.08/s, 720p t2v $0.14/s. So a 10s 480p t2v clip = $0.70, not $0.07. Veo 3.1 Fast IS flat-rate ($0.10/clip flat, always 8s). Don't confuse the two.
+**Seedance pricing differs by provider.** useapi is flat monthly/unlimited, OpenRouter Seedance 2.0 Fast 480p is token-based and remembered here as about **$0.053 per 10s clip**, while KIE-style Seedance endpoints may be per-second. Do not carry a per-second warning from one provider into OpenRouter decisions.
 
 ### Veo content-moderation triggers (Poyo + KIE)
 
@@ -168,6 +195,16 @@ Visual-prompt language that triggers rejection, especially when combined with se
 **THE big one — child + sexual-abuse in the SAME generation = hard child-safety block (2026-05-25).** A clip whose dialogue pairs a minor reference ("kid", "juvenile", "juvie", "I was twelve") with "sexual abuse"/"sexually abused" gets deterministically blocked (child-safety classifier, not generic NSFW). **Fix: split the two across separate clips** — clip A carries the age/"kid" beat, clip B carries the "a staff member sexually abused you" beat; never both in one clip. Verified across the IL JDC podcast set. Note: "sexual abuse" + "locked up" + facility names in one clip passes FINE as long as no kid/juvenile word is present (the announcer videos do exactly this). Also: a persona image that simply *reads young* can block every generation regardless of dialogue (real_02 was unusable on benign lines) — swap the persona, don't fight the prompt.
 
 **Unwanted recurring element (e.g. headphones)? Check the PROMPT first, not the anchor.** When every clip kept showing headphones, the cause was a prompt line ("headphones on"), NOT the host image (which was clean). Negate it explicitly (`"NOT wearing headphones — none on head or neck"`) or delete the line. Don't re-roll the anchor chasing a prompt-driven artifact.
+
+### Replicate p-video gotchas (PrunaAI, verified 2026-06)
+
+Use `prunaai/p-video` only when the user explicitly asks for it or Veo policy blocks a simple talking-head/reporter ad. For talking heads, use **image-to-video with native model audio**. Do NOT pass an external audio file by default; lip-sync degraded and long audio-conditioned runs capped badly.
+
+- **Chunk at 10 seconds** for speech control. The public duration allows up to 20s, but 10s chunks had better mouth timing, cleaner pacing, and fewer weird sounds.
+- **Keep prompts short**: fixed camera, fixed frame, no zooming, no panning, no screen text, no graphics, natural mouth movement, clean native audio. Long negative prompt lists confused the model.
+- **No subtitles/on-screen text in the generation**. If text appears, re-prompt shorter with "No screen text, no graphics, no labels, no captions, no subtitles."
+- **Camera still breathes slightly** even with fixed-camera wording. The user accepted this as a model limit; do not add stabilization, deshake, frozen frames, or speed changes unless explicitly approved.
+- **Post every generated chunk/final link in chat before QA or post-production** so the user can review the raw model output first.
 
 ### GPT Image — KIE (default, changed 2026-05-20)
 
@@ -1039,11 +1076,11 @@ When the user wants ACTUAL photos of real facilities (vs AI-generated), these we
 
 **Copyright caveat:** all of these are copyrighted (advocacy non-profits, news orgs, construction companies). User-explicit "fair use / ignore copyright" only — for cleared commercial campaigns, license images or use AI-generated alternatives.
 
-### Video matting via Replicate RVM — specifics
+### Video matting / background removal — VEED on fal (preferred), RVM legacy
 
-Replicate `arielreplicate/robust_video_matting` is the proven path for matting persona out of existing UGC. Pricing ~$0.05–0.15 per clip.
+**Preferred (user-locked 2026-06-10): VEED background removal on fal** — `fal_client.remove_background(video_path, out_path)`, model `veed/video-background-removal/fast` (~$0.012/30 frames ≈ $0.08 per 8s clip). Default `output_codec="vp9"` returns a webm **with a real alpha channel** → composite with plain ffmpeg `overlay` (put `-c:v libvpx-vp9` BEFORE the webm input to preserve alpha) — **no chromakey, no green spill**. `variant="green-screen"` exists if a keyable green output is needed; the standard (non-fast) variant adds edge refinement at ~2x price.
 
-Specifics from production use:
+Replicate RVM below is the **legacy fallback** (`arielreplicate/robust_video_matting`, ~$0.05–0.15 per clip). Specifics from production use:
 - **RVM green color is `0x78FF9A`** (light-leaf green), not pure `0x00FF00`. Sampled from actual Replicate output.
 - **chromakey settings**: `similarity=0.12, blend=0.04` — milder than defaults. Grey clothing has similar luminance to green; aggressive chromakey eats hoodies.
 - **RVM strips audio** — pass the ORIGINAL mp4 as a 3rd input to ffmpeg for the audio map (`-map 2:a`).
@@ -1135,6 +1172,15 @@ When the user asks to update learnings, save memory, create rules/skills from a 
 
 ---
 
+## Git / GitHub Handoff Safety
+
+- **Re-check branch + status immediately before staging and immediately before pushing.** Multiple Codex sessions can operate in this repo at once; another session may checkout a branch, commit the dirty files, or push while this session is still reasoning. Do not trust an earlier `git status`.
+- If expected dirty files disappear or the branch changes mid-task, pause and inspect `git status`, `git log --oneline -8`, `git reflog -8`, and `git diff main..HEAD` before doing anything else. Determine whether another session already committed the work instead of creating duplicate or conflicting commits.
+- Before pushing a branch that includes newly captured work, run a secret scan over exactly what will be committed or pushed. For a branch already committed by another session, scan `git diff --name-only main..HEAD` file contents before fast-forwarding `main`.
+- When a fast-forward is safe but the active worktree is on another session's branch, prefer `git push origin HEAD:main` over switching branches. This avoids disturbing the other session's checkout while still updating GitHub.
+
+---
+
 ## AdMachin Tort / Sensitive UGC Rules
 
 For AdSwipe analysis, tort/legal UGC scripts, women's-prison campaigns, CIW/CCWF ads, Veo talking-head production, or legal captions, use the `admachin-video-ads` skill. Core rules:
@@ -1168,6 +1214,7 @@ For AdSwipe analysis, tort/legal UGC scripts, women's-prison campaigns, CIW/CCWF
 - **Use `kie_client.generate_veo` for Veo3 Fast** — route to Poyo (`poyo_client.generate_veo`) at $0.10/clip. KIE is $0.30/clip.
 - **Run >4 `dissect.py` instances in parallel** — transcription is now ElevenLabs Scribe (5-concurrent account cap, shared with TTS/voice_changer). Cap at ~4 with `xargs -P 4` to avoid 429s. (The old MAX-2 rule was about local Whisper memory, which no longer applies.)
 - **Burn captions onto deliverables by default** — user does captioning in post. Only burn when explicitly asked ("caption this", "with the disclaimer", "Submagic style").
+- **Use frozen frames, frame holds, deshake, or speed changes to hide cut-off words, silence, mic glitches, or bad gestures unless the user explicitly approves that exact post process.** The user finds these unnatural. Prefer re-trimming at original speed or re-rolling the bad clip.
 - **Submit >20 Poyo generations in parallel** — submit rate limit is 20/10s account-wide. Use `max_workers=10`.
 - **Pass 1 image to Poyo `generation_type: "frame"`** — requires exactly 2. For clip-1 anchor pattern, pass the anchor URL twice (start=end).
 - **Naive `crop=720:900:0:0` to make 4:5** — keeps Veo's baked-in letterbox bars. Use `scripts/crop_4x5.py` which runs `cropdetect` first.
