@@ -1129,6 +1129,19 @@ The AdMachin MCP server is built at `/Users/harry/admachin-mcp/packages/mcp-serv
 
 ---
 
+## AdMachin Tort / Sensitive UGC Rules
+
+For AdSwipe analysis, tort/legal UGC scripts, women's-prison campaigns, CIW/CCWF ads, Veo talking-head production, or legal captions, use the `admachin-video-ads` skill. Core rules:
+
+- Analyze AdSwipe videos transcript-first; viral metrics are sparse and should not drive the whole decision.
+- Put audience + harm + "may qualify for significant potential compensation" in the first 5 seconds.
+- For sexual-abuse/prison-abuse/legal ads, avoid flashing per-word captions and emoji-heavy styles; prefer calm phrase captions, Nick, simple `caption.py`, or `caption_hormozi3.py --no-emoji`.
+- Avoid "private check" because it can sound like a payment. Prefer "private form," "private page," "free case review," or "private questions."
+- If Veo/Scribe mishears a key word repeatedly, rewrite around it instead of retrying forever.
+- Verify clip 1 before parallelizing clips 2-N, and QA stitched boundaries for ghost tails or soft-dissolve artifacts.
+
+---
+
 ## Do Not
 
 - Combine `reference_image_urls` and `reference_video_urls` in one Seedance call.
