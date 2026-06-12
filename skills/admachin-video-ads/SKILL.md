@@ -1,6 +1,6 @@
 ---
 name: admachin-video-ads
-description: Create, analyze, script, generate, caption, or QA AdMachin UGC video ads, especially AdSwipe transcript analysis, tort/legal lead-gen ads, women's prison/CIW/CCWF sexual-abuse compensation campaigns, Veo/Seedance/Kling clip workflows, persona images, disclaimers, and subtitle choices. Use when the user asks for ad ideas, hooks, scripts, transcript analysis, viral ad analysis, video generation, stitched UGC ads, or captions/disclaimers for sensitive legal ads.
+description: Create, analyze, script, generate, or QA AdMachin UGC video ads, especially AdSwipe transcript analysis, tort/legal lead-gen ads, women's prison/CIW/CCWF sexual-abuse compensation campaigns, Veo/Seedance/Kling clip workflows, persona images, and caption/disclaimer strategy. Use when the user asks for ad ideas, hooks, scripts, transcript analysis, viral ad analysis, video generation, stitched UGC ads, or sensitive legal ad production. For actual caption rendering, defer to the dedicated caption/disclaimer skills.
 ---
 
 # AdMachin Video Ads
@@ -17,6 +17,9 @@ Use this skill to avoid re-learning hard-won production lessons from AdMachin ad
 - When the user asks for a specific community voice, capture rhythm and directness without caricature or exaggerated slang.
 
 ## Sensitive Legal Caption Rules
+
+This skill chooses the caption strategy. For execution details, use the dedicated skills:
+`yellow-text-sub`, `hormozi3`, and `pulaski-jones-disclaimer`.
 
 For sexual abuse, prison abuse, juvenile detention, medical injury, or other trauma/legal ads:
 

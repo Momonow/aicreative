@@ -1,9 +1,10 @@
 # Skills (backup mirror)
 
-These are copies of the user's caption/campaign skills that live in the
-assistant's auto-loaded skill folders. For Codex desktop sessions, the live
-copy is under `~/.codex/skills/`. Mirrored here for version control / backup.
-Edit the live copies first, then re-sync here when they change.
+These are copies of the user's aicreative caption/campaign skills that should
+also live in the assistant's auto-loaded skill folders. For Codex desktop
+sessions, the live copy is under `~/.codex/skills/`. Mirrored here for version
+control / backup. Personal or non-aicreative skills should stay live-only in
+`~/.codex/skills/` unless they become repo-relevant.
 
 | Skill | Purpose |
 |---|---|
