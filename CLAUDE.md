@@ -810,6 +810,25 @@ Per-ad finalize order that produced clean stitched ads: **Scribe-QA → word-awa
   1. **Unmatched glob aborts the whole command.** `rm clipA* clipB*` where one pattern matches nothing → zsh errors `no matches found` and runs NOTHING, so you silently reuse stale intermediates (the "tighter trim + VC" looked applied but wasn't — duration was byte-identical). Use `find <dir> -maxdepth 1 \( -name '...' -o -name '...' \) -delete` for multi-pattern cleanup.
   2. **No word-splitting of unquoted vars.** `for pair in "d sister-call"; do set -- $pair; ad=$1; slug=$2; ...` does NOT split in zsh — `$1` becomes the whole `"d sister-call"` and `$2` is empty (a caption batch silently rendered the wrong paths). Either write explicit per-item commands (most reliable), use a real array, or force-split with `${=pair}`. Don't assume bash word-splitting in loops.
 
+### Transcript word-matching QA — canonicalize before comparing (K-Veo, 2026-06)
+
+Any QA that compares a Scribe transcript word-by-word against the scripted line (clean-verify
+reject logic, word-aware trims, overlap detection) MUST canonicalize BOTH sides first, or it
+false-rejects clips whose audio is actually perfect:
+- **Scribe renders spoken amounts as DIGITS** — "a hundred and sixteen million dollars" comes back
+  as "$116 million", which breaks exact-word subsequence matching ("missing words"). Fold any
+  number phrase (number-words + glue + currency) to a single `#num#` token on both sides.
+- **Benign colloquial swaps** — `got to↔gotta`, `going to↔gonna`, `an↔a` read as missing/extra words.
+- **Reaction chains** ("Mm-hmm", "uh-huh") carry internal hyphens — strip nasal/vowel-only chains.
+- **Check defects (false-start hyphen, stutter) ONLY inside the kept span** — trailing/leading
+  improv is trimmed at assembly anyway; rejecting on it re-rolls clips you'd trim regardless.
+
+Reference implementation: `_prep` / `_prep_ts` in `scripts/podcast_omni_produce.py` (the trim
+matcher uses the same canonicalization with timestamps so the cut still lands on the intended
+words). Diagnostic rule: when several clips fail the SAME reject reason on a new model, read the
+actual rejected transcripts before burning re-rolls — on K-Veo, 3 of 7 beats were false-rejected
+3× each (~9 wasted generations) and all cleared first-try once the checker was fixed.
+
 ### STS pitch-delta zones — when voice_changer works vs fails
 
 Voice_changer is Speech-to-Speech: it preserves the source's **pitch contour** (so lip-sync stays intact) and only swaps **timbre**. **It cannot fix pitch drift.** A clip whose mean F0 is +50Hz higher than your reference clip will STILL be +50Hz higher after voice_changer — just now sounding like the cloned voice at an unnatural elevated pitch.
@@ -1296,6 +1315,7 @@ For AdSwipe analysis, tort/legal UGC scripts, women's-prison campaigns, CIW/CCWF
 - **Retry voice_changer with higher stability to fix big pitch drift** — STS preserves source pitch by design. If F0 delta from ref clip is >40Hz, re-roll the source via Veo instead. Bumping `stability=0.5 → 0.7` only moves sim ~0.03 (0.724 → 0.752 — still under 0.85 threshold).
 - **Skip `voice_consistency.py` when user reports voice changes** — `audio_match.py`'s ±20% centroid tolerance is too loose to catch what humans hear. Always run both detectors.
 - **Dissect multiple `clip1.mp4` files in one run** — they all overwrite `outputs/clip1/`. Copy to unique stems first: `outputs/illinois_jdc_<slug>_clip${idx}.mp4`.
+- **Reject/re-roll clips on RAW exact-word transcript matching** — canonicalize both sides first (Scribe renders amounts as digits, swaps got to/gotta + an/a, inserts hyphenated reactions) and check hyphen/stutter defects only inside the kept span. Raw matching false-rejected 3 of 7 K-Veo beats ~9 generations' worth; all passed first-try after the fix. See "Transcript word-matching QA" section + `_prep`/`_prep_ts` in `scripts/podcast_omni_produce.py`.
 - **Keep submitting Poyo after 10min timeouts on known-good payloads** — that's a Poyo-wide outage. Switch to `kie_client.generate_veo` at $0.30/clip instead of burning budget on retries.
 - **Present video file paths as plain text** — the user's chat client only renders a clickable inline preview when the path is wrapped in `` `backticks` ``. Plain text paths, paths inside markdown table cells, paths in markdown link syntax `[label](path)`, `file:///` URLs, and `http://localhost:<port>/` URLs all FAIL to trigger the preview. Every video file (generated clip, source upload, b-roll, composite, stitched final, aspect variant) must be backticked. See the "Presenting videos in chat" section above.
 - **Use Veo 3.1 Quality (`veo3`) on KIE** — HARD RULE: NEVER. Always start with Veo 3.1 Lite (`veo3_lite`). Only fall back to Veo 3.1 Fast (`veo3_fast`) after 2-3 Lite failures on the same prompt for the same failure mode. If Fast also fails, stop and escalate to the user — do NOT use Quality. Memory: `feedback_veo_tier_routing.md`.
