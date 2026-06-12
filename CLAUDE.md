@@ -1238,6 +1238,13 @@ When the user asks to update learnings, save memory, create rules/skills from a 
 - Before pushing a branch that includes newly captured work, run a secret scan over exactly what will be committed or pushed. For a branch already committed by another session, scan `git diff --name-only main..HEAD` file contents before fast-forwarding `main`.
 - When a fast-forward is safe but the active worktree is on another session's branch, prefer `git push origin HEAD:main` over switching branches. This avoids disturbing the other session's checkout while still updating GitHub.
 
+### Secret handling (learned the hard way, 2026-06-12)
+
+- **Never write a real secret value into ANY file — including scratch notes and session logs.** `SESSION_LOG.txt` once captured two plaintext API keys (KIE + ElevenLabs) and got pushed; cleanup took a full `git filter-repo` history rewrite + force-push. Reference keys by env-var name only (`KIE_API_KEY`); values live exclusively in gitignored `.env`.
+- **A secret pushed to GitHub is compromised — rotation is mandatory, scrubbing is not enough.** `git filter-repo` + force-push rewrites the branches, but GitHub keeps serving orphaned commits by SHA for ~90 days, and any clone/fork retains them. Scrub to stop casual discovery, then tell the user to rotate the key in the provider dashboard.
+- **Redact, don't delete (user-locked).** When cleaning secrets out of a useful file, replace only the secret with a `[REDACTED-...]` placeholder and keep the rest of the content. Deleting the whole file threw away session notes the user wanted; the fix was recovering the content from the orphaned commit via the GitHub REST API and restoring it redacted.
+- **Positive-control every secret scan.** `grep -E "key1\|key2"` matches a literal pipe in ERE — silent false negatives (this happened during the audit). Before trusting a "no hits" result, confirm the pattern matches a planted test string.
+
 ---
 
 ## AdMachin Tort / Sensitive UGC Rules

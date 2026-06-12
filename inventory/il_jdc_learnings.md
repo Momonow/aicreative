@@ -63,3 +63,28 @@ Durable notes for Tort / IL JDC legal lead-gen work.
   multi-video host consistency.
 - If headphones or a mic suddenly appear, inspect the prompt first. In this
   batch the recurring prop problem came from the prompt, not the source image.
+
+### Winner/Announcer Track — Shipped Decisions (2026-06-12)
+
+- 3 announcer videos shipped: `jdc_pod_winnerA_h11`, `jdc_pod_winnerB_h15`,
+  `jdc_pod_winnerC_h14` (hosts real_11 / real_15 / real_14 from
+  `scripts/jdc_podcast_real2.py`; user wanted Black hosts only for this track,
+  no headphones, direct-to-lens announcer gaze).
+- Pipeline order: `jdc_podcast_real2.py` (2K personas) →
+  `scripts/jdc_pod_upscale_4k.py` (Real-ESRGAN 4K BEFORE any video work — user
+  flagged the 2K refs as too low-res to build on) →
+  `scripts/jdc_pod_winner_gen.py` (KIE veo3_lite; clip1 from the 4K image,
+  clips 2-5 from rotated eyes-open anchors) → `scripts/jdc_pod_clone.py` (one
+  clone per host) → `scripts/jdc_pod_finalize.py`.
+- AUDIO (user-locked for this track): ship the voice-changer chain as-is —
+  `eleven_english_sts_v2`, `use_speaker_boost` ON, master at -16 LUFS, NO
+  further post volume changes. A raw-Veo A/B was offered; the user explicitly
+  chose to stay on VC at -16 here, even though raw Veo remains the default for
+  single-persona confession videos.
+- Final openers after the `Ayo` failures: A = "Listen up, Illinois." ·
+  B = "Yo, Illinois. Listen up." · C = "Yo, Illinois, listen."
+- One-syllable slang fix: "Nah" rendered as "LA" — fixed with a rhyme anchor in
+  the TONE line: `Say 'Nah' as a clear, open 'NAH' (rhymes with 'spa')`. Reuse
+  the rhyme-anchor trick whenever a short slang word mangles.
+- Delivery format: user wants **9:16 only** in the final delivery folder
+  (`outputs/jdc_podcast_delivery/`); do not add 4:5 variants unless asked.
