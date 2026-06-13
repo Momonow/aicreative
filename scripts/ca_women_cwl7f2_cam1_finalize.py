@@ -26,7 +26,13 @@ INTENDED = {
 }
 
 # ── special overrides: set after reviewing dissect transcripts ──
-CLIP_TRIM_END = {}
+CLIP_TRIM_START = {
+    5: 0.15,   # leading "...that" at 0.12s before intended "may"; cut it
+}
+CLIP_TRIM_END = {
+    3: 2.81,   # trailing "I just feel counted." (5.44s+); "counts." ends 2.56s
+    5: 4.47,   # trailing filler "Um, potential compensation, uh..." after 4.22s
+}
 
 
 def run(cmd, label=""):
@@ -60,12 +66,15 @@ def word_trim(n):
     itoks = tokens(INTENDED[n])
     wtoks = [tokens(w["word"])[0] if tokens(w["word"]) else "" for w in all_words]
 
-    # leading trim: find first intended token
-    start_t = all_words[0]["start"]
-    for i, wt in enumerate(wtoks):
-        if wt == itoks[0]:
-            start_t = max(0.0, all_words[i]["start"] - 0.25)
-            break
+    # leading trim: hard override first, else find first intended token
+    if n in CLIP_TRIM_START:
+        start_t = CLIP_TRIM_START[n]
+    else:
+        start_t = all_words[0]["start"]
+        for i, wt in enumerate(wtoks):
+            if wt == itoks[0]:
+                start_t = max(0.0, all_words[i]["start"] - 0.25)
+                break
 
     # trailing trim: use hard override if set, else walk to last intended token
     if n in CLIP_TRIM_END:
