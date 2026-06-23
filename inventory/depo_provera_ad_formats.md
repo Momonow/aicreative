@@ -265,3 +265,25 @@ First video format produced for this campaign: **diagnosis-first first-person te
 - **Open:** clip03 (both) — Lite renders "Depo" as **"depot"** (positional; clip07 says it fine).
   Ship vs. rewrite clip03 to "that birth control shot". Image-ad batch (20 formats,
   `depo_ads_gen.py`) still pending — strip its `ATTY`/`DRAMA` footers per the no-disclaimer rule.
+
+## UGC10 scale-out — 10 distinct-format testimonials + 5 chorus (DELIVERED 2026-06-22)
+
+Second video batch: scaled the testimonial to **10 unique ads** = 10 DISTINCT script FORMATS × 10
+distinct Black-woman ~45 personas ([[feedback-distinct-format-ugc-scripts]]). Diagnosis-first
+("meningioma" in the first 3-5s), 46-60s, 9:16, static interiors (no cars/motion), **Nick captions**,
+no disclaimer. Scripts: `scripts/depo_ugc10_{personas,gen,finalize,chorus}.py`. Deliverables:
+`outputs/depo_ugc10/ad{01..10}_*/ad*_nick.mp4` + `outputs/depo_ugc10/chorus/chorus{1..5}_nick.mp4`.
+
+- **Formats:** story-arc · urgent-PSA · 3-things-list · phone-call · myth-buster · fired-up ·
+  quiet-reflection · do-this · second-person-letter · straight-talk.
+- **5 chorus-of-voices stitches** — montages of fragments from MANY personas (diagnosis chorus → Depo
+  link → compensation → CTA), built by concatenating each ad's finalize building blocks (`fin/g*.mp4`).
+- **Gen path:** useapi google-flow Veo 3.1 Lite low-priority, 9:16 anchor + portrait + dur=8. Hit (and
+  the user topped up) BOTH account blockers mid-run — paygate credits + CapSolver balance
+  ([[feedback-googleflow-account-blockers]]). Recovered a process-kill via skip-if-exists resume +
+  prompt commit of the untracked scripts.
+- **AdMachin (Tort → Depo Provera `9cfb5b76`):** all 15 captioned cuts uploaded (creatives rows
+  952-966) + assembled as draft ads **#653-#667** (10 individual + 5 chorus), `is_launched=false`,
+  `ad_type` auto="Video" (omit it). **OPEN:** currently all share ONE reused copy (#679 headline /
+  #680 primary); user asked for APPROPRIATE distinct per-ad copy — a 10-individual + 1-chorus
+  headline/primary set was drafted + presented in chat, awaiting approval to create rows + `update_ad`.
