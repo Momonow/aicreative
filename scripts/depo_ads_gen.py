@@ -145,7 +145,32 @@ def r_testimonial(imgs, f):
     y += 18
     y = block(d, 54, y, PHRASE, F_bold(36), YELLOW, 46, W - 108); y += 14
     chip(d, (54, y), f["cta"], F_black(34))
-    footer(d, DRAMA, (220, 220, 220))
+    return img  # NO disclaimer footer (locked rule: feedback_no_disclaimer_lingo_in_copy)
+
+
+def r_testi_real(imgs, f, headline=True):
+    """#472-style real-photo testimonial. headline=True: full-bleed photo + bottom scrim + big
+    Arial-Black headline + qualifier subtext. headline=False: CLEAN photo, zero text overlay.
+    NO brand wordmark, NO CTA, NO disclaimer (all per user direction 2026-06)."""
+    base = imgs.get("")
+    img = cover(base, W, H) if base else Image.new("RGB", (W, H), (40, 40, 46))
+    if not headline:
+        return img  # clean photo, no text at all
+    img = scrim(img, 0.55, 232)
+    d = ImageDraw.Draw(img)
+    M = 60
+    hf = font(["Arial Black.ttf", "Montserrat-Black.ttf"], 92)
+    sf = F_reg(44)
+    hl = wrap(d, f["headline"], hf, W - 2 * M)
+    sub = wrap(d, f.get("sub", ""), sf, W - 2 * M) if f.get("sub") else []
+    block_h = len(hl) * 100 + (24 + len(sub) * 56 if sub else 0)
+    y = H - 72 - block_h
+    for ln in hl:
+        d.text((M, y), ln, font=hf, fill=WHITE); y += 100
+    if sub:
+        y += 24
+        for ln in sub:
+            d.text((M, y), ln, font=sf, fill=WHITE); y += 56
     return img
 
 
@@ -421,6 +446,10 @@ NOTEXT = (" Absolutely NO text, no letters, no numbers, no words, no captions, n
           "anywhere in the image.")
 REAL = (" Photoreal candid documentary photo, natural skin texture with visible pores and fine lines, "
         "no beauty retouching, no filter, no makeup, ordinary relatable person, NOT a glamour or stock-model shot.")
+REAL_IPHONE = (" Shot on an iPhone — a real candid amateur snapshot, natural phone-camera look, slightly "
+               "soft, mixed natural indoor light, faint grain, imperfect unposed framing. Real skin with "
+               "visible texture and pores, no makeup, no retouching, no studio lighting. Looks like a genuine "
+               "photo a real person took on their phone — NOT a stock photo, NOT glamorous, NOT AI-perfect.")
 
 
 # --------------------------------------------------------------------------- formats (all 20)
@@ -537,6 +566,28 @@ FORMATS = [
          kicker="FOR SOMEONE YOU LOVE", headline="Your mom. Your sister. Your best friend.",
          sub="If a woman you love was diagnosed with a meningioma and used Depo-Provera, she may qualify.",
          cta="Help her check →"),
+    # --- 5 long-story testimonials (#472 mold) — REAL iPhone/UGC photo of a Black target persona,
+    #     renders TWO variants (headline + clean), NO brand/CTA/disclaimer. Long copy = FB primary. ---
+    dict(n=21, slug="t_confession", lane="testi_real", aspect="4:5",
+         images={"": "An ordinary African American woman about 50 with natural hair pulled back, sitting at "
+                     "her kitchen table at home, looking tired and far-off." + REAL_IPHONE + NOTEXT},
+         headline="It Was a Brain Tumor. And No One Warned Me.", sub=PHRASE),
+    dict(n=22, slug="t_daughter", lane="testi_real", aspect="4:5",
+         images={"": "A young African American woman about 32 with shoulder-length braids, sitting on her "
+                     "couch holding her phone, a worried look on her face." + REAL_IPHONE + NOTEXT},
+         headline="We Thought It Was Age. It Was a Brain Tumor.", sub=PHRASE),
+    dict(n=23, slug="t_toolate", lane="testi_real", aspect="4:5",
+         images={"": "An African American woman about 56 with short natural grey-flecked hair, sitting by a "
+                     "window at home, calm and weary." + REAL_IPHONE + NOTEXT},
+         headline="A Brain Tumor Years Ago Still Counts Today.", sub=PHRASE),
+    dict(n=24, slug="t_longtime", lane="testi_real", aspect="4:5",
+         images={"": "A heavyset African American woman about 58 with greying natural hair, in a modest "
+                     "kitchen, lived-in and tired, soft daylight." + REAL_IPHONE + NOTEXT},
+         headline="Fifteen Years on the Shot. Then a Brain Tumor.", sub=PHRASE),
+    dict(n=25, slug="t_newsreaction", lane="testi_real", aspect="4:5",
+         images={"": "An African American woman about 42 sitting on her living-room couch holding her phone "
+                     "in one hand, caught mid-thought as if she just stopped scrolling, soft lamplight." + REAL_IPHONE + NOTEXT},
+         headline="I Almost Scrolled Past the Words ‘Brain Tumor.’", sub=PHRASE),
 ]
 
 
@@ -583,10 +634,17 @@ def main():
         for k in f.get("images", {}):
             p = bases.get((f["slug"], k))
             imgs[k] = Image.open(p).convert("RGB") if p and os.path.exists(p) else None
+        miss = [k or "(main)" for k in f.get("images", {}) if imgs.get(k) is None]
+        if f["lane"] == "testi_real":
+            for variant, hl in (("headline", True), ("clean", False)):
+                im = r_testi_real(imgs, f, headline=hl)
+                out = os.path.join(FINAL_DIR, f"{f['n']:02d}_{f['slug']}_{variant}_4x5.png")
+                im.save(out)
+                print(f"[render] {out}{'  MISSING:' + ','.join(miss) if miss else ''}", flush=True)
+            continue
         img = LANES[f["lane"]](imgs, f)
         out = os.path.join(FINAL_DIR, f"{f['n']:02d}_{f['slug']}_4x5.png")
         img.save(out)
-        miss = [k or "(main)" for k in f.get("images", {}) if imgs.get(k) is None]
         print(f"[render] {out}{'  MISSING:' + ','.join(miss) if miss else ''}", flush=True)
 
 
