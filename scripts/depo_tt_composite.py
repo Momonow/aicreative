@@ -48,6 +48,7 @@ def main():
     backdrop, matte, audio, out = sys.argv[1:5]
     word = sys.argv[5] if len(sys.argv) > 5 else "MENINGIOMA"
     pos = sys.argv[6] if len(sys.argv) > 6 else "top"
+    pip_h = int(sys.argv[7]) if len(sys.argv) > 7 else 560   # PIP inset height (corner)
     dur = dur_of(audio)
     frames = int(dur * 24) + 1
     wlay = str(Path(out).with_name("_wordlay.png"))
@@ -57,8 +58,8 @@ def main():
           f"zoompan=z='min(zoom+0.00035,1.14)':d={frames}:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':"
           f"s={W}x{H}:fps=24,setsar=1[bg];")
     word_ov = "[bg][2:v]overlay=0:0[bgw];"
-    pip = "[1:v]scale=-1:720,setsar=1[pip];"
-    comp = "[bgw][pip]overlay=x=W-w-24:y=H-h-16:shortest=1,format=yuv420p[v]"
+    pip = f"[1:v]scale=-1:{pip_h},setsar=1[pip];"
+    comp = "[bgw][pip]overlay=x=W-w-12:y=H-h-10:shortest=1,format=yuv420p[v]"
 
     cmd = ["ffmpeg", "-y",
            "-loop", "1", "-framerate", "24", "-t", f"{dur:.2f}", "-i", backdrop,
