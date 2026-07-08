@@ -44,12 +44,13 @@ def generate_veo(prompt, image_path=None, image_mgid=None, duration=8, seed=None
     for a in range(1, attempts + 1):
         payload = {"prompt": prompt, "model": model,
                    "duration": duration, "count": 1,
-                   # DATA-DRIVEN order (GET /accounts/captcha-stats, 2026-07-08, n=10k):
-                   # CapSolver 39.6% > YesCaptcha 33.5% > AntiCaptcha 23.8%; UserProvided 93.4%
-                   # (captchaToken is the escalation path). Repeats allowed (max 10); zero-balance
-                   # providers ABORT the attempt so SolveCaptcha is excluded. String, not array;
-                   # mutually exclusive with captchaRetry.
-                   "captchaOrder": "CapSolver,YesCaptcha,AntiCaptcha,CapSolver,YesCaptcha,AntiCaptcha,CapSolver,YesCaptcha,CapSolver,YesCaptcha",
+                   # Per useapi guidance + /captcha-stats (2026-07-08): pick best TWO by rate AND
+                   # volume — CapSolver 39.6% @ n=8769 (primary, repeated) + YesCaptcha 33.5%
+                   # (backup). AntiCaptcha (23.8%) dropped from chain; SolveCaptcha zero-balance
+                   # ABORTS attempts so never include unfunded providers. String, not array;
+                   # mutually exclusive with captchaRetry. UserProvided captchaToken = 93.4%
+                   # (browser-minted, the escalation path).
+                   "captchaOrder": "CapSolver,CapSolver,CapSolver,YesCaptcha,CapSolver,CapSolver,YesCaptcha,CapSolver,CapSolver,YesCaptcha",
                    "seed": (seed if seed is not None else (abs(hash(prompt)) % 9000)) + a * 31}
         if aspect_ratio:  # omit to let I2V inherit the input image's aspect (free tier can't OVERRIDE aspect)
             payload["aspectRatio"] = aspect_ratio
