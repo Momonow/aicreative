@@ -19,8 +19,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from googleflow_client import generate_veo, upload_asset, download   # FREE veo-3.1-lite-low-priority
 
 OUT = Path("outputs/depo_tt")
-MODEL = "omni-flash"   # user-picked (2026-07-08): cheapest omni on google-flow, startImage i2v,
-                       # native 480p-class output, supports SHORT durations (4/6/8/10s)
+MODEL = "veo-3.1-fast"  # user-directed (2026-07-08): try the fast/unlimited tier — different queue,
+                        # may dodge the omni contention. i2v is 8s-ONLY (no 4/6s), so gen() forces 8.
 PRON = ('"meningioma" = "men-in-jee-OH-muh". "Depo" = "DEP-oh" with a short e like in "deck", '
         'NOT "dee-po", NOT "depot" (no T sound).')
 
@@ -122,7 +122,8 @@ def gen(ad_n, ad, idx, line, mgid):
     out.parent.mkdir(parents=True, exist_ok=True)
     if out.exists() and out.stat().st_size > 50000:
         return "cached"
-    r = generate_veo(prompt=P(ad, line), image_mgid=mgid, duration=dur_for(line),
+    dur = 8 if "fast" in MODEL else dur_for(line)  # veo-3.1-fast i2v is 8s-only
+    r = generate_veo(prompt=P(ad, line), image_mgid=mgid, duration=dur,
                      aspect_ratio="portrait", model=MODEL, ref_param="startImage")
     if r.get("status") != "success" or not r.get("urls"):
         return "FAIL: " + str(r.get("raw"))[:160]
