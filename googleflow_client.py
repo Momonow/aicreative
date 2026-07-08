@@ -44,6 +44,9 @@ def generate_veo(prompt, image_path=None, image_mgid=None, duration=8, seed=None
     for a in range(1, attempts + 1):
         payload = {"prompt": prompt, "model": model,
                    "duration": duration, "count": 1, "captchaRetry": 3,
+                   # user-set order (2026-07): AntiCaptcha first, CapSolver fallback — two fast
+                   # report-back solvers; kills most UNUSUAL_ACTIVITY low-token-score stalls
+                   "captchaOrder": ["AntiCaptcha", "CapSolver"],
                    "seed": (seed if seed is not None else (abs(hash(prompt)) % 9000)) + a * 31}
         if aspect_ratio:  # omit to let I2V inherit the input image's aspect (free tier can't OVERRIDE aspect)
             payload["aspectRatio"] = aspect_ratio
