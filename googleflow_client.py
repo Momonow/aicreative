@@ -43,11 +43,11 @@ def generate_veo(prompt, image_path=None, image_mgid=None, duration=8, seed=None
     last = None
     for a in range(1, attempts + 1):
         payload = {"prompt": prompt, "model": model,
-                   "duration": duration, "count": 1, "captchaRetry": 3,
+                   "duration": duration, "count": 1,
                    # user-set order (2026-07): AntiCaptcha first, CapSolver fallback, YesCaptcha
-                   # last (fast but no solve-quality report-back). Three-deep chain kills the
-                   # UNUSUAL_ACTIVITY low-token-score stalls.
-                   "captchaOrder": "AntiCaptcha,CapSolver,YesCaptcha",  # comma-separated STRING (array 400s)
+                   # last (fast but no report-back). Comma-separated STRING (array 400s), and it
+                   # REPLACES captchaRetry (the two are mutually exclusive — sending both 400s).
+                   "captchaOrder": "AntiCaptcha,CapSolver,YesCaptcha",
                    "seed": (seed if seed is not None else (abs(hash(prompt)) % 9000)) + a * 31}
         if aspect_ratio:  # omit to let I2V inherit the input image's aspect (free tier can't OVERRIDE aspect)
             payload["aspectRatio"] = aspect_ratio
