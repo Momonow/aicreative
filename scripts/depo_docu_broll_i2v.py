@@ -89,7 +89,9 @@ def main():
         try:
             mgid = upload_asset(path)
             r = generate_veo(prompt=prompt, image_mgid=mgid, duration=8,
-                             aspect_ratio=aspect, model="veo-3.1-lite", attempts=2)
+                             aspect_ratio=aspect, model="veo-3.1-fast", attempts=2)
+            # switched lite->fast (2026-07-09): lite i2v content-rejected most clinical stills
+            # ("Generation job finished with state: FAILED"); fast passes the same content.
             if r.get("status") == "success" and r.get("urls"):
                 download(r["urls"][0], dest)
                 print(f"  {slug} -> ok", flush=True)
