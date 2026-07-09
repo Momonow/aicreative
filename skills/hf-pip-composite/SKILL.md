@@ -85,6 +85,8 @@ compensation / Go); calm connective lines get the smaller/zoom-out waypoints.
   emit literal tweens (pattern: `depo_hf/gen_walk.py`, seed 11).
 - One paused GSAP timeline at `window.__timelines["<composition-id>"]`; finite repeats only.
 - Draft render ≈ 3-4s/video-second (10s ≈ 40s wall). Renders are sequential — never two at once.
-- Captions: render the motion composite CLEAN, then burn Hormozi (`--no-emoji`) after, Reels-safe
-  `--vertical-pos ~0.80` (bottom 15% is Reels UI-unsafe; captions land on the talker's band —
-  normal TikTok look).
+- Captions: render the motion composite CLEAN, then burn Hormozi (`--no-emoji`) after.
+  **Position = the backdrop subject's FOREHEAD band, `--vertical-pos 0.28`** (user-locked
+  2026-07-09): the gap between the title band and the subject's eyes. The default lower-third
+  (~0.80) lands ON the talker's face in this supersized layout and was rejected; forehead keeps
+  BOTH faces clear and reads title → caption → eyes → talker.
