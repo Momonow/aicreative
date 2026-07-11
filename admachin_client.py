@@ -172,6 +172,70 @@ def upload_creative(path, type=None, project_id=None, subproject_id=None,
 
 
 # --------------------------------------------------------------------------
+# B-Roll clips — the dedicated B-Roll library (separate from /creatives!).
+# The B-Roll page in the UI (admachin.com/b-roll) is backed by /brolls/clips,
+# NOT /creatives. Endpoints (from OpenAPI /api/v1/openapi.json):
+#   POST /brolls/clips/upload  — multipart, one-step upload+register (used here)
+#   POST /brolls/clips         — JSON, register an already-uploaded storage_path
+#   GET  /brolls/clips         — list ; GET/PATCH/DELETE /brolls/clips/{id}
+# The route is /brolls/CLIPS — a bare /brolls 401s ("Authentication required"),
+# which is why it looks missing. Internally-generated videos use platform=ai_video.
+# --------------------------------------------------------------------------
+def upload_broll_clip(path, title=None, project_id=None, subproject_id=None,
+                      platform="ai_video", clip_category=None, tags=None,
+                      note=None, gen_model=None, gen_prompt=None,
+                      idem_key=None, timeout=600):
+    """Upload a local video/image into the B-Roll library (POST /brolls/clips/upload).
+
+    Returns the b-roll clip row {id, title, project_id, subproject_id, ...}.
+    Mirrors the /creatives multipart shape (file + form fields).
+    """
+    p = pathlib.Path(path)
+    if not p.is_file():
+        raise FileNotFoundError(path)
+    size = p.stat().st_size
+    if size > MAX_BYTES:
+        raise ValueError(f"{p.name} is {size / 1048576:.1f} MiB > 200 MiB cap")
+    mime = _MIME.get(p.suffix.lower())
+    if not mime:
+        raise ValueError(f"Unsupported file type {p.suffix!r}; allowed: {sorted(_MIME)}")
+    media_type = "video" if mime.startswith("video") else "image"
+
+    data = {"media_type": media_type, "platform": platform}
+    if title:          data["title"] = title
+    if project_id:     data["project_id"] = project_id
+    if subproject_id:  data["subproject_id"] = subproject_id
+    if clip_category:  data["clip_category"] = clip_category
+    if note:           data["note"] = note
+    # NOTE: video_generation_model 500s server-side on arbitrary values (e.g. "grok-imagine")
+    # — likely an enum/FK constraint. Skip it; keep the descriptive prompt which is accepted.
+    if gen_model:      data["image_generation_model"] = gen_model if media_type == "image" else None
+    if gen_prompt:     data["video_generation_prompt" if media_type == "video" else "image_generation_prompt"] = gen_prompt
+    data = {k: v for k, v in data.items() if v is not None}
+    if tags:           data["tags"] = ",".join(tags) if isinstance(tags, (list, tuple)) else str(tags)
+
+    h = _auth()
+    h["Idempotency-Key"] = idem_key or str(uuid.uuid4())
+    with open(p, "rb") as f:
+        files = {"file": (p.name, f, mime)}
+        r = requests.post(f"{BASE}/brolls/clips/upload", headers=h, files=files, data=data, timeout=timeout)
+    return _check(r)
+
+
+def list_broll_clips(limit=20, project_id=None, subproject_id=None):
+    params = {"limit": limit}
+    if project_id:    params["project_id"] = project_id
+    if subproject_id: params["subproject_id"] = subproject_id
+    return _get("/brolls/clips", params=params)
+
+
+def delete_broll_clip(clip_id):
+    # DELETE /brolls/clips/{id} requires ?confirm=true (guard against accidental deletes).
+    return _check(requests.delete(f"{BASE}/brolls/clips/{clip_id}",
+                  headers=_auth(), params={"confirm": "true"}, timeout=60))
+
+
+# --------------------------------------------------------------------------
 # Copy — POST /ad-copies. Requires write:copy.
 # --------------------------------------------------------------------------
 def create_ad_copy(text, type, project_id=None, subproject_id=None, name=None, **kw):

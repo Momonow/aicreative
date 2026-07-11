@@ -8,7 +8,7 @@ import sys, json, argparse, requests
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 import kie_client as kie
-from admachin_client import upload_creative
+from admachin_client import upload_broll_clip   # B-Roll DB (/brolls/clips), NOT /creatives
 
 BROLL = Path("outputs/depo_interview/broll")
 CLIPS = Path("outputs/depo_interview/broll_clips"); CLIPS.mkdir(parents=True, exist_ok=True)
@@ -16,15 +16,15 @@ STATE = CLIPS / "uploaded.json"
 TORT = "e15c60bd-95c2-47b9-9730-c29fb5325461"
 DEPO = "9cfb5b76-1dd3-4e07-b037-2dda178ac266"
 
-# (still_name, grok motion prompt) — subtle, silent, no talking
+# (still_name, grok motion prompt, b-roll TITLE, tags) — subtle, silent, no talking
 ITEMS = [
- ("study_pages", "The hands slowly turn a page and slide the highlighter along a line of text, small quiet movement. Quiet room, no talking, no voices."),
- ("depo_vial", "The blue-gloved hands steadily finish drawing the liquid up into the syringe, a small controlled motion. Quiet clinic, no talking, no voices."),
- ("depo_injection", "The nurse steadily gives the injection with a small press of the plunger while the patient sits still. Minimal quiet motion, no talking, no voices."),
- ("women_group", "The women sit and listen, small natural nods and shifts of posture, one glances toward another. Quiet room, no talking, no voices."),
- ("legal_docs", "A hand sets another folder onto the stack and the top page settles, then stillness. Quiet office, no talking, no voices."),
- ("phone_form", "The thumb taps the button on the phone screen, a small natural hand movement. Quiet, no talking, no voices."),
- ("lawyer_review", "The attorney turns a page in the open folder and reads it, small calm natural movements. Quiet office, no talking, no voices."),
+ ("study_pages", "The hands slowly turn a page and slide the highlighter along a line of text, small quiet movement. Quiet room, no talking, no voices.", "Highlighting a medical research study", ["depo","study","research"]),
+ ("depo_vial", "The blue-gloved hands steadily finish drawing the liquid up into the syringe, a small controlled motion. Quiet clinic, no talking, no voices.", "Drawing up a Depo-Provera injection", ["depo","injection","clinic"]),
+ ("depo_injection", "The nurse steadily gives the injection with a small press of the plunger while the patient sits still. Minimal quiet motion, no talking, no voices.", "Nurse giving a contraceptive injection", ["depo","injection","clinic"]),
+ ("women_group", "The women sit and listen, small natural nods and shifts of posture, one glances toward another. Quiet room, no talking, no voices.", "Womens support group circle", ["women","support","community"]),
+ ("legal_docs", "A hand sets another folder onto the stack and the top page settles, then stillness. Quiet office, no talking, no voices.", "Stack of legal case files on a desk", ["legal","lawsuit","documents"]),
+ ("phone_form", "The thumb taps the button on the phone screen, a small natural hand movement. Quiet, no talking, no voices.", "Filling out a form on a phone", ["form","phone","intake"]),
+ ("lawyer_review", "The attorney turns a page in the open folder and reads it, small calm natural movements. Quiet office, no talking, no voices.", "Attorney reviewing a case folder", ["legal","review","attorney"]),
 ]
 
 def animate(name, prompt):
@@ -46,15 +46,17 @@ def main():
     ap = argparse.ArgumentParser(); ap.add_argument("--no-upload", action="store_true")
     a = ap.parse_args()
     state = json.loads(STATE.read_text()) if STATE.exists() else {}
-    for name, prompt in ITEMS:
+    for name, prompt, title, tags in ITEMS:
         clip = animate(name, prompt)
         if not clip: continue
         if a.no_upload or name in state: continue
         try:
-            c = upload_creative(str(clip), type="video", project_id=TORT, subproject_id=DEPO)
+            c = upload_broll_clip(str(clip), title=title, project_id=TORT, subproject_id=DEPO,
+                                  platform="ai_video", clip_category="medical", tags=tags,
+                                  note=prompt, gen_prompt=prompt)
             cid = c.get("id") if isinstance(c, dict) else None
             state[name] = cid; STATE.write_text(json.dumps(state, indent=1))
-            print(f"UPLOADED {name} -> creative {cid}")
+            print(f"UPLOADED {name} -> broll clip {cid}")
         except Exception as e:
             print(f"UPLOAD FAIL {name}: {type(e).__name__} {e}")
     print("ALL DONE")
