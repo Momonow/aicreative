@@ -234,6 +234,27 @@ Use `prunaai/p-video` only when the user explicitly asks for it or Veo policy bl
 
 **Rule change (2026-05-20):** the prior "OpenAI direct, never KIE" rule (which existed to avoid KIE's proxy cost markup) is **reversed**. The user prioritizes image quality + larger 2K/4K output over the markup. Route GPT Image through `kie_client.generate_gpt_image` at 2K. Memory: `feedback_image_gen_provider.md`.
 
+#### gpt-image-2 image-to-image — the `input_urls` gotcha + minimal-prompt rule (verified 2026-07-11)
+
+- **The i2i model reads `input_urls`, NOT `image_urls`.** KIE's `gpt-image-2-image-to-image`
+  silently IGNORES an `image_urls` field — the task still returns `success`, but it ran as pure
+  **text-to-image** (no reference image entered), so the "i2i" output is a totally different
+  person/scene every time. Verified by probe: a fake URL under `input_urls` → `fail: image fetch
+  failed` (honored); the same fake URL under `image_urls` → `success` (ignored). `kie_client.py`
+  now sends `input_urls` for i2i. If faces/scenes drift wildly on an "i2i" call, check this FIRST.
+  (nano-banana-2 accepts BOTH `image_urls` and `input_urls`, so it was never affected.)
+- **On i2i, do NOT describe the person in the prompt.** Text descriptions of the reference
+  subject ("short gray hair, wire glasses, chambray shirt…") COMPETE with the image reference and
+  pull the output toward the words → likeness drift. Keep i2i prompts MINIMAL: only the *action /
+  framing / gaze / setting change* you want, never the subject's appearance. (Same principle as
+  the i2v short-prompt rule.) Multi-image compose works: pass `[face, room]` and say "put the
+  woman from the first image into the room from the second image" with no appearance words.
+- **Same-room / same-chair two-shots:** build ONE empty room (t2i), then i2i-composite each real
+  face into it with a minimal prompt → identical room/chair/light, exact faces. Reference:
+  `scripts/depo_interview_anchors_final.py` (Depo interview two-shot). Add "candid vertical iPhone
+  video frame, deep focus, flat exposure, no bokeh, no cinematic grade" for a phone-shot UGC look
+  instead of a polished-photo look; "tight waist-up medium close-up" for interview framing.
+
 #### IMAGE ADS — ALWAYS full KIE gpt-image-2 render, NEVER programmatic/PIL (user-locked 2026-06-23)
 
 Build EVERY static image ad (the whole banner — headline, layout, on-image text, photo, CTA, footnote) as **one `kie_client.generate_gpt_image` render**. Do **NOT** composite the headline/text programmatically (PIL, ffmpeg `drawtext`, code overlay) — the model renders the entire creative. **This OVERRIDES the older "text-precise cards render cleaner in PIL / CAWP-F1" guidance** in `inventory/depo_provera_ad_formats.md` and the `cawp-f1` work: even dense-text formats (qualify checklist, FAQ, news headline, dictionary definition, facilities map) go through gpt-image-2. To get clean text, **specify the EXACT on-image text verbatim in the prompt** and append *"Render ONLY the exact text specified — no extra words…"* The `image-ad-formats` skill is the format catalog (format × style × angle); reusable generators that follow this rule: `scripts/il_jdc_image_ads.py` (10 UGC longform + designed), `scripts/il_jdc_news_ads.py` (10 news-headline-article banners), `scripts/depo_formats100_gen.py`.
