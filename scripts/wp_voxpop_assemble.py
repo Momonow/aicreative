@@ -1,29 +1,26 @@
-"""Assemble the vox-pop clips into a tight ad: trim each clip's leading/trailing silence
-(via ffmpeg silencedetect, no API), concat, even loudness with loudnorm.
+"""Assemble the vox-pop clips into a tight ad: trim each clip's leading/trailing DEAD AIR
+using Scribe word-timings (Grok clips have ambient street noise, so silencedetect misses the
+trailing pause — word-timings are reliable), concat, even loudness with loudnorm.
 Usage: python scripts/wp_voxpop_assemble.py <dir> <out.mp4> clip1 clip2 clip3 ...
 """
-import sys, subprocess, re, pathlib
+import sys, subprocess, json, pathlib
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))
+from elevenlabs_client import scribe
+
+LEAD_PAD, TRAIL_PAD = 0.05, 0.25
 
 def dur(f):
     return float(subprocess.run(["ffprobe","-v","error","-show_entries","format=duration",
         "-of","default=nk=1:nw=1",f],capture_output=True,text=True).stdout.strip())
 
-def speech_span(f, noise="-32dB", d="0.25"):
-    """Return (start, end) of speech using silencedetect, with small pads."""
-    out = subprocess.run(["ffmpeg","-i",f,"-af",f"silencedetect=noise={noise}:d={d}","-f","null","-"],
-                         capture_output=True,text=True).stderr
-    starts = [float(x) for x in re.findall(r"silence_start: ([\d.]+)", out)]
-    ends   = [float(x) for x in re.findall(r"silence_end: ([\d.]+)", out)]
-    total = dur(f)
-    # leading silence: if a silence starts at ~0, speech begins at its silence_end
-    s = 0.0
-    if starts and starts[0] < 0.15 and ends:
-        s = max(0.0, ends[0] - 0.03)
-    # trailing silence: if last silence runs to EOF, speech ends at that silence_start
-    e = total
-    if starts and (not ends or ends[-1] < starts[-1] + 0.05 or starts[-1] > (ends[-1] if ends else 0)):
-        if starts[-1] > s + 0.3:
-            e = min(total, starts[-1] + 0.20)
+def speech_span(f):
+    """Return (start, end) of speech from Scribe word-timings, with small pads."""
+    res = scribe(f, biased_keywords=["Chowchilla"])
+    words = [w for w in res.get("words", []) if w.get("type") == "word"]
+    if not words:
+        return 0.0, dur(f)
+    s = max(0.0, words[0]["start"] - LEAD_PAD)
+    e = min(dur(f), words[-1]["end"] + TRAIL_PAD)
     return round(s,2), round(e,2)
 
 dirp = pathlib.Path(sys.argv[1]); out = sys.argv[2]; slugs = sys.argv[3:]
