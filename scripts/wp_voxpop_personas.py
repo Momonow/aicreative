@@ -7,31 +7,34 @@ from kie_client import generate_gpt_image
 
 OUT = pathlib.Path("outputs/wp_voxpop/reference"); OUT.mkdir(parents=True, exist_ok=True)
 
-REAL = ("Photoreal candid documentary street photo (NOT a glamour or fashion shoot, NOT a "
-        "celebrity portrait) — an ordinary everyday person, plain average features. Natural skin "
-        "with visible pores, fine lines, uneven tone, no makeup, no beauty retouching, no filter. "
-        "Bright natural daylight, sunny urban sidewalk with softly out-of-focus storefronts and a "
-        "faded awning edge behind (no readable signage). Waist-up, casual vox-pop framing.")
+REAL = ("Photoreal candid documentary street photo (NOT glamour, NOT fashion, NOT a celebrity "
+        "portrait) — an ordinary hard-lived working-class woman who looks like life has been rough "
+        "on her, like someone who has done time. Weathered sun-worn skin with visible pores, deep "
+        "lines, uneven tone, heavy under-eye shadows, no makeup, no beauty retouching, no filter. "
+        "Tired, guarded eyes. Bright natural daylight on a plain urban sidewalk with softly "
+        "out-of-focus storefronts behind (no readable signage). Waist-up vox-pop framing, a black "
+        "foam-windscreen handheld microphone held into frame from the side toward her. NO tattoos "
+        "on the neck.")
 
 PERSONAS = {
- "interviewer": (
-   "A friendly female street interviewer, late 20s, warm approachable smile, medium-tan skin, oval "
-   "face, brown wavy shoulder-length hair, small silver stud earrings, casual light-blue denim "
-   "jacket over a white tee. She holds up a black foam-windscreen handheld microphone with a small "
-   "BLANK news cube (no logo) toward the camera, arm extended. Looking slightly off-camera as if "
-   "listening. " + REAL),
+ # interviewer already approved — regenerate respondents only (rough, been-to-prison, Black/Latina, ~45)
  "respondent_a": (
-   "A young woman, early 20s, round face, light-olive skin, dark brown hair in a claw clip with "
-   "loose strands, a few freckles, expressive raised eyebrows (surprised look), plain grey zip "
-   "hoodie. Ordinary passerby. " + REAL),
+   "A Latina woman, about 42, hard-lived and weary. Long oval face, medium-brown skin, sun-worn "
+   "and lined, sharp cheekbones, thin lips, dark deep-set eyes with heavy under-eye shadows, "
+   "penciled-thin eyebrows, dark hair with grey streaks scraped back into a tight low bun, a small "
+   "faded fine-line tattoo on her forearm. Plain worn grey zip hoodie. Guarded, tired, mid-answer "
+   "expression. " + REAL),
  "respondent_b": (
-   "A woman in her 30s, heart-shaped face, deep-brown skin, Afro-textured hair pulled back into a "
-   "puff, gold hoop earrings, lively animated expression, denim jacket over a mustard top. "
-   "Ordinary passerby. " + REAL),
+   "A Black woman, about 46, heavyset and weathered. Round full face, deep-brown skin with uneven "
+   "tone and visible pores, tired puffy eyes, short natural hair with grey at the temples, a small "
+   "gold hoop earring, a faded fine-line tattoo on the back of one hand. Plain oversized dark tee "
+   "under a worn flannel shirt. Hard, no-nonsense, been-through-it expression. " + REAL),
  "respondent_c": (
-   "A woman in her late 50s, long slightly gaunt face, fair weathered sun-lined skin, grey-streaked "
-   "hair to the shoulders, reading glasses pushed up on her head, calm serious warm expression, "
-   "soft oatmeal cardigan. Ordinary passerby. " + REAL),
+   "A Latina woman, about 48, gaunt and hard-lived. Long angular face, olive skin deeply sun-"
+   "damaged and creased, hollow cheeks, a faint old scar through one eyebrow, imperfect uneven "
+   "teeth, thin lips, dark tired eyes, dark-grey hair loose and slightly unkempt. Plain faded tank "
+   "under an open worn cardigan, a small faded tattoo on her forearm. Wary, subdued, weary "
+   "expression. " + REAL),
 }
 
 def gen(name, prompt):
