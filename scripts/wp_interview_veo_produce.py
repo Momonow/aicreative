@@ -13,7 +13,7 @@ PRON = ("PRONUNCIATION: 'Chowchilla' = three English syllables chow (rhymes with
 
 # (idx, speaker L=reporter/R=woman, line)
 TURNS = [
- (1,"L","Nearly 500 women who were incarcerated in California's prisons are coming forward. You were at Chowchilla. What happened in there?"),
+ (1,"L","Nearly 500 women who were in California's prisons are coming forward. You were at Chowchilla, right?"),
  (2,"R","The guards crossed the line. Sexually. And back then, nobody would have believed us."),
  (3,"L","A lot of women think that because they never reported it, it is too late."),
  (4,"R","That is exactly what I thought. I honestly believed that it was somehow my own fault."),

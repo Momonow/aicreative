@@ -16,17 +16,17 @@ COMMON = ("Wide 16:9 candid street interview on a sunny sidewalk, static camera.
 
 # each chunk = 2 turns (L then R) unless noted; L=reporter, R=woman
 CHUNKS = {
- "o1": [("L","Nearly 500 women from California's prisons are coming forward. You were at Chowchilla. What happened in there?"),
-        ("R","The guards crossed the line. Sexually. Nobody would have believed us.")],
- "o2": [("L","A lot of women think that because they never reported it, it is too late."),
-        ("R","That is exactly what I thought. I thought it was my fault.")],
- "o3": [("L","But under California law, a woman in prison cannot consent to a guard."),
+ "o1": [("L","Nearly 500 women from California's prisons are coming forward. You were at Chowchilla."),
+        ("R","The guards crossed the line. Sexually.")],
+ "o2": [("L","Some women think because they never reported it, it is too late."),
+        ("R","That is what I thought. I thought it was my fault.")],
+ "o3": [("L","But under California law, you cannot consent to a guard."),
         ("R","Wait. Even after all these years?")],
  "o4": [("L","You may qualify for significant potential compensation. It is free and confidential."),
-        ("R","I never knew that was even possible.")],
- "o5": [("L","You never go to court. If you were at Chowchilla, Valley State, or Folsom, there is a private two-minute form."),
-        ("R","So anyone who was in there should check?")],
- "o6": [("L","Yes. Tap below and see if you qualify.")],
+        ("R","I never knew that was possible.")],
+ "o5": [("L","You never even go to court."),
+        ("R","If I had only known that sooner.")],
+ "o6": [("L","If you were at Chowchilla, Valley State, or Folsom, tap below and see if you qualify.")],
 }
 
 def prompt_for(turns):
