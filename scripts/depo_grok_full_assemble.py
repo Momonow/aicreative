@@ -36,7 +36,7 @@ BEATS = [
 
 # b-roll overlays the survivor's FIRST answer (beat idx 1) — her VO keeps playing UNDER the
 # b-roll (scan -> incision -> recovery in bed). No silent bridge.
-BROLL = ["scan_lightbox", "incision_bw", "recovery_bed_bandaged_bw"]
+BROLL = ["scan_lightbox", "incision_bw", "recovery_surv"]  # recovery = the survivor herself (i2i->Grok)
 BROLL_OVER_BEAT = 1   # overlay b-roll on this beat index (survivor's first answer)
 
 def canon(w): return re.sub(r"[^a-z0-9]", "", w.lower())
