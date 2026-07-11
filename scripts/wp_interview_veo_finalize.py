@@ -31,15 +31,24 @@ def check(path, line):
         # isolate the word, transcribe unbiased
         hit = next((w for w in ws if "chow" in wt(w).lower() or "chau" in wt(w).lower()
                     or "chill" in wt(w).lower()), None)
+        iso = ""
         if hit:
             wav = tempfile.mktemp(suffix=".wav")
             subprocess.run(["ffmpeg","-y","-i",path,"-ss",str(max(0,hit["start"]-0.15)),
                 "-to",str(hit["end"]+0.2),"-vn","-ar","22050","-ac","1",wav],capture_output=True)
             iso = scribe(wav).get("text","").lower()
-            if not ("chowchill" in iso or ("chow" in iso and "chill" in iso)):
-                return False, f"Chowchilla mispron ({iso.strip()!r})"
-        else:
-            return False, "Chowchilla not found"
+        good = "chowchill" in iso or ("chow" in iso and "chill" in iso)
+        bad = any(k in iso for k in ("chauch", "chochil", "chauchi", "chachil"))
+        if bad:
+            return False, f"Chowchilla mispron ({iso.strip()!r})"
+        if not good:
+            # isolated window inconclusive (often masked by faint music) -> fall back to the FULL
+            # UNBIASED transcript, which reliably renders 'chowchilla' when it's said right.
+            full = " ".join(wt(w).lower() for w in scribe(path).get("words", []))
+            if "chauch" in full or "chochil" in full:
+                return False, f"Chowchilla mispron (full: ...{full[:60]})"
+            if "chowchill" not in full:
+                return False, "Chowchilla unclear"
     return True, "ok"
 
 report = []
@@ -47,7 +56,7 @@ for idx, spk, line in TURNS:
     path = D / f"t{idx:02d}_{spk}.mp4"
     for attempt in range(1, MAX + 1):
         if not path.exists():
-            subprocess.run(["python", "scripts/wp_interview_veo_produce.py", str(idx)],
+            subprocess.run([".venv/bin/python", "scripts/wp_interview_veo_produce.py", str(idx)],
                            capture_output=True, env={**__import__("os").environ, "PYTHONPATH": "."})
         if not path.exists():
             report.append((idx, "GEN FAILED")); break

@@ -42,6 +42,21 @@ CONFIGS = {
    "clip3": [("L","If you were at Chowchilla Valley State or Folsom there is a private two minute form"),
              ("R","So anyone who was in there should check"),
              ("L","Yes Tap below and see if you qualify")]}},
+ "omni": {
+  "dir": "outputs/wp_voxpop/interview_omni",
+  "order": ["o1","o2","o3","o4","o5","o6"],
+  "turns": {
+   "o1": [("L","Nearly 500 women from California's prisons are coming forward You were at Chowchilla What happened in there"),
+          ("R","The guards crossed the line Sexually Nobody would have believed us")],
+   "o2": [("L","A lot of women think that because they never reported it it is too late"),
+          ("R","That is exactly what I thought I thought it was my fault")],
+   "o3": [("L","But under California law a woman in prison cannot consent to a guard"),
+          ("R","Wait Even after all these years")],
+   "o4": [("L","You may qualify for significant potential compensation It is free and confidential"),
+          ("R","I never knew that was even possible")],
+   "o5": [("L","You never go to court If you were at Chowchilla Valley State or Folsom there is a private two minute form"),
+          ("R","So anyone who was in there should check")],
+   "o6": [("L","Yes Tap below and see if you qualify")]}},
 }
 
 def toks(s): return re.findall(r"[a-z]+", s.lower())
