@@ -8,7 +8,10 @@ Skip-if-exists. Run: .venv/bin/python scripts/depo_interview_personas.py [--only
 """
 import argparse
 import concurrent.futures as cf
+import sys
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from kie_client import generate_gpt_image, download
 
