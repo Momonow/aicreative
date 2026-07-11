@@ -12,23 +12,20 @@ print("[upload] interviewer + respondent_a to KIE ...")
 iv = upload_file(str(REF / "interviewer.png"))
 ra = upload_file(str(REF / "respondent_a.png"))
 
-BASE = ("Combine these two women into ONE candid documentary street-interview photo, wide 16:9 "
-        "horizontal framing, sunny urban sidewalk, natural daylight, softly out-of-focus "
-        "storefronts behind. The FIRST image is the interviewer (light-blue denim jacket, holding "
-        "a black foam microphone). The SECOND image is the woman being interviewed (grey hoodie, "
-        "dark hair in a low bun, weathered face). Keep each woman's EXACT face, skin tone, hair and "
-        "clothing — do not beautify or change their identity. Photoreal, real skin texture, no "
-        "makeup, no beauty retouching, no filter. No on-screen text, no captions.")
+# MINIMAL prompt — describe ONLY the scene/composition, NOT the people (per input_urls i2i rule).
+# Describing appearance fights the reference faces and drifts identity.
+BASE = ("Put these two exact people together in ONE candid documentary street-interview photo, "
+        "wide 16:9 horizontal framing on a sunny sidewalk. FIRST person = the interviewer holding "
+        "the microphone. SECOND person = the woman being interviewed. No on-screen text.")
 
 VARIANTS = {
- "v1_ots": BASE + " Over-the-shoulder: the interviewer stands at the LEFT edge seen from behind at "
-   "a three-quarter angle (back and shoulder to camera), extending the mic toward the other woman "
-   "on the RIGHT, who faces toward camera mid-answer. She is the main subject.",
- "v2_profile": BASE + " Balanced two-shot: interviewer on the LEFT in three-quarter profile facing "
-   "right, the woman on the RIGHT in three-quarter profile facing left, the microphone held "
-   "between them near center. Both faces clearly visible so either can be the focus.",
- "v3_foreground": BASE + " The interviewer's shoulder, arm and the microphone are in soft "
-   "foreground at the LEFT, the interviewed woman is centered and sharp, facing the mic, waist-up.",
+ "v1_ots": BASE + " Over-the-shoulder: the interviewer at the LEFT edge seen from behind (back and "
+   "shoulder to camera), extending the mic toward the second woman on the RIGHT, who faces camera "
+   "mid-answer as the main subject.",
+ "v2_profile": BASE + " Balanced two-shot: interviewer on the LEFT facing right, the second woman "
+   "on the RIGHT facing left, microphone between them near center, both faces clearly visible.",
+ "v3_foreground": BASE + " The interviewer's shoulder, arm and microphone soft in the LEFT "
+   "foreground, the second woman centered and sharp, facing the mic, waist-up.",
 }
 
 def gen(name, prompt):

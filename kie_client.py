@@ -253,14 +253,24 @@ def generate_veo(prompt, aspect_ratio="9:16", image_urls=None, mode=None, model=
 
 # ─── Image generators ────────────────────────────────────────────────
 
-def generate_gpt_image(prompt, image_urls=None, aspect_ratio="auto", resolution="2K"):
+def generate_gpt_image(prompt, image_urls=None, aspect_ratio="auto", resolution="2K",
+                       input_fidelity="high"):
     """GPT Image 2. If image_urls given → image-to-image; else → text-to-image.
     aspect_ratio: auto | 1:1 | 9:16 | 16:9 | 4:3 | 3:4
     resolution:   1K | 2K | 4K  (1:1 can't be 4K; auto/unspecified → 1K only)
+    input_fidelity (i2i only): high | low. DEFAULT high — preserves the input
+      subjects' faces/features/identity. Without it gpt-image-2 edits re-imagine
+      the face (the "different person" failure). Set low only when you WANT a loose
+      re-interpretation.
     """
     if image_urls:
         model = "gpt-image-2-image-to-image"
-        payload_input = {"prompt": prompt, "image_urls": image_urls, "aspect_ratio": aspect_ratio, "resolution": resolution}
+        # CRITICAL: KIE gpt-image-2 i2i expects the reference images under "input_urls".
+        # Sending "image_urls" is silently ignored → KIE falls back to text-to-image and
+        # INVENTS a new face (identity lost). Must be "input_urls". (Python kwarg stays
+        # image_urls for back-compat with existing call sites.)
+        payload_input = {"prompt": prompt, "input_urls": image_urls, "aspect_ratio": aspect_ratio,
+                         "resolution": resolution, "input_fidelity": input_fidelity}
     else:
         model = "gpt-image-2-text-to-image"
         payload_input = {"prompt": prompt, "aspect_ratio": aspect_ratio, "resolution": resolution}
