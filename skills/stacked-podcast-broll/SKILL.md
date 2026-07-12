@@ -38,6 +38,29 @@ Reusable reference scripts (Depo build): `scripts/depo_grok_talk.py` + `depo_gro
 - **Match dialogue length to clip duration** (~2.4 words/sec): a short line in a long clip makes the
   model improvise. ≤10 words → 4s; ~15-19 words → 8s.
 
+## 0.5 ANCHOR VERIFICATION PASS — mandatory before any video (user-locked 2026-07)
+
+The two anchors MUST read as ONE room shot by two cameras that FACE EACH OTHER. Run
+`scripts/interview_anchor_verify.py <subject> <interviewer>` — it stacks them with center-line +
+eyeline guides — and check ALL of:
+- **Gaze/facing:** subject looks screen-RIGHT, interviewer screen-LEFT (opposite; a real 3/4 turn,
+  NOT frontal, NOT into-lens except the CTA). Both frontal = the "weird angle" that breaks the
+  illusion (Figured-It-Out build — caught here, re-composited).
+- **Looking-room:** each face sits on the OPPOSITE side of its gaze (subject left-of-center with room
+  on the right; interviewer right-of-center with room on the left). Centered/edge-jammed faces read
+  as looking at the camera, not each other.
+- **Eyeline height** matches; **framing scale** (head size) matches; both eye-level; level horizon.
+- **180° axis:** gazes converge.
+- **Background:** same palette/decor, DIFFERENT walls of the SAME room (not identical, not two rooms).
+- **Lighting:** consistent color temp / softness / exposure; coherent light direction.
+
+i2i tends to re-pose faces toward FRONTAL, so the first composite is often too straight-on. Fix by
+re-compositing with an explicit strong 3/4 turn + off-center placement ("turn her into a clear
+three-quarter view angled toward the RIGHT side of the frame … position her a bit LEFT so there is
+looking-room on the right"), and use the flip trick for the opposite side (generate both turned the
+easy way, flip one — over a TEXT-FREE backdrop). **Do NOT spend a single Grok generation until the
+anchors pass** — every talking/listening clip inherits the anchor's angle.
+
 ## 1. Video generation — GROK IMAGINE for everything (locked)
 
 Use **Grok Imagine on KIE** (`grok-imagine/image-to-video`) for BOTH the talking clips AND the

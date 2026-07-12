@@ -38,10 +38,12 @@ TALK = [
    "brain meningioma and was ever on Deppo, you may qualify for significant compensation. Tap below "  # Depo->Deppo (TTS said 'Depot')
    "and take the two-minute check.\" " + AMB),
 ]
-# subject listeners only (doc listeners reused from The Insider)
+# listeners (subject + documentarian, from the corrected turned anchors)
 LISTEN = [
  ("surv_listen_1", SURV, "10", "The woman sits calmly in the armchair, listening quietly to an interviewer just off to the RIGHT side of the frame, gentle nods, natural blinks, a warm attentive expression, lips closed, calm and still. Faint room ambience, no talking, no voices."),
  ("surv_listen_2", SURV, "10", "The woman sits in the armchair, listening thoughtfully to someone off to the RIGHT, a slow nod and a soft breath, natural blinks, lips closed, still. Faint room ambience, no talking, no voices."),
+ ("doc_listen_1", DOC, "10", "The woman sits calmly in the armchair, listening intently to the person just off to the LEFT side of the frame, slow empathetic nods, soft micro-expressions, natural blinks, lips closed, calm and still. Faint room ambience, no talking, no voices."),
+ ("doc_listen_2", DOC, "10", "The woman sits in the armchair, listening to someone off to the LEFT, a gentle understanding nod, natural blinks, lips closed, still and attentive. Faint room ambience, no talking, no voices."),
 ]
 
 def gen(name, anchor, dur, prompt):
