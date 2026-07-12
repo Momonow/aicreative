@@ -38,7 +38,7 @@ BEATS = [
 ]
 BEAT_BROLL = {
  0: ["scan_lightbox_lib","A3_mri_compare"],   # brain meningioma diagnosis
- 3: ["D2_bmj_stat","depo_syringe"],            # studies / 5.6x / the shot
+ 3: ["medical_records","D2_bmj_stat","nurse_inject"],  # studies / 5.6x / the shot she gave (3 clips so stat doesn't linger)
  4: ["depo_inject_arm","D4_label_warning"],    # hundreds of women / the label
  6: ["D3_mdl_filing","legal_folders"],         # thousands / federal lawsuit
  8: ["C1_paper_form"],                          # answer a few questions online
