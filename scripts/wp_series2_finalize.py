@@ -2,50 +2,84 @@
 (<=MAX), trim each to its intended line, concat in order + loudnorm, Nick captions + Pulaski/Jones
 disclaimer. 9:16 out.  Usage: wp_series2_finalize.py <video>   (relationship|moved|kids)
 """
-import subprocess, re, sys, pathlib, os
+import subprocess, re, sys, pathlib, os, shutil
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))
 from elevenlabs_client import scribe
 from wp_series2_produce import VIDEOS
 
 MAX = 3; LEAD, TRAIL = 0.05, 0.25
-def toks(s): return re.findall(r"[a-z0-9]+", s.lower())
+# number-word <-> digit + benign colloquial folds so Scribe's rendering ("11" for "eleven",
+# "gonna" for "going to") doesn't false-reject an otherwise-correct free-tier take.
+NUMS = {"11": "eleven", "31": "thirtyone", "2": "two", "6": "six", "eleven": "eleven",
+        "thirtyone": "thirtyone", "two": "two", "six": "six"}
+def _canon(tok):
+    return NUMS.get(tok, tok)
+def toks(s):
+    raw = re.findall(r"[a-z0-9]+", s.lower().replace("-", ""))
+    return [_canon(t) for t in raw]
 def wt(w): return (w.get("text") or w.get("word") or "")
+
+def tight_span(exp, trans):
+    """Return (i,j,matched) for the TIGHTEST window in `trans` that contains `exp` as an ordered
+    subsequence (min j-i), so leading/mid/trailing improv is excluded. matched = words hit."""
+    best = None
+    for start in range(len(trans)):
+        if trans[start] != exp[0]:
+            continue
+        ei, j = 0, start
+        while j < len(trans) and ei < len(exp):
+            if trans[j] == exp[ei]:
+                ei += 1; last = j
+            j += 1
+        if ei > 0:
+            span_len = last - start
+            if best is None or ei > best[3] or (ei == best[3] and span_len < best[2] - best[1]):
+                best = (start, last, span_len, ei)
+    if best is None:
+        return None
+    return best[0], best[1], best[3]
 
 def analyze(path, line):
     res = scribe(path, biased_keywords=["Chowchilla"])
     ws = [w for w in res.get("words", []) if w.get("type") == "word"]
-    if not ws: return None, False, "no speech"
-    exp = toks(line); trans = [re.sub(r"[^a-z0-9]", "", wt(w).lower()) for w in ws]
-    matched_idx = []; ei = 0
-    for j, t in enumerate(trans):
-        if ei < len(exp) and t == exp[ei]: matched_idx.append(j); ei += 1
-    ok = ei >= 0.8 * len(exp)
-    reason = "ok" if ok else f"missing ({ei}/{len(exp)}, {len(trans)}w)"
-    if ok and "chowchilla" in line.lower():
+    if not ws: return None, 0.0, "no speech"
+    exp = toks(line)
+    trans = [_canon(re.sub(r"[^a-z0-9]", "", wt(w).lower())) for w in ws]
+    ts = tight_span(exp, trans)
+    if ts is None: return None, 0.0, f"nomatch (0/{len(exp)}, {len(trans)}w)"
+    i, j, matched = ts
+    recall = matched / len(exp)
+    reason = "ok" if recall >= 0.8 else f"low ({matched}/{len(exp)}, {len(trans)}w)"
+    if "chowchilla" in line.lower():
         full = " ".join(wt(w).lower() for w in scribe(path).get("words", []))
-        if "chauch" in full or "chochil" in full: ok, reason = False, "Chowchilla mispron"
-        elif "chowchill" not in full: ok, reason = False, "Chowchilla unclear"
-    span = None
-    if matched_idx:
-        span = (max(0, ws[matched_idx[0]]["start"] - LEAD), ws[matched_idx[-1]]["end"] + TRAIL)
-    return span, ok, reason
+        if "chauch" in full or "chochil" in full: reason = "Chowchilla mispron"; recall = 0.0
+        elif "chowchill" not in full: reason = "Chowchilla unclear"; recall = 0.0
+    span = (max(0, ws[i]["start"] - LEAD), ws[j]["end"] + TRAIL)
+    return span, recall, reason
 
 def main():
     video = sys.argv[1]
     cfg = VIDEOS[video]; D = pathlib.Path(f"outputs/wp_series2/{video}")
     pieces, lines = [], []
     for idx, spk, line in cfg["turns"]:
-        path = D / f"t{idx:02d}_{spk}.mp4"; span = None
+        path = D / f"t{idx:02d}_{spk}.mp4"
+        best = None  # (recall, span, saved_take_path)
         for a in range(1, MAX + 1):
             if not path.exists():
                 subprocess.run([".venv/bin/python", "scripts/wp_series2_produce.py", video, str(idx)],
                                capture_output=True, env={**os.environ, "PYTHONPATH": "."})
-            if not path.exists(): print(f"{video} t{idx} GEN FAILED"); break
-            span, ok, reason = analyze(str(path), line)
-            print(f"{video} t{idx} a{a}: {reason}", flush=True)
-            if ok: break
-            path.unlink(missing_ok=True); span = None
-        if span is None: continue
+            if not path.exists(): print(f"{video} t{idx} a{a}: GEN FAILED", flush=True); continue
+            span, recall, reason = analyze(str(path), line)
+            print(f"{video} t{idx} a{a}: {reason} r={recall:.2f}", flush=True)
+            if span and (best is None or recall > best[0]):
+                take = D / f"_take{idx:02d}.mp4"; shutil.copy(str(path), str(take))
+                best = (recall, span, str(take))
+            if recall >= 0.8: break
+            path.unlink(missing_ok=True)          # reroll for a better take
+        if best is None: print(f"{video} t{idx} DROPPED"); continue
+        # keep the BEST take across attempts (never drop a present-but-imperfect beat)
+        recall, span, take = best
+        if not path.exists(): shutil.copy(take, str(path))
         s, e = span; p = str(D / f"_c{idx:02d}.mp4")
         subprocess.run(["ffmpeg","-y","-i",str(path),"-ss",str(round(s,2)),"-to",str(round(e,2)),
             "-vf","scale=720:1280,setsar=1,fps=30","-c:v","libx264","-preset","fast","-crf","20",

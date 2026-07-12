@@ -69,15 +69,19 @@ VIDEOS = {
 
 def prompt_for(spk, line):
     if spk == "I":
+        # interviewer = LEFT person -> looks SCREEN-RIGHT (toward the survivor)
         who = ("The woman holding the small podcast microphone speaks to the person she is interviewing "
-               "off to her right, warm, calm, everyday tone, gentle. Gaze off-camera to her right.")
+               "off to the RIGHT side of the frame, warm, calm, everyday tone, gentle. Gaze off-camera "
+               "to the RIGHT (screen-right).")
     elif spk == "C":
         who = ("The older woman holds the microphone in her own hand near her mouth and speaks STRAIGHT "
                "INTO the camera lens, directly to the viewer, heartfelt and steady, urging them. Gaze "
                "locked on the camera lens.")
     else:
-        who = ("The older woman speaks candidly to the interviewer off to her left, weathered, honest, "
-               "quietly emotional, measured. Gaze off-camera to her left.")
+        # survivor = RIGHT person -> looks SCREEN-LEFT (back toward the interviewer)
+        who = ("The older woman speaks candidly to the interviewer off to the LEFT side of the frame, "
+               "weathered, honest, quietly emotional, measured. Gaze off-camera to the LEFT "
+               "(screen-left).")
     pron = PRON if "Chowchilla" in line else ""
     return (
      "Vertical 9:16 candid street interview at a courthouse, locked static camera, single person in "

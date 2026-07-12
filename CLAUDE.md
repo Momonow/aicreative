@@ -1164,6 +1164,18 @@ The fix is cheap and identity-safe because gpt-image-2 i2i now holds identity (`
 
 **Rule of thumb: any change to WHERE a subject looks or HOW they're angled is an image-gen problem, not a video-prompt problem.** The starting frame is hard to nudge in-motion; a fresh gpt-image-2 anchor with the correct pose is faster and reliable. Reference: `scripts/wp_niceone_camlock.py` (regenerated into-lens closer anchor).
 
+### Shot-reverse-shot interview EYELINE — the two people MUST look in OPPOSITE screen directions (user-locked, 2026-07-12)
+
+For ANY solo shot-reverse-shot interview (interviewer clip cut against interviewee clip), the two anchors must have **opposite** gaze directions or the cut reads as two separate monologues, not a conversation (the classic 180°/eyeline-match rule). Lock this convention for the women's-prison interview series and reuse it:
+
+- **Interviewer = the LEFT person → looks SCREEN-RIGHT** (toward the interviewee, mic extended to the right). Anchor: `outputs/wp_interview2/reference/interviewer_mic.png`.
+- **Interviewee/survivor = the RIGHT person → looks SCREEN-LEFT** (back toward the interviewer, mic entering from the left). Anchor: `outputs/wp_interview2/reference/survivor_mic.png` (the Nice One survivor — correct reference).
+- **Closer (survivor delivers the CTA) = looks STRAIGHT INTO the lens** (direction-neutral) — see the GAZE/ANGLE section above.
+
+**"her left" / "his right" prompt wording is UNRELIABLE** — gpt-image-2 does not map speaker-relative left/right consistently (it rendered "looking to HER LEFT" as screen-RIGHT on the series-2 survivors, putting them the SAME way as the interviewer → broken eyeline). **Always specify SCREEN direction explicitly** in the image prompt: *"turned toward the LEFT edge of the frame, looking off-camera to the LEFT (screen-left)"*. Then VERIFY by eye on the actual anchor before generating any clips — tile interviewer + interviewee side by side and confirm the noses point at each other (one looks right, one looks left).
+
+To FIX an anchor that faces the wrong way, i2i it (identity held via `input_urls`) with a minimal prompt changing only the direction — do NOT hflip (mirrors any engraved building text / the mic LED). Reference: `scripts/wp_series2_eyeline_fix.py`. Fixing the anchor means **every clip from that anchor must be regenerated** — the wrong-eyeline clips can't be salvaged in post.
+
 ### Reverse-engineering a winning reference ad → new scripts (2026-05-25)
 When the user drops a high-performing ad and wants more like it: transcribe it (Scribe), extract its **beat structure** (the IL JDC winner had 9: hook/geo → qualifier (abuse + facilities) → payoff → kill-objection (no paperwork) → urgency → low-risk (no court/cost) → confidential → CTA → FOMO close), then replicate the structure with fresh, compliance-correct copy. Vary hook/facilities/close per variant. **Compliance rewrite is mandatory** — winning ads often say "owed compensation"/"money won for you"/"what's yours" (all imply a guaranteed payout); rewrite to "may qualify for significant compensation" / "Illinois is paying" (never "paid"/"owed"/"settlement").
 
