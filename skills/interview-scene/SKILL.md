@@ -93,8 +93,26 @@ Resolution: **2K default** (user pref; 4K for the establishing empty room is fin
    spines, no letters, same palette/light).
 5. **Composite the interviewer** into it (i2i, minimal, chest-up, 3/4, ALONE, looking toward the
    model-preferred side) → **flip** the result so the gaze opposes the subject.
-6. **Verify:** faces preserved · chest-up · iPhone look · opposite gazes · same-home continuity ·
-   no backwards text · no foreground blob. Surface via `SendUserFile` (render) for approval.
+6. **VERIFICATION PASS — mandatory GATE before any video (user-locked 2026-07).** Do NOT generate a
+   single interview clip until BOTH anchors pass. Run
+   `scripts/interview_anchor_verify.py <subject> <interviewer>` (stacks them with center-line +
+   eyeline guides) and confirm every item:
+   - **Gaze/facing:** subject looks screen-RIGHT, interviewer screen-LEFT — opposite, a real 3/4
+     turn, NOT frontal, NOT into-lens (except CTA). Both frontal = the "weird angle" that breaks
+     the two-camera illusion (caught on the Figured-It-Out build).
+   - **Looking-room:** each face sits on the OPPOSITE side of its gaze (subject left-of-center with
+     room on the right; interviewer right-of-center with room on the left). Centered/edge-jammed =
+     reads as looking at the camera, not each other.
+   - **Eyeline height** matches · **framing scale** (head size) matches · both eye-level · level horizon.
+   - **180° axis:** gazes converge (camera stays one side of the line between them).
+   - **Background:** same palette/decor, DIFFERENT walls of the SAME room (not identical, not two rooms).
+   - **Lighting:** consistent color temp / softness / exposure; coherent light direction.
+   - Also: faces preserved · chest-up · iPhone look · no backwards text · no foreground blob.
+   **i2i defaults to FRONTAL**, so the first composite is usually too straight-on — re-composite with
+   an explicit strong 3/4 turn + off-center placement, use the flip trick for the opposite side (over
+   a text-free backdrop), and re-run the pass until it's clean. Then surface via `SendUserFile`
+   (render) for approval. Every clip inherits the anchor's angle, so fixing it here is free and
+   fixing it later means re-generating the whole clip set.
 
 Reusable scripts (Depo build): `scripts/depo_interview_set_iphone.py` (room+composite iPhone),
 `scripts/depo_interview_facing.py` (opposite 3/4 gazes), `scripts/depo_doc_notext.py` (text-free
