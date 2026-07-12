@@ -3,7 +3,7 @@
 frame-right), Interviewer = the documentarian reused from The Insider (gaze frame-left, listeners
 reused). CTA into lens. Durations matched to word count. Em-dashes stripped. Skip-if-exists.
 """
-import sys, argparse, requests
+import sys, argparse, requests, concurrent.futures as cf
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 import kie_client as kie
@@ -65,7 +65,9 @@ def main():
     a = ap.parse_args()
     items = TALK + LISTEN
     if a.only: items = [x for x in items if x[0] in set(a.only.split(","))]
-    for it in items: gen(*it)
+    # clips are independent (all from the locked anchor, no last-frame chaining) -> run in parallel
+    with cf.ThreadPoolExecutor(max_workers=5) as ex:
+        list(ex.map(lambda it: gen(*it), items))
     print("ALL DONE")
 
 if __name__ == "__main__":
