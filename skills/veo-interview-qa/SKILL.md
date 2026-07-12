@@ -49,9 +49,14 @@ CLI: `.venv/bin/python scripts/veo_clip_qa.py clip.mp4 "the line" --pron Chowchi
   direction. **VERIFY by eye**: tile interviewer + interviewee, confirm noses point at each other,
   BEFORE generating any clip. Fixing an anchor ⇒ every clip from it must be regenerated.
 - **Closer / CTA** = survivor looks straight into the lens (regenerate that anchor, don't fight Veo).
-- **Provider fallback chain:** Poyo Veo 3.1 Fast ($0.10/clip) → KIE `veo3_fast` ($0.30) → free
-  google-flow Veo 3.1 Lite ($0, slow). Switch on `402 insufficient_credits` (Poyo) or a wider
-  outage. `WP_PROVIDER=poyo|kie|googleflow`. Free Lite is sloppier ⇒ lean harder on the QA gate.
+- **Provider chain (user-locked 2026-07-12): useapi FIRST, always.** We pay useapi's flat monthly
+  plan (~$250-300/mo) — consume it before spending per-clip credits. Veo → `googleflow_client`
+  (useapi google-flow, free Veo 3.1 Lite); Seedance/Kling/Runway → `useapi_client` (unlimited).
+  Escalate to **Poyo Veo Fast ($0.10/clip) → KIE `veo3_fast` ($0.30)** ONLY on useapi
+  compliance/moderation blocks, captcha errors, account/queue problems, or outages — and tell the
+  user before switching (credits get spent). `WP_PROVIDER=googleflow|poyo|kie`. Free Lite is
+  sloppier ⇒ this QA gate is mandatory, and adaptive duration matters more (Lite loves to fill
+  voids with improv/second voices).
 
 ## Parallel runs (multi-video)
 

@@ -67,12 +67,20 @@ is therefore required for any step that needs a transcript (dissect QA gate, cap
 
 ### Provider routing (per-model)
 
-User-set rule: **route each model to its cheapest reliable host**, not all through KIE.
+User-set rule (UPDATED 2026-07-12): **useapi.net is the FIRST option for all video generation.**
+We already pay useapi's flat monthly plan (~$250-300/mo) — its unlimited/free-tier capacity must be
+consumed before spending per-clip credits anywhere else. **Poyo and KIE are FALLBACKS only**, used
+when useapi hits a compliance/moderation block, captcha errors, account/queue problems, or an
+outage — not as a default. Concretely: Veo → useapi google-flow (`googleflow_client`, free Veo 3.1
+Lite) first; Seedance/Kling/Runway → useapi RunwayML wrapper (`useapi_client`, unlimited) first.
+Escalate to Poyo Veo Fast ($0.10/clip) or KIE ($0.30/clip) only for: useapi failures as above, or
+when the free Lite tier's quality genuinely can't hold the shot (e.g. 2-person identity) — say so
+in chat before switching so the user knows credits are being spent.
 
 | Model | Provider | Module | Cost | Notes |
 |---|---|---|---|---|
-| **Veo 3.1 Fast** | **Poyo** | `poyo_client.generate_veo` | **$0.10/clip** flat | Default Veo. See "Poyo gotchas". Fallback: `openrouter_video.generate_veo(model="google/veo-3.1-fast")`. |
-| **Veo 3.1 Lite (FREE)** | **useapi google-flow** | `googleflow_client.generate_veo` | **$0 — free, no credit** | **DEFAULT for Veo Lite.** Model `veo-3.1-lite-low-priority`, ultra-low-priority queue (SLOW but free). `startImage` i2v persona lock. `USEAPI_TOKEN`, EMAIL `flowmomomedia@gmail.com`. See `feedback_veo_lite_free_path` memory + `scripts/podcast_omni_produce.py`. |
+| **Veo 3.1 Fast** | **Poyo** | `poyo_client.generate_veo` | **$0.10/clip** flat | **FALLBACK tier** (not default — see useapi-first rule above). See "Poyo gotchas". Secondary fallback: `openrouter_video.generate_veo(model="google/veo-3.1-fast")`. |
+| **Veo 3.1 Lite (FREE)** | **useapi google-flow** | `googleflow_client.generate_veo` | **$0 — free, no credit** | **DEFAULT for ALL Veo work (useapi-first rule).** Model `veo-3.1-lite-low-priority`, ultra-low-priority queue (SLOW but free). `startImage` i2v persona lock. `USEAPI_TOKEN`, EMAIL `flowmomomedia@gmail.com`. Verified full 3-video interview series on it 2026-07-12 (wp_series2) — quality holds for talking-head UGC with the veo-interview-qa gate. See `feedback_veo_lite_free_path` memory + `scripts/podcast_omni_produce.py`. |
 | **Veo 3.1 Lite** | **OpenRouter** | `openrouter_video.generate_veo` | **$0.40/8s** (audio) | Paid fallback when the free queue is too slow. `OPENROUTER_ADCLI_KEY`. Not on Poyo. (KIE `veo3_lite` also paid — spends points, hourly cap.) |
 | **Seedance 2.0 Fast** | **useapi.net** | `useapi_client.generate_seedance` | **unlimited** (flat monthly) | Default for high volume. Set `USEAPI_EXPLORE=true`. |
 | **Seedance 2.0 Fast (480p)** | **OpenRouter** | `openrouter_video.generate_seedance` | **~$0.05/sec** (480p, token-based) | Pay-per-use fallback when useapi is down or the unlimited queue is too slow. `OPENROUTER_ADCLI_KEY`. Seedance is per-second, not per-clip. Do not confuse this with Runway; OpenRouter video API has Seedance/Kling/Veo/Sora/Wan, not Runway Gen-4. |
@@ -1395,7 +1403,7 @@ For AdSwipe analysis, tort/legal UGC scripts, women's-prison campaigns, CIW/CCWF
 - **Use `tts()` to "fix" voice quality on existing Veo clips** — it breaks lip-sync. Use `voice_changer()` instead.
 - **Use `openai_image.generate_image()` for GPT Image work** — as of 2026-05-20 GPT Image routes through `kie_client.generate_gpt_image` at 2K (OpenAI dropped — lower quality, caps at 1024×1536). Only use the OpenAI path if the user explicitly asks for it.
 - **Build image ads with a programmatic / PIL / `drawtext` text overlay** — user-locked (2026-06-23): EVERY static image ad is ONE full `kie_client.generate_gpt_image` render (model renders headline + text + layout + photo). Never composite the text in code; specify the exact on-image text in the prompt instead. Overrides the old "dense text → PIL/CAWP-F1" guidance. See "IMAGE ADS — ALWAYS full KIE gpt-image-2 render" in the GPT Image section.
-- **Use `kie_client.generate_veo` for Veo3 Fast** — route to Poyo (`poyo_client.generate_veo`) at $0.10/clip. KIE is $0.30/clip.
+- **Default video generation to Poyo or KIE** — user-locked 2026-07-12: **useapi first, always** (flat monthly already paid; Veo → google-flow free Lite, Seedance/Kling/Runway → useapi unlimited). Poyo ($0.10/clip Veo Fast) and KIE ($0.30/clip) are fallbacks for useapi compliance blocks, captcha errors, account/queue problems, or outages only — and if Poyo is used, never via KIE for Veo Fast (Poyo is the cheaper of the two fallbacks).
 - **Run >4 `dissect.py` instances in parallel** — transcription is now ElevenLabs Scribe (5-concurrent account cap, shared with TTS/voice_changer). Cap at ~4 with `xargs -P 4` to avoid 429s. (The old MAX-2 rule was about local Whisper memory, which no longer applies.)
 - **Burn captions onto deliverables by default** — user does captioning in post. Only burn when explicitly asked ("caption this", "with the disclaimer", "Submagic style").
 - **Use frozen frames, frame holds, deshake, or speed changes to hide cut-off words, silence, mic glitches, or bad gestures unless the user explicitly approves that exact post process.** The user finds these unnatural. Prefer re-trimming at original speed or re-rolling the bad clip.

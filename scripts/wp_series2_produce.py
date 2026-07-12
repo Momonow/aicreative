@@ -8,8 +8,9 @@ Usage: wp_series2_produce.py <video> [turn_idx]   video in {relationship, moved,
 import sys, os, pathlib, requests
 from kie_client import upload_file
 
-# Provider switch (Poyo out of credits -> default to the FREE google-flow Veo Lite path).
-# Override with WP_PROVIDER=poyo|kie|googleflow.
+# Provider switch — user-locked 2026-07-12: useapi FIRST (google-flow free Veo Lite; flat plan
+# already paid). Poyo/KIE are fallbacks for useapi compliance/captcha/outage problems only.
+# Override with WP_PROVIDER=googleflow|poyo|kie.
 PROVIDER = os.environ.get("WP_PROVIDER", "googleflow")
 
 REF2 = "outputs/wp_series2/reference"
