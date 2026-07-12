@@ -14,27 +14,39 @@ NUMS = {"11": "eleven", "31": "thirtyone", "2": "two", "6": "six", "eleven": "el
         "thirtyone": "thirtyone", "two": "two", "six": "six"}
 def _canon(tok):
     return NUMS.get(tok, tok)
+def _clean(t):
+    # strip ALL non-alphanumerics WITHIN a token (apostrophes, hyphens, periods) so both the
+    # expected line and the Scribe words tokenize identically ("didn't"->"didnt", not "didn"+"t").
+    return re.sub(r"[^a-z0-9]", "", t.lower())
 def toks(s):
-    raw = re.findall(r"[a-z0-9]+", s.lower().replace("-", ""))
-    return [_canon(t) for t in raw]
+    out = []
+    for t in s.split():
+        c = _canon(_clean(t))
+        if c: out.append(c)
+    return out
 def wt(w): return (w.get("text") or w.get("word") or "")
 
 def tight_span(exp, trans):
-    """Return (i,j,matched) for the TIGHTEST window in `trans` that contains `exp` as an ordered
-    subsequence (min j-i), so leading/mid/trailing improv is excluded. matched = words hit."""
-    best = None
-    for start in range(len(trans)):
-        if trans[start] != exp[0]:
-            continue
-        ei, j = 0, start
-        while j < len(trans) and ei < len(exp):
-            if trans[j] == exp[ei]:
-                ei += 1; last = j
-            j += 1
-        if ei > 0:
-            span_len = last - start
-            if best is None or ei > best[3] or (ei == best[3] and span_len < best[2] - best[1]):
-                best = (start, last, span_len, ei)
+    """Return (i,j,matched) for the window in `trans` best matching `exp` as an ordered subsequence,
+    trimming leading/mid/trailing improv. Tolerates a corrupted leading/trailing expected word by
+    allowing the match to begin a few expected-words in (Scribe sometimes garbles the first word,
+    e.g. 'Shame'->'deshame'). Picks max matched words, then tightest span."""
+    best = None  # (start, last, span_len, matched)
+    for off in range(0, min(3, len(exp))):          # tolerate up to 2 corrupted leading exp words
+        e0 = exp[off]
+        for start in range(len(trans)):
+            if trans[start] != e0:
+                continue
+            ei, j, last = off, start, start
+            while j < len(trans) and ei < len(exp):
+                if trans[j] == exp[ei]:
+                    ei += 1; last = j
+                j += 1
+            matched = ei - off
+            if matched > 0:
+                span_len = last - start
+                if best is None or matched > best[3] or (matched == best[3] and span_len < best[2]):
+                    best = (start, last, span_len, matched)
     if best is None:
         return None
     return best[0], best[1], best[3]
@@ -44,7 +56,7 @@ def analyze(path, line):
     ws = [w for w in res.get("words", []) if w.get("type") == "word"]
     if not ws: return None, 0.0, "no speech"
     exp = toks(line)
-    trans = [_canon(re.sub(r"[^a-z0-9]", "", wt(w).lower())) for w in ws]
+    trans = [_canon(_clean(wt(w))) for w in ws]
     ts = tight_span(exp, trans)
     if ts is None: return None, 0.0, f"nomatch (0/{len(exp)}, {len(trans)}w)"
     i, j, matched = ts
