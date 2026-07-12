@@ -5,9 +5,12 @@ Poyo Veo 3.1 Fast 8s, generation_type=frame (anchor twice). skip-if-exists.
 
 Usage: wp_series2_produce.py <video> [turn_idx]   video in {relationship, moved, kids}
 """
-import sys, pathlib, requests
+import sys, os, pathlib, requests
 from kie_client import upload_file
-from poyo_client import generate_veo
+
+# Provider switch (Poyo out of credits -> default to the FREE google-flow Veo Lite path).
+# Override with WP_PROVIDER=poyo|kie|googleflow.
+PROVIDER = os.environ.get("WP_PROVIDER", "googleflow")
 
 REF2 = "outputs/wp_series2/reference"
 IV = "outputs/wp_interview2/reference/interviewer_mic.png"     # recurring interviewer (looks right)
@@ -83,21 +86,35 @@ def prompt_for(spk, line):
      "DIALOGUE LOCK: English only, no filler, no 'um/uh', no extra or trailing words, stop after the "
      f"final word. SPOKEN DIALOGUE (verbatim): \"{line}\". No on-screen text, no captions.")
 
+def _gen(prompt, spk, local_path):
+    """Dispatch one i2v generation by provider. Returns {status,urls,raw}."""
+    if PROVIDER == "poyo":
+        from poyo_client import generate_veo
+        url = upload_file(local_path)
+        return generate_veo(prompt, image_urls=[url, url], aspect_ratio="9:16",
+                            resolution="720p", generation_type="frame")
+    if PROVIDER == "kie":
+        from kie_client import generate_veo as kie_veo
+        url = upload_file(local_path)
+        return kie_veo(prompt, image_urls=[url, url], model="veo3_fast",
+                       mode="IMAGE_2_VIDEO", aspect_ratio="9:16")
+    # googleflow (free Veo 3.1 Lite, startImage i2v) — takes a LOCAL path, auto-uploads
+    from googleflow_client import generate_veo as gf_veo
+    return gf_veo(prompt, image_path=local_path, duration=8, aspect_ratio="portrait")
+
 def _main():
     video = sys.argv[1]
     only = int(sys.argv[2]) if len(sys.argv) > 2 else None
     cfg = VIDEOS[video]
     OUT = pathlib.Path(f"outputs/wp_series2/{video}"); OUT.mkdir(parents=True, exist_ok=True)
-    iv_url = upload_file(IV); sv_url = upload_file(cfg["sv"]); cam_url = upload_file(cfg["cam"])
+    local = {"I": IV, "S": cfg["sv"], "C": cfg["cam"]}
     for idx, spk, line in cfg["turns"]:
         if only and idx != only: continue
         dst = OUT / f"t{idx:02d}_{spk}.mp4"
         if dst.exists(): print(f"[skip] {video} t{idx}"); continue
-        url = {"I": iv_url, "S": sv_url, "C": cam_url}[spk]
-        r = generate_veo(prompt_for(spk, line), image_urls=[url, url], aspect_ratio="9:16",
-                         resolution="720p", generation_type="frame")
+        r = _gen(prompt_for(spk, line), spk, local[spk])
         if r.get("urls"):
-            dst.write_bytes(requests.get(r["urls"][0], timeout=300).content); print(f"[done] {video} t{idx}")
+            dst.write_bytes(requests.get(r["urls"][0], timeout=600).content); print(f"[done] {video} t{idx}")
         else:
             print(f"[FAIL] {video} t{idx}", str(r.get("raw"))[:150])
     print(f"SERIES2 PRODUCE DONE {video}")
