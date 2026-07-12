@@ -78,6 +78,41 @@ a failed beat never silently drops:
 Running one `finalize` per video in parallel is fine for a few videos; for large batches prefer the
 explicit produce→QA→reroll→assemble phases so QA parallelism isn't gated by the slowest producer.
 
+## Trim & assembly gotchas (each shipped a bug once)
+
+- **Digit-eating trim:** Scribe reformats spoken numbers to digits ("a hundred and three"→"103"); a
+  leading-word subsequence match can start AFTER the digit and eat it from the cut. When the first
+  intended word is unmatched, back up over leading non-improv words before trimming.
+- **Don't over-trim:** ghost tails / silence gaps / repeated phrases between Veo chunks are common —
+  but do NOT trim a harmless leading article just to tighten a cut; only reroll when a meaningful
+  word is cut or repeated.
+- **Watermark crop:** free google-flow / Veo Lite bakes a bottom-right "Veo" watermark. Fix with a
+  ratio-preserving center-crop on the ASSEMBLED master (e.g. crop 675:1200 → scale 720:1280,
+  uniform axis scale, NEVER stretch), before captions.
+- **Never crop a captioned combo** to a new aspect — re-burn captions from the clean master (see
+  feed-4x5 skill).
+
+## Visual QA extras (beyond the 7 audio/transcript checks)
+
+- **OCR false-positives:** patterned wardrobe (floral/plaid/knit) false-flags as burned-in text —
+  eyeball every OCR flag on a band-sheet before rerolling; don't auto-trust the flag.
+- **Phantom motion in "static" shots** (parked car, idle machines): prompt lock alone is
+  insufficient — generate 2 takes and auto-pick the one with least frame-diff in the motion region.
+  Background-motion QA needs DENSE sampling (fps=6 tile grid over the whole clip), not spot frames.
+- **Gesture/finger-count shots:** Veo can start with the wrong finger count; reroll from a seed
+  frame with the hand DOWN/out of frame — never reseed from a frame already showing the wrong hand.
+
+## Prompt-shape rules that prevent rerolls (write scripts this way BEFORE generating)
+
+- **No em-dash / trailing colon in any spoken line** — Veo completes the thought with improv or an
+  invented name. Closed sentences only (periods/commas).
+- **Never join two proper nouns with "and"** — "Chowchilla and Chino" rendered as "Chowchilla in
+  Chino" (conflated facilities). Use "or" or restructure the sentence.
+- **Pronunciation wins are duration-sensitive** — a respell/lock that passes at 4s can drift at
+  10s+. Retest the proper noun at the real clip duration, not just the short test.
+- **Rhyme-anchor for stubborn short words** — "qualify" → `KWAH-luh-fy, rhyming with fly`; "Nah" →
+  "rhymes with spa". Generalize: anchor the vowel to a common word.
+
 ## Do / Do-not
 
 - **DO** run `veo_clip_qa` on every clip before assembly, and again on the finished video.

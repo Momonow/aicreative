@@ -1,5 +1,10 @@
 # Depo-Provera image ads — FB primary text + headline (per creative)
 
+> ⚠️ **PARTIALLY SUPERSEDED (2026-07-12 audit).** A later user-LOCKED rule in
+> `depo_provera_ad_formats.md` REVERSES the disclaimer-lingo guidance below: **NO "Attorney
+> Advertising" / "Dramatization" text in FB primary or headline copy.** Every primary text in this
+> deck still carries those footers — strip them before reusing any copy from this file.
+
 Matches `outputs/depo_ads/final/`. Angle = diagnosis-first (meningioma/brain tumor leads, Depo is
 the link). Phrase locked: "may qualify for significant compensation." Each primary text carries
 "Attorney Advertising" (+ "Dramatization" where a persona is depicted). Recurring beats paraphrased

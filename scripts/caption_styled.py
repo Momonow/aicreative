@@ -50,6 +50,7 @@ SUBSTITUTIONS = {
     "NIHA": "MIJA",
     "MI-HA": "MIJA",
     "MEE-HAH": "MIJA",
+    "FALSUM": "FOLSOM",
 }
 
 DEFAULT_DISCLAIMER = (

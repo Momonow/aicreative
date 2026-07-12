@@ -62,6 +62,8 @@ For the aicreative women's-prison ad pipeline:
 
 The `yellow-text-sub` skill (sister to this one) handles caption rendering and auto-adjusts caption Y position based on the new aspect (lands below chin regardless of crop).
 
+**NEVER crop an already-captioned combo file to a new aspect** (user-locked, CAWP 2026-06). Cropping a captioned video clips or mis-positions the burned text. Always go back to the CLEAN master, crop that to the new aspect, then re-burn captions (and disclaimer) on the cropped file — the caption tools position correctly per aspect.
+
 ## Output dimensions
 
 | Source | After cropdetect | After 4:5 crop |
