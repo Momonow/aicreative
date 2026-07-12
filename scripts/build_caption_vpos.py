@@ -19,9 +19,15 @@ def main():
     a = ap.parse_args()
     mod = importlib.import_module(f"{a.which}_assemble")
     BEATS, BB, INTRO, S = mod.BEATS, mod.BEAT_BROLL, mod.BROLL_INTRO, mod.S
+    def seg_path(idx):
+        if idx in BB:                       # b-roll beat: naming is beat_ or bbeat_ across scripts
+            for pre in ("beat_", "bbeat_"):
+                p = S / f"{pre}{idx}_stack.mp4"
+                if p.exists(): return p
+        return S / f"seg_{idx:02d}.mp4"
     ranges, t = [], 0.0
     for idx, (talk, persona, listener, line) in enumerate(BEATS):
-        seg = S / (f"beat_{idx}_stack.mp4" if idx in BB else f"seg_{idx:02d}.mp4")
+        seg = seg_path(idx)
         d = dur(seg)
         if idx in BB:                      # b-roll beat: 2s two-pane intro, then full-frame tail
             ranges.append([round(t + INTRO, 2), round(t + d, 2), a.full_vpos])
