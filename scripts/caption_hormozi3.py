@@ -652,7 +652,7 @@ def find_boring_window(video, length=6.0, edge=4.0):
 
 
 def burn(video, cards, work_dir, out, fontsize_ratio, vertical_pos, use_emoji, max_lines=3,
-         disc_text=None, disc_start=0.0, disc_end=0.0, emoji_plan=None):
+         disc_text=None, disc_start=0.0, disc_end=0.0, emoji_plan=None, vpos_map=None):
     """Pre-composite the whole caption track (text + animated emoji w/ motion) to a PNG
     sequence, then overlay it in ONE ffmpeg pass (fast regardless of card count)."""
     import shutil
@@ -700,7 +700,13 @@ def burn(video, cards, work_dir, out, fontsize_ratio, vertical_pos, use_emoji, m
     last_emoji = None   # last PLACED glyph — never repeat it back-to-back
     for ci, card in enumerate(cards):
         accent = ACCENTS[ci % len(ACCENTS)]
-        lay = compute_layout(card["words"], width, height, fontsize_ratio, vertical_pos, max_lines,
+        # per-card vertical position: layout-aware (seam during two-pane, bottom during full-frame)
+        vp = vertical_pos
+        if vpos_map:
+            tc = (card["start"] + card.get("end", card["start"])) / 2.0
+            for a, b, v in vpos_map:
+                if a <= tc < b: vp = v; break
+        lay = compute_layout(card["words"], width, height, fontsize_ratio, vp, max_lines,
                              force_lines=card.get("n_lines"))
         cap = int(lay["fontsize"] * 0.72)
         d0, d1 = card["start"], disp_end[ci]
@@ -848,6 +854,9 @@ def main():
     ap.add_argument("--disclaimer-start", type=float, default=None,
                     help="force disclaimer start (sec). Default: auto-detect calmest window.")
     ap.add_argument("--end", type=float, default=None)
+    ap.add_argument("--vpos-map", default=None,
+                    help="JSON [[start,end,vpos],...] — per-time-range vertical position "
+                         "(layout-aware: seam during two-pane, bottom during full-frame).")
     args = ap.parse_args()
     if args.emoji_gap is not None:
         global EMOJI_MIN_GAP
@@ -901,10 +910,14 @@ def main():
                           for e in inv.get("emojis", inv)]
             print(f"      emoji plan: {len(emoji_plan)} Submagic emojis to place", flush=True)
         print("[4/4] render + burn", flush=True)
+        vpos_map = None
+        if args.vpos_map:
+            vpos_map = [tuple(x) for x in json.load(open(args.vpos_map))]
+            print(f"      vpos-map: {len(vpos_map)} ranges (layout-aware positioning)", flush=True)
         burn(video, cards, td, out, args.font_ratio, args.vertical_pos,
              use_emoji=not args.no_emoji, max_lines=args.max_lines,
              disc_text=disc_text, disc_start=disc_start or 0.0, disc_end=disc_end or 0.0,
-             emoji_plan=emoji_plan)
+             emoji_plan=emoji_plan, vpos_map=vpos_map)
     print(f"\nDONE → {out}", flush=True)
 
 
