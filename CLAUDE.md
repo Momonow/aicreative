@@ -1153,6 +1153,17 @@ Two distinct talking-head registers, and the **gaze must match the register** or
 - **Announcer** (direct-response, addressing the audience — "Listen up, Illinois"): GAZE = **directly into the lens**. Set `GAZE: talking DIRECTLY INTO the camera lens, addressing the viewer` in the i2v prompt.
 Putting a hype direct-response read into a "confession" visual (off-camera gaze) breaks the candid illusion and reads as an ad. Reference: `scripts/jdc_pod_winner_gen.py` (announcer) vs the confession podcasts.
 
+### GAZE/ANGLE is baked into the ANCHOR — regen the image, don't fight Veo (user-locked, 2026-07-12)
+
+**When you need a character's speaking angle or gaze to CHANGE (off-camera → into-lens, profile → front, looking-left → looking-right), REGENERATE the anchor image in gpt-image-2 with the new gaze in the prompt. Do NOT try to make Veo swing the gaze from an existing anchor.** Veo animates whatever gaze/head-angle the first-frame anchor already has and will only drift it slightly around that pose — it cannot rotate an off-axis subject to lock onto the lens. An anchor whose eyes are even slightly off-axis (looking to one side / down) produces a clip where the subject is clearly NOT looking at the viewer, and no i2v prompt wording ("looking STRAIGHT INTO the lens") overrides the image. This bit the women's-prison "Nice One" closer: the survivor's direct-to-camera CTA anchor (`survivor_cam_b.png`) had a slightly off-axis gaze → the clip read as "not looking at the camera" despite an into-lens prompt.
+
+The fix is cheap and identity-safe because gpt-image-2 i2i now holds identity (`input_urls` + minimal prompt — see the i2i identity section):
+- Feed the EXISTING anchor as `input_urls=[current_anchor]` (keeps the exact face, hair, wardrobe, mic, background).
+- Keep the prompt MINIMAL and describe ONLY the pose/gaze change, never the person: *"this exact woman, facing the camera straight on, both eyes locked directly on the camera lens, looking right down the barrel of the lens at the viewer, holding the small podcast microphone near her mouth, same courthouse-steps background."*
+- Then re-run the clip from the NEW anchor. Same rule for interviewer/reverse-shot angles: bake the look-direction (screen-left vs screen-right vs into-lens) into each anchor at image-gen time, not at video time.
+
+**Rule of thumb: any change to WHERE a subject looks or HOW they're angled is an image-gen problem, not a video-prompt problem.** The starting frame is hard to nudge in-motion; a fresh gpt-image-2 anchor with the correct pose is faster and reliable. Reference: `scripts/wp_niceone_camlock.py` (regenerated into-lens closer anchor).
+
 ### Reverse-engineering a winning reference ad → new scripts (2026-05-25)
 When the user drops a high-performing ad and wants more like it: transcribe it (Scribe), extract its **beat structure** (the IL JDC winner had 9: hook/geo → qualifier (abuse + facilities) → payoff → kill-objection (no paperwork) → urgency → low-risk (no court/cost) → confidential → CTA → FOMO close), then replicate the structure with fresh, compliance-correct copy. Vary hook/facilities/close per variant. **Compliance rewrite is mandatory** — winning ads often say "owed compensation"/"money won for you"/"what's yours" (all imply a guaranteed payout); rewrite to "may qualify for significant compensation" / "Illinois is paying" (never "paid"/"owed"/"settlement").
 

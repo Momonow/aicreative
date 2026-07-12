@@ -9,7 +9,7 @@ from poyo_client import generate_veo
 OUT = pathlib.Path("outputs/wp_interview2/niceone"); OUT.mkdir(parents=True, exist_ok=True)
 IV = "outputs/wp_interview2/reference/interviewer_mic.png"    # interviewer (looks right, matched mic)
 SV = "outputs/wp_interview2/reference/survivor_mic.png"       # survivor (looks left, matched mic)
-SV_CAM = "outputs/wp_interview2/reference/survivor_cam_b.png" # survivor holds mic, looks INTO camera (closer)
+SV_CAM = "outputs/wp_interview2/reference/survivor_cam_lock.png" # survivor holds mic, eyes LOCKED on lens (closer)
 PRON = ("PRONUNCIATION: 'Chowchilla' = three English syllables chow (rhymes with cow) + chill + uh, "
         "stress the middle syllable, one fluid word, never Spanish. ")
 
