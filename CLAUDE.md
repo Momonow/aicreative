@@ -1307,15 +1307,54 @@ The connection is already wired — **never ask the user to paste the key or how
 - **Confirmation:** ALWAYS get explicit user confirmation before any **paid / launch / delete / pause** call (launch spends real money). Read-only GETs (`list_*`, `get_*`, `/fb/graph-read`, `/launches/validate`) are safe to call freely — validate does NOT spend.
 - **Meta launch discovery flow (read-only, no spend):** resolve Page via `connection_id` + `ad_account_id` (`/fb/pages` or `list_fb_pages`), find the campaign/adset ids (`/fb/graph-read` on the adset id returns its full config), then **`POST /launches/validate`** to check the body before `POST /launches`. See the launch gotchas below.
 
-### Launch via adset duplication — `POST /launches` field shape (verified 2026-07-12)
+### Launch via adset duplication — THREE endpoints, don't confuse them (verified 2026-07-12, corrected 2026-07-15)
 
-To launch ads into a **new adset duplicated from an existing one** (the Bad Luck → adset "42" from "41" case), the validated body shape is:
-- `ad_set_mode: "duplicate"` (allowed: `duplicate` | `existing` | `new` | `bulk`; NOT `"create"`), plus `source_adset_id` (the FB numeric adset id to clone) and `use_create_from_source: true`.
-- **`new_adset_params` must carry the FULL adset shape even in duplicate mode** — the validator requires `name`, a budget, `billing_event`, `optimization_goal`, `bid_strategy`, and `targeting`. Pull them from the source adset via `/fb/graph-read` (fields `name,daily_budget,billing_event,optimization_goal,bid_strategy,targeting,promoted_object,attribution_spec`) and mirror them, overriding only `name` + budget.
-- **`new_adset_params.daily_budget` is in DOLLARS** (validator caps it **$1–$300**) — even though the raw FB adset stores cents (`40000` = $400). Pass `100` for $100/day, NOT `10000`.
-- **Validator-supported targeting subset** (source adsets may carry more that the launch validator rejects): `publisher_platforms` may NOT include `threads`; `facebook_positions` must exclude `biz_disco_feed, facebook_reels_overlay, profile_feed, notification`; `instagram_positions` must exclude `explore_home`; `attribution_spec` entries must all be `CLICK_THROUGH` (drop `VIEW_THROUGH` / `ENGAGED_VIDEO_VIEW`).
-- **UTM: do NOT hardcode / override `utm_template`.** The API/MCP default applies the `{{ }}` template (incl. `am_mb={{media_buyer_code}}`) — Meta fills the placeholders. Only set `landing_url` (the base HTTPS URL).
-- Reusable gated script: **`scripts/depo_launch_badluck.py`** (validate-only by default; `--go` to launch). Iterate validation with `POST /launches/validate` until `passed: true` before any real launch.
+Launching the Depo Bad Luck / Insider / Figured ads into new adsets 42/43/44 (duplicated from
+adset "41") taught the real endpoint map. **`/launches/validate` and the real launch use DIFFERENT
+body shapes and DIFFERENT endpoints — the validate body is NOT what you POST to launch.**
+
+| Goal | Endpoint | Body shape |
+|---|---|---|
+| **Pre-flight check** (no spend) | `POST /launches/validate` | `ad_set_mode: "duplicate"` + `new_adset_params` (full adset shape) + `ad_ids`. Validate-only. |
+| **Launch into NEW duplicated adset(s)** | **`POST /launches/bulk`** | `ad_grouping` (list of ad-id GROUPS — each group → ONE new adset) + `source_adset_id` + `adset_names` + `budgets`/`daily_budget` + `confirm:true`. **NO `ad_set_mode`, NO `new_adset_params`.** |
+| **Launch ONE ad into an EXISTING adset** (retry a failed ad) | `POST /launches` | `ad_id` + `adset_id` (must already exist + be PAUSED) + `confirm:true`. **Single ad only** — NOT `ad_grouping`/`ad_set_mode`. |
+
+**The `use_create_from_source: true` trap — OMIT it.** In `/launches/bulk`, `use_create_from_source:true`
+takes the "create ad sets from source targeting" path (for grandfathered placements) and it
+**STALLS — the launch-run is created but the worker never drains it** (status stuck `running`, empty
+`/launch-runs/{id}/events`, "No console entries", 0/N progress for 10+ min). All three of our first
+attempts hung this way regardless of mode. **Omit `use_create_from_source`** → the worker uses Meta's
+native `POST {adset}/copies` duplicate (the same fast "Duplicate" mode the web wizard uses) and it
+completes in ~1 min. If you hand-supply `new_adset_params` targeting you also have to trim
+validator-rejected values (`threads`, `biz_disco_feed`, `explore_home`, non-CLICK_THROUGH
+attribution) — native `/copies` copies the source adset as-is and skips all that, so it's simpler too.
+
+**Async — a POST timeout is NOT a launch failure.** Both `/launches/bulk` and `/launches` return
+AFTER the launch worker runs, which often exceeds the HTTP read timeout → you get a client
+`ReadTimeout` or an API `"[INTERNAL] Launch worker timed out before returning a result"`. **The run
+still completes server-side.** NEVER blind-retry on a timeout — first check `/launch-runs` (match on
+`campaign_id` + `ad_count`) and the adset's actual ad list (`/fb/graph-read` on `{adset}/ads`). A
+stable `Idempotency-Key` dedups within 24h, but verify-first is the rule (our "timed-out"
+`insider_cut` had actually launched — a blind retry would have doubled it).
+
+**Meta code 6000 / subcode 1363048 = transient video chunk-upload glitch.** ("Error Uploading Video…
+try again with another file.") It hit 3 of our 4 ads in one bulk run while a 4th identical-format
+video uploaded fine → it's Meta-side flakiness, not a bad file. The run result says *"Retry only this
+failed ad; successful ads were kept."* Fix: re-launch ONLY the failed ad_id into its **existing**
+adset via `POST /launches` (single). Don't re-duplicate (that makes a new adset).
+
+**Reading a multi-group bulk run:** the top-level `/launch-runs` record shows `adset_name=None` and an
+aggregate `success_count/ad_count` (e.g. 1/4) — the per-adset / per-ad detail (which succeeded, each
+`fb_ad_id`, each `adset_id`) is in **`result.output.results[]`**. `success=2/2` on a single-group run
+DOES populate `adset_name`/`adset_id`.
+
+**Everything-else details (still true):**
+- **`daily_budget` is in DOLLARS** (validator caps **$1–$300**; per-adset `budgets:[100,100]` array also dollars) — even though the raw FB adset stores cents (`40000` = $400). Pass `100` for $100/day.
+- **`confirm:true` is required** on `POST /launches`, `POST /launches/bulk`, and `POST /launch-runs/{id}/cancel` — omitting it 422s "requires confirm: true".
+- **UTM: do NOT override `utm_template`.** The API default applies the `{{ }}` template (incl. `am_mb={{media_buyer_code}}`); only set `landing_url` (base HTTPS URL).
+- **Launched ads land under a PAUSED adset for you to flip ACTIVE in Meta** — but this was inconsistent: adset 42 came back ACTIVE while 43/44 came back PAUSED. Always CHECK the resulting adset status; don't assume PAUSED.
+- Discovery is read-only/no-spend: `/fb/graph-read` on `{campaign}/adsets` and `{adset}/ads` to inspect; `/launch-runs` + `/launch-runs/{id}/events` to monitor an async launch.
+- Reusable gated script: **`scripts/depo_launch_badluck.py`** — validate-only by default, `--go` to launch; uses `/launches/bulk` native duplicate (no `use_create_from_source`).
 
 ### Python client + push script (the automation)
 
@@ -1352,7 +1391,7 @@ To launch ads into a **new adset duplicated from an existing one** (the Bad Luck
 
 ### MCP server (interactive — v1.3.0, ~143 tools)
 
-The AdMachin MCP server is distributed as the private GitHub Packages npm package `@harrymomomedia/admachin-mcp-server`. Consumer repos like this one should use that installed MCP runtime, not paths into the AdMachin builder checkout. On Harry's Mac, the local runtime is `/Users/harry/admachin-mcp/dist/index.js`, registered with Claude Code at **user scope**. As of **v1.3.0 (~143 tools)** it exposes — beyond upload/copy/assemble — **FB-object creation + launch** (`create_fb_campaign`, `create_fb_adset`, `bulk_launch_ads`, `launch_ad`, `validate_launch`), **FB reads** (`get_fb_insights`, `get_fb_account_performance_export`, `get_fb_graph_read`, `get_fb_ad_full_details`, `list_fb_ad_accounts/campaigns/adsets/pages/pixels/cta_types`), **renames** (`rename_fb_adset/ad/campaign`), swipe/AdSwipe tools (`export_swipe_creatives_for_agent`, `list/get_swipe_creative`), and launch-run/preset tools. **Still NO delete/activate for FB objects** (deletion + flipping ACTIVE stay Meta-UI-only by design; launch always lands PAUSED). **MCP config is read on cold start — restart Claude Code to load a NEW version's tools; to drive the freshly-built server WITHOUT restarting, use `scripts/admachin_mcp_stdio.py`.** Build/upgrade path + all the launch gotchas (CBO vs ABO, placement-coupling → `use_create_from_source`, verify-before-launch) live in memory `project_admachin_publish_automation`.
+The AdMachin MCP server is distributed as the private GitHub Packages npm package `@harrymomomedia/admachin-mcp-server`. Consumer repos like this one should use that installed MCP runtime, not paths into the AdMachin builder checkout. On Harry's Mac, the local runtime is `/Users/harry/admachin-mcp/dist/index.js`, registered with Claude Code at **user scope**. As of **v1.3.0 (~143 tools)** it exposes — beyond upload/copy/assemble — **FB-object creation + launch** (`create_fb_campaign`, `create_fb_adset`, `bulk_launch_ads`, `launch_ad`, `validate_launch`), **FB reads** (`get_fb_insights`, `get_fb_account_performance_export`, `get_fb_graph_read`, `get_fb_ad_full_details`, `list_fb_ad_accounts/campaigns/adsets/pages/pixels/cta_types`), **renames** (`rename_fb_adset/ad/campaign`), swipe/AdSwipe tools (`export_swipe_creatives_for_agent`, `list/get_swipe_creative`), and launch-run/preset tools. **Still NO delete/activate for FB objects** (deletion + flipping ACTIVE stay Meta-UI-only by design; launch always lands PAUSED). **MCP config is read on cold start — restart Claude Code to load a NEW version's tools; to drive the freshly-built server WITHOUT restarting, use `scripts/admachin_mcp_stdio.py`.** Build/upgrade path + all the launch gotchas (CBO vs ABO, placement-coupling, verify-before-launch) live in memory `project_admachin_publish_automation`. **Caveat (2026-07-15): via the REST API, `use_create_from_source:true` STALLS the launch worker — omit it for a working native `/copies` duplicate. See "Launch via adset duplication".**
 
 ### MCP capabilities/limits (updated 2026-07)
 
@@ -1445,6 +1484,9 @@ For AdSwipe analysis, tort/legal UGC scripts, women's-prison campaigns, CIW/CCWF
 - **Use Veo 3.1 Quality (`veo3`) on KIE** — HARD RULE: NEVER. Always start with Veo 3.1 Lite (`veo3_lite`). Only fall back to Veo 3.1 Fast (`veo3_fast`) after 2-3 Lite failures on the same prompt for the same failure mode. If Fast also fails, stop and escalate to the user — do NOT use Quality. Memory: `feedback_veo_tier_routing.md`.
 - **Call `admachin_client.launch_ad` / `POST /launches` without the `--launch` gate** — launching SPENDS REAL MONEY on Facebook. Always go through `scripts/admachin_push.py`; launch is gated behind `--launch` + confirmation (`type LAUNCH`, or `--yes` for automation). No TTY and no `--yes` = refuse, never silently spend. See "Publishing to AdMachin".
 - **Commit the `ADMACHIN_PAT` or `admachin_targets/`** — the PAT lives in gitignored `.env` (+ `~/.claude.json` for MCP); the per-campaign FB targeting configs are gitignored. Never hardcode the PAT or paste it into a tracked file.
+- **Set `use_create_from_source: true` on a `/launches/bulk` duplicate** — it takes the "create from source targeting" path and STALLS (worker never drains the run; stuck `running`, empty events, 0/N for 10+ min). OMIT it → Meta native `/copies` duplicate completes in ~1 min. See "Launch via adset duplication".
+- **Duplicate an adset via `POST /launches` (single) or the validate body's `ad_set_mode`/`new_adset_params` shape** — that shape is validate-ONLY. Real duplicate-launch goes through **`POST /launches/bulk`** with `ad_grouping` (each ad-id group → one new adset). `POST /launches` (single) is ONLY for one ad into an EXISTING adset (failed-ad retry).
+- **Blind-retry an AdMachin launch on a POST timeout** — `ReadTimeout` / `"Launch worker timed out before returning a result"` is NOT a failure; the run finishes server-side. VERIFY via `/launch-runs` + `/fb/graph-read` on `{adset}/ads` first (a "timed-out" ad often actually launched — retrying doubles it). Meta code 6000 / subcode 1363048 is a transient video-upload glitch → retry ONLY that ad into its existing adset. See "Launch via adset duplication".
 - **Create AdMachin copy rows or assemble ads before the user has approved the FULL text verbatim in chat** — a template walkthrough or hook-list pick is not approval. Present every headline + primary final-form first. See "Copy approval gate".
 - **Verify background stillness from a single frame** — door swings/drum spins are events in time; use the `fps=6` dense tile grid over the whole clip. See "Background stillness".
 - **Give a video clip more duration than its dialogue fills** (~2.4wps; ≤10 words → 4s) — Veo fills the void with invented, potentially defamatory monologue. See "Underfilled clips".
