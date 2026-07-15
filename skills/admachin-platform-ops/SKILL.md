@@ -82,6 +82,24 @@ https://<campaign>.justicecovered.com/?utm_source={{site_source_name}}&utm_mediu
   wrong adset can't be edited or deleted via API — fix by creating a correct one and deleting the
   wrong one in Meta UI.
 
+## Cloud REST vs MCP — DECISION RULE
+
+**For a faithful adset DUPLICATE, launch from the AdMachin MCP server (runs on the Mac) — its
+`use_create_from_source` natively clones the source adset exactly (all placements incl. Threads,
+Audience Network off, attribution, everything).** The cloud REST path has NO native copy and its
+create-endpoint allowlist is outdated (rejects `threads`/`biz_disco_feed`/`facebook_reels_overlay`/
+`profile_feed`/`notification`/`explore_home`/`ig_search`), so a cloud reconstruction only reproduces
+~11 of a typical ~19-placement source and CANNOT match "all placements except Audience Network".
+Use cloud REST only when the MCP isn't available, and tell the user the placement set will differ.
+
+## Transient errors
+
+- **Meta code 6000 / subcode 1363048 "problem uploading your video"** on `/launches` is TRANSIENT —
+  an idempotent retry clears it (bump the launch idem-key version to force a fresh Meta upload).
+  Don't treat it as a real failure; successful ads in the same run are kept.
+- **API gateway serves the SPA (HTML) on a 200** intermittently — retry the request until the
+  content-type is JSON (see `_req` in `scripts/wp_launch_adsets.py`).
+
 ## Launch & post-launch
 
 - **Launched ads are IMMUTABLE.** Wrong copy on a live ad → CREATE ONE MORE ad (new draft), never
