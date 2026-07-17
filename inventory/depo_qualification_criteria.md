@@ -101,48 +101,58 @@ That is the root cause of "client does not recall": nobody ever asked.
 
 ---
 
-# REDESIGNED FUNNEL — LEAN (user-locked 2026-07-09)
+# THE PLAN — ADDITIVE ONLY (user-locked 2026-07-09)
 
-**This is a MARKETING funnel, not a legal intake. Volume is the goal. Do not tank conversion.**
+**Two hard constraints from the user:**
+1. **This is a MARKETING funnel, not a legal intake. Volume is the goal.** **NEVER ask doctor name /
+   hospital / pharmacy in the funnel** — typing + memory questions are where a form bleeds leads, and
+   **our agents ask them on the call**. *That is also the answer to MTM's "capture it at intake
+   level": **the agents ARE the intake.*** No post-capture enrichment step either — rejected as still
+   too long.
+2. **DO NOT touch the existing questions — UTM + pixel are tied to their conditions.** Reordering,
+   rewording or re-optioning a tracked step breaks the pixel conditions and resets FB's learning on
+   the conversion event. **Everything below is ADDED manually; nothing existing is edited.**
 
-**DIVISION OF LABOUR (user-locked): the FORM qualifies. The AGENTS collect the record data.**
-**NEVER ask doctor name / hospital / pharmacy in the funnel** — those are typing + memory questions,
-they are where a form bleeds leads, and our agents ask them on the call anyway. *That is also the
-answer to MTM's "capture it at intake level": **the agents ARE the intake.*** The form's only job is
-max leads + the qualification facts that cost a single tap.
+## The trick: you don't fix the broken Q3 — you NEUTRALIZE it by adding a shot count
 
-**Rules the form obeys:** taps only, never typing · never name the drug in a yes/no · never label the
-losing option · never put the qualifying threshold at the floor of a list · **mirror the ad's order —
-brain meningioma FIRST** (they self-identified from the ad, so it's an instant "that's me" and builds
-momentum), the Depo relation second.
+The live duration question is structurally forced (its floor IS the qualifying minimum), so it will
+keep returning "1 year" from everyone. **Leave it.** Add a shot-count question next to it and it
+becomes harmless: **qualify on the shot count, ignore Q3's answer.** The bad data stays, the pixel
+stays, the truth arrives alongside it.
 
-## The form — 5 taps, then contact
+## What to ADD, in priority order
 
-**Q1 — the hook (matches the ad). "What were you (or your loved one) diagnosed with?"**
-Brain meningioma · Another kind of brain tumor · Glioma / glioblastoma · Acoustic neuroma ·
-Pituitary tumor · Something else · Not diagnosed with anything
-→ Real conditions mixed in, **no "(you do not qualify)" label on anything**. Meningioma stops being
-the obvious pick at zero conversion cost.
+**ADD #1 — "About how many shots in total?"** 1 · 2 · 3 · 4–6 · 7–12 · 13–20 · More than 20 · Not sure
+→ **The single highest-value add.** MTM's real line is **4+ shots**; 4 sits **mid-list**, never at the
+floor, so it can't be gamed by elimination the way the live Q3 can. This alone converts the funnel
+from "manufactures unqualified leads" to "qualifies."
 
-**Q2 — "What year were you diagnosed?"** dropdown **1985 → 2026**
-→ Criterion 3 (dx 1992+) and the sequence check (dx after use). The wide range hides the cut-off.
+**ADD #2 — "When were you getting the Depo shot?"** ONE screen, two dropdowns: **first year** /
+**last year** (**1985 → 2026**, + *"Still getting them"*)
+→ The **1992–2019 usage window**, which is currently invisible. Also cross-checks duration.
 
-**Q3 — "When were you getting the Depo shot?"** ONE screen, two dropdowns: **first year** / **last
-year** (**1985 → 2026**, + *"Still getting them"*)
-→ Duration AND the 1992–2019 window both fall out of this, and no option advertises a threshold.
-**This replaces the broken live Q3.**
+**ADD #3 — "What year were you diagnosed?"** dropdown **1985 → 2026**
+→ Criterion 3 (dx 1992+) + the sequence check (dx AFTER use). **Lowest value — cut this first if the
+funnel feels long.** Pre-1992 diagnoses are vanishingly rare and an agent can confirm the date.
 
-**Q4 — "About how many shots in total?"** 1 · 2 · 3 · 4–6 · 7–12 · 13–20 · More than 20 · Not sure
-→ The most precise qualifier we can get in one tap (MTM's real line is **4+ shots**, and dates alone
-miss "2 shots spread over 2 years"). 4 sits **mid-list**, never at the floor.
+## WHERE to insert (matters — don't shift tracked steps)
 
-**Q5 — "Currently represented by an attorney for this matter?"** Yes/No *(unchanged from live)*
+**Safest: APPEND all new questions at the TAIL — after the attorney question, immediately before the
+contact form.** Every existing step keeps its position, its index, and its conditions. Nothing that
+the pixel or UTM logic keys on moves.
+- **If the platform keys conditions on question ID (not step index)**, ADD #1 can instead sit right
+  after the live duration question, where it reads more naturally. **Confirm which before inserting
+  mid-funnel** — if it keys on index, a mid-funnel insert shifts the attorney step and breaks it.
+- Trade-off of appending: the qualification data arrives last, so a drop between the attorney step
+  and capture loses it. Drop-off there is low (they're nearly done), and it's worth it to never
+  disturb the tracked path.
 
-→ **CAPTURE:** first · last · email · phone · consent. **Done. No second form, no enrichment step.**
+## The one edit worth checking (label-only, no logic change)
 
-**Net: 5 taps vs the live 4** — one extra tap buys duration + both date windows + the fraud fixes.
-If even that is too long, **cut Q2** (dx year) first — pre-1992 diagnoses are vanishingly rare and
-the agent can confirm the date on the call. **Never cut Q4** — it is the whole qualification.
+Q2's option is labelled **"No injury (You do not qualify)"** — it tells every claimant which box
+loses. **If the pixel condition keys on the option's VALUE or index (not its display text), editing
+the label to plain "No injury" is free** and costs zero conversion. Check first; if the condition
+matches on label text, leave it and let ADD #1 carry the qualification.
 
 ## API fields (post all of it — PDF is backup only)
 
