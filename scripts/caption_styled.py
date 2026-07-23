@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Burn TikTok-style captions with per-word yellow highlight + optional legal disclaimer overlay.
+"""Burn TikTok-style captions with per-word yellow highlight and an optional supplied disclaimer.
 
 Caption style (matches user's reference UGC ad):
   - ALL CAPS, bold sans-serif (Arial Black), white fill + black stroke
@@ -7,16 +7,16 @@ Caption style (matches user's reference UGC ad):
   - 2-3 word chunks, position ~70% from top of frame
   - Adaptive font shrink when wrap exceeds max-lines
 
-Disclaimer style:
+Optional supplied-disclaimer style:
   - White text + black stroke, smaller font, multi-line, left-justified
   - Bottom 25% of frame
-  - Hard cut in/out at specified window (default 0s-5s)
+  - Hard cut in/out at the specified window
 
 Usage:
   .venv/bin/python scripts/caption_styled.py <in.mp4> [--out out.mp4]
-       [--disclaimer-text "Paid legal advertisement..." | --no-disclaimer]
+       [--disclaimer-text "Exact campaign-approved legal text" | --disclaimer-file path.txt]
        [--disclaimer-start 0 --disclaimer-end 5]
-       [--biased-keywords Chowchilla Mija] [--max-words 3]
+       [--biased-keywords Name Product] [--substitutions-json path.json] [--max-words 3]
 """
 import argparse
 import json
@@ -36,32 +36,9 @@ FONT_CANDIDATES = [
     "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
 ]
 
-# STT (ElevenLabs Scribe) mistranscription fixups for proper nouns in our scripts.
-# Prefer passing --biased-keywords to reduce these at the source; this dict is the post-fix.
-SUBSTITUTIONS = {
-    "CHOWCHILLY": "CHOWCHILLA",
-    "CHOW CHILLER": "CHOWCHILLA",
-    "CHOW-CHILLER": "CHOWCHILLA",
-    "CHOW CHILLA": "CHOWCHILLA",
-    "CHOW-CHILLA": "CHOWCHILLA",
-    "CHILLAH": "CHILLA",
-    "MIHA": "MIJA",
-    "MEHA": "MIJA",
-    "NIHA": "MIJA",
-    "MI-HA": "MIJA",
-    "MEE-HAH": "MIJA",
-}
-
-DEFAULT_DISCLAIMER = (
-    "Paid legal advertisement. Jordan M. Jones, Attorney at Law "
-    "(360 E 2nd St #820, Los Angeles, CA 90012) and Adam Pulaski, Attorney "
-    "at Law (2925 Richmond Ave #1725, Houston, TX 77098) are responsible "
-    "for this advertisement. A California-licensed attorney is associated "
-    "for CA cases. This ad uses paid actors, dramatizations, and AI-generated "
-    "imagery for illustration only and does not depict real clients or events. "
-    "No guarantee or prediction of outcome is made. Cases may be referred to "
-    "other attorneys."
-)
+# Campaign-specific Scribe corrections are loaded explicitly through
+# --substitutions-json. Generic captioning has no hidden proper-noun rewrites.
+SUBSTITUTIONS = {}
 
 YELLOW = (252, 222, 0, 255)
 
@@ -71,6 +48,18 @@ def apply_subs(text):
     for wrong, right in SUBSTITUTIONS.items():
         out = re.sub(rf"\b{re.escape(wrong)}\b", right, out, flags=re.IGNORECASE)
     return out
+
+
+def load_substitutions(path):
+    """Load an explicit campaign correction map into the renderer."""
+    SUBSTITUTIONS.clear()
+    if not path:
+        return
+    data = json.loads(Path(path).read_text())
+    if not isinstance(data, dict) or not all(isinstance(k, str) and isinstance(v, str)
+                                             for k, v in data.items()):
+        raise ValueError("substitutions JSON must be an object of string-to-string replacements")
+    SUBSTITUTIONS.update(data)
 
 
 def run(cmd, **kw):
@@ -357,10 +346,17 @@ def main():
     ap.add_argument("video")
     ap.add_argument("--out", default=None)
     ap.add_argument("--biased-keywords", nargs="+", default=None,
-                    help="proper nouns to bias Scribe toward, e.g. --biased-keywords Chowchilla Mija")
+                    help="proper nouns to bias Scribe toward")
+    ap.add_argument("--substitutions-json", default=None,
+                    help="campaign-specific post-Scribe correction map")
     ap.add_argument("--max-words", type=int, default=3)
-    ap.add_argument("--no-disclaimer", action="store_true")
-    ap.add_argument("--disclaimer-text", default=DEFAULT_DISCLAIMER)
+    ap.add_argument("--no-disclaimer", action="store_true",
+                    help="compatibility flag; generic rendering already has no disclaimer")
+    disclaimer = ap.add_mutually_exclusive_group()
+    disclaimer.add_argument("--disclaimer-text", default=None,
+                            help="exact campaign-approved disclaimer text")
+    disclaimer.add_argument("--disclaimer-file", default=None,
+                            help="path to exact campaign-approved disclaimer text")
     ap.add_argument("--disclaimer-start", type=float, default=7.0,
                     help="seconds when disclaimer hard-cuts IN")
     ap.add_argument("--disclaimer-end", type=float, default=12.0,
@@ -370,8 +366,14 @@ def main():
     ap.add_argument("--vertical-pos", type=float, default=None,
                     help="Caption Y position (0-1, fraction of frame height). Default: auto by aspect ratio (0.72 for 9:16, 0.82 for 4:5).")
     ap.add_argument("--font-ratio", type=float, default=0.04,
-                    help="Caption font size as fraction of frame height. Default 0.04 (~4%%, campaign-approved 2026-05-12).")
+                    help="Caption font size as fraction of frame height. Default 0.04 (~4%%).")
     args = ap.parse_args()
+    load_substitutions(args.substitutions_json)
+    if args.no_disclaimer and (args.disclaimer_text or args.disclaimer_file):
+        ap.error("--no-disclaimer cannot be combined with a disclaimer source")
+    disclaimer_text = args.disclaimer_text
+    if args.disclaimer_file:
+        disclaimer_text = Path(args.disclaimer_file).read_text().strip()
 
     video = Path(args.video).resolve()
     if not video.exists():
@@ -398,7 +400,7 @@ def main():
         print("[4/4] render PNGs and burn", flush=True)
         burn(
             video, chunks, td, out,
-            disclaimer_text=None if args.no_disclaimer else args.disclaimer_text,
+            disclaimer_text=None if args.no_disclaimer else disclaimer_text,
             disclaimer_start=args.disclaimer_start,
             disclaimer_end=args.disclaimer_end,
             highlight_style=args.highlight_style,

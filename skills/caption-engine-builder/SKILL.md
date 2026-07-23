@@ -44,8 +44,8 @@ function; only consider HyperFrames when the style needs real motion graphics th
   variants), frame loop picks by time, dedupe identical frames by cache key (card id, state,
   rounded scale), write PNG sequence, ONE ffmpeg overlay pass. Never per-card filter chains.
 - **Subtle card pop**: ~0.94→1.0 scale over ~0.10-0.12s ease-out matches most modern styles.
-- **Disclaimer is a separate layer** (`burn_disclaimer.py` on the captioned output); keep the
-  clean master untouched; suffix naming `<master>_<style>.mp4`.
+- **Disclaimer is a separate campaign-controlled layer** applied by the relevant disclaimer
+  skill; keep the clean master untouched; suffix naming `<master>_<style>.mp4`.
 
 ## Verification loop (until 1:1)
 

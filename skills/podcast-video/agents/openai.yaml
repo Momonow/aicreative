@@ -1,0 +1,4 @@
+interface:
+  display_name: "Podcast Video"
+  short_description: "Produce natural podcast-style talking-head videos"
+  default_prompt: "Use $podcast-video to build this podcast-style video naturally."

@@ -8,29 +8,28 @@
 *{margin:0;padding:0;box-sizing:border-box;}
 html,body{width:1080px;height:1920px;overflow:hidden;background:#000;}
 #root{position:relative;width:1080px;height:1920px;overflow:hidden;}
-#bg{position:absolute;inset:0;background:url("assets/selfie3.png") center center/cover no-repeat;transform-origin:38% 20%;}
-#title{position:absolute;top:0;left:0;width:1080px;text-align:center;padding:44px 0 30px;background:rgba(0,0,0,.42);font-family:"Montserrat Black",sans-serif;font-size:140px;color:#fff;-webkit-text-stroke:5px #000;letter-spacing:1px;line-height:1;z-index:3;}
-/* FACE-SAFE SUPERSIZE: wide low box, head-focused crop (shoulders/body cut by the box).
-   top edge ~1070 at rest -> survivor's face always fully visible above. */
+#bg{position:absolute;inset:0;background:url("assets/backdrop.png") center center/cover no-repeat;transform-origin:50% 30%;}
+#title{position:absolute;top:0;left:0;width:1080px;text-align:center;padding:44px 0 30px;background:rgba(0,0,0,.42);font-family:"Montserrat Black",sans-serif;font-size:140px;color:#fff;-webkit-text-stroke:5px #000;letter-spacing:0;line-height:1;z-index:3;}
+/* Face-safe supersize: crop the foreground presenter while preserving the backdrop subject. */
 #pip{position:absolute;left:90px;bottom:0;width:900px;height:850px;object-fit:cover;object-position:50% 12%;transform-origin:bottom center;z-index:2;}
 </style></head>
 <body>
 <div id="root" data-composition-id="main" data-start="0" data-duration="10" data-width="1080" data-height="1920">
 <div id="bg"></div>
 <video id="pip" class="clip" src="assets/matte.webm" data-start="0" data-duration="10" data-track-index="1" muted playsinline></video>
-<div id="title" class="clip" data-start="0" data-duration="10" data-track-index="2">MENINGIOMA</div>
+<div id="title" class="clip" data-start="0" data-duration="10" data-track-index="2">KEYWORD</div>
 <audio id="pip-audio" src="assets/matte.webm" data-start="0" data-duration="10" data-track-index="10" data-volume="1"></audio>
 </div>
 <script>
 window.__timelines=window.__timelines||{};
 const tl=gsap.timeline({paused:true});
 tl.from("#title",{scale:1.6,opacity:0,duration:.4,ease:"power3.out"},.15);
-/* crash open on the backdrop scar */
+/* Crash open on the backdrop's focal proof. */
 gsap.set("#bg",{scale:1.5});
 tl.to("#bg",{scale:1.05,duration:1.4,ease:"power3.out"},0.1)
   .to("#bg",{scale:1.14,duration:.45,ease:"power2.in"},1.9)
   .to("#bg",{scale:1.03,duration:.8,ease:"power2.out"},2.4);
-/* she enters big, punches, then wanders LOW (scale capped 1.12; big -> sides) */
+/* The presenter enters big, punches, then moves through measured waypoints. */
 gsap.set("#pip",{x:-120,scale:1.1});
 tl.to("#pip",{scale:0.96,duration:.5,ease:"power3.inOut"},0.9)
   .to("#pip",{scale:1.12,x:150,duration:.45,ease:"back.out(2.2)"},1.8)

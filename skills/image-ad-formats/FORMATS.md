@@ -1,10 +1,9 @@
 # Image Ad-Format Catalog — 101 formats (generic / campaign-agnostic)
 
-The master list of static **image** ad formats. Each is produced as a full **gpt-image-2** banner
-(model renders headline + layout + product + CTA + footnote; i2i with the product image as
-reference, or t2i for pure-photo). Reuse on ANY product/offer — swap in the product, offer, and
-copy. Worked example with real files: `inventory/trimrx_glp1_ad_formats.md`. Generator templates:
-`scripts/trimrx_{viral_gpt,styles20,copyled,formats,compare_gpt}.py` (`--only <slug>`).
+The master list of static **image** ad formats. Each can be produced as a full generated banner
+or recreated in a deterministic design pipeline. Reuse on any product or offer by supplying
+approved product, copy, and compliance inputs. Historical campaign implementations are indexed
+in `inventory/video_workflow_catalog.md`.
 
 **Total: 101 distinct formats**, in 7 buckets. (Layer a unique angle/persona on top → effectively unlimited variants; keep format AND angle unique per ad.)
 

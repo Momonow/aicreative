@@ -1,0 +1,5362 @@
+[
+  {
+    "path": "admachin_client.py",
+    "role": "reusable-tool",
+    "status": "canonical",
+    "campaign": null,
+    "summary": "AdMachin client — upload creatives, assemble ads, launch to Facebook. REST v1: https://admachin.com/api/v1 Auth: Authorization: Bearer admachin_pat_... (ADMACHIN_PAT in .env) Docs:",
+    "syntax_error": null,
+    "techniques": [
+      "AdMachin",
+      "assembly"
+    ],
+    "providers": [],
+    "lines": 268
+  },
+  {
+    "path": "caption.py",
+    "role": "reusable-tool",
+    "status": "canonical",
+    "campaign": null,
+    "summary": "Add TikTok-style burned-in captions to a video. Usage: .venv/bin/python caption.py <input.mp4> [--out output.mp4] [--biased-keywords ...] [--max-words 4] Pipeline: 1. Extract audio",
+    "syntax_error": null,
+    "techniques": [
+      "captions",
+      "speech-QA"
+    ],
+    "providers": [
+      "ElevenLabs",
+      "ffmpeg"
+    ],
+    "lines": 309
+  },
+  {
+    "path": "dissect.py",
+    "role": "reusable-tool",
+    "status": "canonical",
+    "campaign": null,
+    "summary": "Dissect a competitor / generated video into beat-by-beat artifacts. Usage: python dissect.py <path-to-video> [--biased-keywords ProductName PlaceName] [--no-ocr] Produces outputs/<",
+    "syntax_error": null,
+    "techniques": [
+      "captions",
+      "framewise-QA",
+      "speech-QA"
+    ],
+    "providers": [
+      "ElevenLabs",
+      "ffmpeg",
+      "Veo"
+    ],
+    "lines": 315
+  },
+  {
+    "path": "elevenlabs_client.py",
+    "role": "reusable-tool",
+    "status": "canonical",
+    "campaign": null,
+    "summary": "ElevenLabs direct API client for TTS + voice cloning. Functions: tts(text, voice_id, ...) → synthesize speech, write to file list_voices() → list all voices on the account (find vo",
+    "syntax_error": null,
+    "techniques": [
+      "audio-QA",
+      "matte-PIP",
+      "speech-QA",
+      "voice-processing"
+    ],
+    "providers": [
+      "ElevenLabs"
+    ],
+    "lines": 224
+  },
+  {
+    "path": "evolink_client.py",
+    "role": "reusable-tool",
+    "status": "canonical",
+    "campaign": null,
+    "summary": "EvoLink.AI client — Veo 3.1 Fast. Endpoint: POST https://api.evolink.ai/v1/videos/generations Polling: GET https://api.evolink.ai/v1/tasks/{task_id} Auth: Bearer sk-... Models: veo",
+    "syntax_error": null,
+    "techniques": [
+      "video-generation"
+    ],
+    "providers": [
+      "Veo"
+    ],
+    "lines": 90
+  },
+  {
+    "path": "fal_client.py",
+    "role": "reusable-tool",
+    "status": "canonical",
+    "campaign": null,
+    "summary": "Thin fal.ai gateway for ElevenLabs models (this project's own client, NOT fal's SDK). fal.ai hosts ElevenLabs models behind its own API + auth. Use this when we have a FAL_KEY but ",
+    "syntax_error": null,
+    "techniques": [
+      "captions",
+      "matte-PIP",
+      "speech-QA"
+    ],
+    "providers": [
+      "ElevenLabs",
+      "ffmpeg",
+      "KIE"
+    ],
+    "lines": 143
+  },
+  {
+    "path": "googleflow_client.py",
+    "role": "reusable-tool",
+    "status": "canonical",
+    "campaign": null,
+    "summary": "useapi.net google-flow client — FREE no-credit Veo 3.1 Lite (ultra-low-priority). Model `veo-3.1-lite-low-priority` = free, no credit, ultra-low-priority queue (SLOW). i2v persona ",
+    "syntax_error": null,
+    "techniques": [
+      "anchor-continuity",
+      "video-generation"
+    ],
+    "providers": [
+      "Google Flow/useapi",
+      "Veo"
+    ],
+    "lines": 86
+  },
+  {
+    "path": "kie_client.py",
+    "role": "reusable-tool",
+    "status": "canonical",
+    "campaign": null,
+    "summary": "KIE.ai client for the 5 endpoints we use: Video: generate_seedance(prompt, ...) → bytedance/seedance-2-fast (480p) generate_kling(prompt, ...) → kling-3.0/video (std = 720p) genera",
+    "syntax_error": null,
+    "techniques": [
+      "image-generation",
+      "video-generation"
+    ],
+    "providers": [
+      "KIE",
+      "Poyo",
+      "Seedance",
+      "Veo"
+    ],
+    "lines": 290
+  },
+  {
+    "path": "openai_image.py",
+    "role": "reusable-tool",
+    "status": "canonical",
+    "campaign": null,
+    "summary": "OpenAI image-gen client (direct, NOT via KIE). Use this for any GPT Image work in this project. KIE's GPT Image proxy (`kie_client.generate_gpt_image`) is deprecated — see CLAUDE.m",
+    "syntax_error": null,
+    "techniques": [
+      "image-generation"
+    ],
+    "providers": [
+      "KIE"
+    ],
+    "lines": 95
+  },
+  {
+    "path": "openrouter_client.py",
+    "role": "reusable-tool",
+    "status": "canonical",
+    "campaign": null,
+    "summary": "OpenRouter video generation client. Async pattern: POST /api/v1/videos → 202 + {id, polling_url, status: \"pending\"} GET /api/v1/videos/{id} → poll until status terminal Download fr",
+    "syntax_error": null,
+    "techniques": [],
+    "providers": [
+      "Seedance",
+      "Veo"
+    ],
+    "lines": 148
+  },
+  {
+    "path": "openrouter_video.py",
+    "role": "reusable-tool",
+    "status": "canonical",
+    "campaign": null,
+    "summary": "OpenRouter Video Generation API Submit: POST https://openrouter.ai/api/v1/videos Poll: GET https://openrouter.ai/api/v1/videos/{id} Models: GET https://openrouter.ai/api/v1/videos/",
+    "syntax_error": null,
+    "techniques": [
+      "video-generation"
+    ],
+    "providers": [
+      "Google Flow/useapi",
+      "Poyo",
+      "Seedance",
+      "Veo"
+    ],
+    "lines": 176
+  },
+  {
+    "path": "poyo_client.py",
+    "role": "reusable-tool",
+    "status": "canonical",
+    "campaign": null,
+    "summary": "Poyo.ai client — Veo 3.1 Fast at $0.10/clip flat (cheaper than KIE for Veo3). Endpoint: POST https://api.poyo.ai/api/generate/submit → returns {data.task_id} Polling: GET https://a",
+    "syntax_error": null,
+    "techniques": [
+      "video-generation"
+    ],
+    "providers": [
+      "Poyo",
+      "Veo"
+    ],
+    "lines": 131
+  },
+  {
+    "path": "replicate_client.py",
+    "role": "reusable-tool",
+    "status": "canonical",
+    "campaign": null,
+    "summary": "Replicate API client wrapper. Async pattern via official `replicate` Python SDK. Currently we use this for video matting (Robust Video Matting / RVM). Models we care about: arielre",
+    "syntax_error": null,
+    "techniques": [],
+    "providers": [],
+    "lines": 66
+  },
+  {
+    "path": "scripts/admachin_mcp_stdio.py",
+    "role": "reusable-tool",
+    "status": "canonical",
+    "campaign": null,
+    "summary": "Drive the locally-built AdMachin MCP 1.2.0 server over stdio. Bypasses the stale Claude Code MCP manifest (a running session keeps the old tool list; this talks straight to `node /",
+    "syntax_error": null,
+    "techniques": [
+      "AdMachin"
+    ],
+    "providers": [],
+    "lines": 131
+  },
+  {
+    "path": "scripts/admachin_push.py",
+    "role": "reusable-tool",
+    "status": "canonical",
+    "campaign": null,
+    "summary": "Push a finished video into AdMachin: upload -> assemble -> (gated) launch. .venv/bin/python scripts/admachin_push.py <video.mp4> [options] Default run (NO spend): uploads the file ",
+    "syntax_error": null,
+    "techniques": [
+      "AdMachin",
+      "assembly",
+      "matte-PIP"
+    ],
+    "providers": [],
+    "lines": 193
+  },
+  {
+    "path": "scripts/admachin_upload_product_broll.py",
+    "role": "compatibility-wrapper",
+    "status": "legacy",
+    "campaign": null,
+    "summary": "Compatibility wrapper for the Depo campaign product B-roll uploader.",
+    "syntax_error": null,
+    "techniques": [
+      "AdMachin",
+      "B-roll"
+    ],
+    "providers": [],
+    "lines": 9
+  },
+  {
+    "path": "scripts/adswipe_1564_clip01.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "adswipe-1564",
+    "summary": "",
+    "syntax_error": null,
+    "techniques": [
+      "captions",
+      "video-generation"
+    ],
+    "providers": [
+      "Google Flow/useapi",
+      "Veo"
+    ],
+    "lines": 60
+  },
+  {
+    "path": "scripts/adswipe_1564_clip02.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "adswipe-1564",
+    "summary": "",
+    "syntax_error": null,
+    "techniques": [
+      "captions",
+      "matte-PIP",
+      "video-generation"
+    ],
+    "providers": [
+      "Google Flow/useapi",
+      "Veo"
+    ],
+    "lines": 64
+  },
+  {
+    "path": "scripts/adswipe_1564_clip03.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "adswipe-1564",
+    "summary": "",
+    "syntax_error": null,
+    "techniques": [
+      "captions",
+      "matte-PIP",
+      "video-generation"
+    ],
+    "providers": [
+      "Google Flow/useapi",
+      "Veo"
+    ],
+    "lines": 64
+  },
+  {
+    "path": "scripts/adswipe_1564_clip04.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "adswipe-1564",
+    "summary": "",
+    "syntax_error": null,
+    "techniques": [
+      "captions",
+      "video-generation"
+    ],
+    "providers": [
+      "Google Flow/useapi",
+      "Veo"
+    ],
+    "lines": 64
+  },
+  {
+    "path": "scripts/adswipe_1564_gpt_street_anchors.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "adswipe-1564",
+    "summary": "",
+    "syntax_error": null,
+    "techniques": [
+      "image-generation"
+    ],
+    "providers": [
+      "KIE"
+    ],
+    "lines": 85
+  },
+  {
+    "path": "scripts/adswipe_1564_host_still.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "adswipe-1564",
+    "summary": "",
+    "syntax_error": null,
+    "techniques": [
+      "captions",
+      "image-generation"
+    ],
+    "providers": [
+      "KIE"
+    ],
+    "lines": 47
+  },
+  {
+    "path": "scripts/adswipe_1564_host_street.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "adswipe-1564",
+    "summary": "",
+    "syntax_error": null,
+    "techniques": [
+      "captions",
+      "image-generation"
+    ],
+    "providers": [
+      "KIE"
+    ],
+    "lines": 52
+  },
+  {
+    "path": "scripts/analyze_submagic_emojis.py",
+    "role": "reusable-tool",
+    "status": "canonical",
+    "campaign": null,
+    "summary": "Full frame-by-frame analysis of Submagic emojis: for every 0.1s, detect the emoji blob (compact, filled, square-ish, isolated below the text row) AND the caption text block, so we ",
+    "syntax_error": null,
+    "techniques": [
+      "captions"
+    ],
+    "providers": [
+      "ffmpeg"
+    ],
+    "lines": 98
+  },
+  {
+    "path": "scripts/audio_match.py",
+    "role": "reusable-tool",
+    "status": "canonical",
+    "campaign": null,
+    "summary": "Compare each clip's audio profile to a reference clip; flag mismatches. Detects: - voice loudness (RMS during speech) - background noise floor (RMS during silence) - spectral chara",
+    "syntax_error": null,
+    "techniques": [
+      "assembly",
+      "audio-QA"
+    ],
+    "providers": [
+      "ffmpeg"
+    ],
+    "lines": 145
+  },
+  {
+    "path": "scripts/build_ugc_copy_xlsx.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "cilocala",
+    "summary": "",
+    "syntax_error": null,
+    "techniques": [],
+    "providers": [],
+    "lines": 162
+  },
+  {
+    "path": "scripts/burn_disclaimer.py",
+    "role": "compatibility-wrapper",
+    "status": "legacy",
+    "campaign": null,
+    "summary": "Compatibility wrapper for the Pulaski/Jones campaign disclaimer renderer. New work should call burn_pulaski_jones_disclaimer.py explicitly.",
+    "syntax_error": null,
+    "techniques": [],
+    "providers": [],
+    "lines": 18
+  },
+  {
+    "path": "scripts/burn_disclaimer_image.py",
+    "role": "compatibility-wrapper",
+    "status": "legacy",
+    "campaign": null,
+    "summary": "Compatibility wrapper for the campaign-specific image disclaimer renderer.",
+    "syntax_error": null,
+    "techniques": [],
+    "providers": [],
+    "lines": 15
+  },
+  {
+    "path": "scripts/burn_pulaski_jones_disclaimer.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "pulaski-jones",
+    "summary": "Burn the exact Pulaski/Jones campaign disclaimer without captions.",
+    "syntax_error": null,
+    "techniques": [
+      "captions"
+    ],
+    "providers": [
+      "ffmpeg"
+    ],
+    "lines": 66
+  },
+  {
+    "path": "scripts/burn_pulaski_jones_disclaimer_image.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "pulaski-jones",
+    "summary": "Burn the verbatim Pulaski/Jones legal disclaimer onto a static image ad. The regulated text is loaded from config/campaigns/pulaski-jones/disclaimer.txt. Styles: auto (default) — s",
+    "syntax_error": null,
+    "techniques": [],
+    "providers": [],
+    "lines": 109
+  },
+  {
+    "path": "scripts/caption_hormozi3.py",
+    "role": "reusable-tool",
+    "status": "canonical",
+    "campaign": null,
+    "summary": "Burn Submagic-style \"Hormozi 3\" captions (general — works on any video/text). Verified frame-by-frame from a real Submagic Hormozi 3 export (2026-05-21): FONT Montserrat Black (900",
+    "syntax_error": null,
+    "techniques": [
+      "captions",
+      "speech-QA"
+    ],
+    "providers": [
+      "ElevenLabs",
+      "ffmpeg"
+    ],
+    "lines": 934
+  },
+  {
+    "path": "scripts/caption_linecmp.py",
+    "role": "reusable-tool",
+    "status": "canonical",
+    "campaign": null,
+    "summary": "Compare caption LINE COUNT (and rough word grouping) between two videos, frame by frame, via OCR. Used to tune our in-house captions to match Submagic's line organization. python s",
+    "syntax_error": null,
+    "techniques": [
+      "captions"
+    ],
+    "providers": [
+      "ffmpeg"
+    ],
+    "lines": 90
+  },
+  {
+    "path": "scripts/caption_news_subtitle.py",
+    "role": "reusable-tool",
+    "status": "canonical",
+    "campaign": null,
+    "summary": "Burn compact broadcast-style subtitles above a lower-third news bar. This is intentionally calmer than creator captions: no emoji, no pop, no per-word highlight. It uses ElevenLabs",
+    "syntax_error": null,
+    "techniques": [
+      "captions",
+      "speech-QA"
+    ],
+    "providers": [
+      "ElevenLabs",
+      "ffmpeg"
+    ],
+    "lines": 241
+  },
+  {
+    "path": "scripts/caption_nick.py",
+    "role": "reusable-tool",
+    "status": "canonical",
+    "campaign": null,
+    "summary": "Internal clone of Submagic's \"Nick\" caption template, calibrated frame by frame against an approved reference. Unlike the Submagic API, this uses our verbatim Scribe transcript and",
+    "syntax_error": null,
+    "techniques": [
+      "captions",
+      "speech-QA"
+    ],
+    "providers": [
+      "ElevenLabs",
+      "ffmpeg"
+    ],
+    "lines": 208
+  },
+  {
+    "path": "scripts/caption_redwood.py",
+    "role": "reusable-tool",
+    "status": "canonical",
+    "campaign": null,
+    "summary": "Redwood internal clone of an approved pink-karaoke caption reference. All-caps Anton, white fill with black stroke and soft shadow, and one word at a time boxed in hot pink. Measur",
+    "syntax_error": null,
+    "techniques": [
+      "captions",
+      "speech-QA"
+    ],
+    "providers": [
+      "ElevenLabs",
+      "ffmpeg"
+    ],
+    "lines": 294
+  },
+  {
+    "path": "scripts/caption_styled.py",
+    "role": "reusable-tool",
+    "status": "canonical",
+    "campaign": null,
+    "summary": "Burn TikTok-style captions with per-word yellow highlight and an optional supplied disclaimer. Caption style (matches user's reference UGC ad): - ALL CAPS, bold sans-serif (Arial B",
+    "syntax_error": null,
+    "techniques": [
+      "captions",
+      "speech-QA"
+    ],
+    "providers": [
+      "ElevenLabs",
+      "ffmpeg"
+    ],
+    "lines": 416
+  },
+  {
+    "path": "scripts/capture_clean_traj.py",
+    "role": "reusable-tool",
+    "status": "canonical",
+    "campaign": null,
+    "summary": "DISSECT EVERY FRAME to capture each Submagic emoji's EXACT per-frame entrance trajectory, then store it for frame-by-frame replay. Method (validated on 💸): diff each 24fps frame vs",
+    "syntax_error": null,
+    "techniques": [
+      "captions"
+    ],
+    "providers": [
+      "ffmpeg"
+    ],
+    "lines": 126
+  },
+  {
+    "path": "scripts/capture_emoji_trajectories.py",
+    "role": "reusable-tool",
+    "status": "canonical",
+    "campaign": null,
+    "summary": "Motion-capture each Submagic emoji's FULL per-frame trajectory (position + scale) via multi-scale template matching, expressed as offsets from its RESTING position. These keyframes",
+    "syntax_error": null,
+    "techniques": [
+      "captions"
+    ],
+    "providers": [
+      "ffmpeg"
+    ],
+    "lines": 76
+  },
+  {
+    "path": "scripts/car_selfie_person_swap.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "juvenile-detention",
+    "summary": "Swap the person in the car-selfie photo with a different Black man in his early 30s, keeping the EXACT car interior / seatbelt / selfie angle / daylight. gpt-image-2 image-edit via",
+    "syntax_error": null,
+    "techniques": [
+      "captions",
+      "image-generation"
+    ],
+    "providers": [
+      "KIE"
+    ],
+    "lines": 99
+  },
+  {
+    "path": "scripts/car_selfie_person_swap_nb.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "juvenile-detention",
+    "summary": "Person-swap that PRESERVES the original background — nano-banana-2 (Gemini edit). gpt-image-2 edit mode re-imagines the whole scene; nano-banana-2 does targeted edits that keep the",
+    "syntax_error": null,
+    "techniques": [
+      "image-generation"
+    ],
+    "providers": [
+      "KIE"
+    ],
+    "lines": 91
+  },
+  {
+    "path": "scripts/car_selfie_survivor_test.py",
+    "role": "campaign-job",
+    "status": "variant",
+    "campaign": "juvenile-detention",
+    "summary": "TEST: corrected realism + survivor emotional direction (2 variants). Fixes the 'dating-app selfie' problem: heavy skin texture/imperfection, amateur front-camera phone realism, wea",
+    "syntax_error": null,
+    "techniques": [
+      "captions",
+      "image-generation"
+    ],
+    "providers": [
+      "KIE"
+    ],
+    "lines": 91
+  },
+  {
+    "path": "scripts/catalog_video_workflows.py",
+    "role": "reusable-tool",
+    "status": "canonical",
+    "campaign": null,
+    "summary": "Catalog every repository skill and Python workflow without moving legacy entry points. The repository accumulated campaign jobs in a flat scripts directory. Moving them wholesale w",
+    "syntax_error": null,
+    "techniques": [],
+    "providers": [],
+    "lines": 394
+  },
+  {
+    "path": "scripts/cawp_card_highlights.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "california-womens-prison",
+    "summary": "Yellow-marker highlights for article cards — ANIMATED-SWEEP edition (user 2026-06-10). Outputs per card: cards_real/<card>.png — CLEAN base (restored from backup, no baked strokes)",
+    "syntax_error": null,
+    "techniques": [
+      "assembly"
+    ],
+    "providers": [],
+    "lines": 104
+  },
+  {
+    "path": "scripts/cawp_f1_assemble.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "california-womens-prison",
+    "summary": "F1 'Look At This' — assemble one tone wave into the finished PIP ad. Pipeline: word-aware trim (drop leading/trailing Veo improv) -> per-clip loudness gain -> veed/fal alpha mattin",
+    "syntax_error": null,
+    "techniques": [
+      "assembly",
+      "audio-QA",
+      "matte-PIP",
+      "speech-QA"
+    ],
+    "providers": [
+      "ffmpeg",
+      "Veo"
+    ],
+    "lines": 153
+  },
+  {
+    "path": "scripts/cawp_f1_headline_cards.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "california-womens-prison",
+    "summary": "F1 news-reaction ad — headline backdrop cards (1080x1920, 9:16). Stylized news-headline RE-CREATIONS (no outlet branding/screenshots — rights-clean). Facts per inventory/womens_pri",
+    "syntax_error": null,
+    "techniques": [
+      "captions",
+      "speech-QA"
+    ],
+    "providers": [
+      "ElevenLabs"
+    ],
+    "lines": 146
+  },
+  {
+    "path": "scripts/cawp_f1f5_gen.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "california-womens-prison",
+    "summary": "cawp clip generation — F1 news-reaction (persona l4) + F5 three-questions announcer (persona l1). FREE google-flow Veo 3.1 Lite low-priority (slow queue, $0). 8s clips, portrait. T",
+    "syntax_error": null,
+    "techniques": [
+      "captions",
+      "video-generation"
+    ],
+    "providers": [
+      "Google Flow/useapi",
+      "Veo"
+    ],
+    "lines": 140
+  },
+  {
+    "path": "scripts/cawp_f2_assemble.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "california-womens-prison",
+    "summary": "F2 'What it actually asks' — assemble question-explainer video. Faceless: typographic question cards (NO form UI, no buttons/cursor — per feedback_no_form_click_coaching) hard-cut ",
+    "syntax_error": null,
+    "techniques": [
+      "assembly",
+      "audio-QA",
+      "speech-QA"
+    ],
+    "providers": [
+      "ElevenLabs",
+      "ffmpeg"
+    ],
+    "lines": 163
+  },
+  {
+    "path": "scripts/cawp_f2_assemble_v2.py",
+    "role": "campaign-job",
+    "status": "variant",
+    "campaign": "california-womens-prison",
+    "summary": "F2 'What it actually asks' v2 — photographic backdrops + docu type (style A). Each beat: gpt-image-2 documentary backdrop + bottom-third gradient + amber kicker + Montserrat Black ",
+    "syntax_error": null,
+    "techniques": [
+      "assembly",
+      "image-generation",
+      "speech-QA"
+    ],
+    "providers": [
+      "ElevenLabs",
+      "ffmpeg",
+      "KIE"
+    ],
+    "lines": 168
+  },
+  {
+    "path": "scripts/cawp_f2_assemble_v3.py",
+    "role": "campaign-job",
+    "status": "variant",
+    "campaign": "california-womens-prison",
+    "summary": "F2 'What it actually asks' v2 — photographic backdrops + docu type (style A). Each beat: gpt-image-2 documentary backdrop + bottom-third gradient + amber kicker + Montserrat Black ",
+    "syntax_error": null,
+    "techniques": [
+      "assembly",
+      "image-generation",
+      "speech-QA"
+    ],
+    "providers": [
+      "ElevenLabs",
+      "ffmpeg",
+      "KIE"
+    ],
+    "lines": 175
+  },
+  {
+    "path": "scripts/cawp_f2_backdrops.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "california-womens-prison",
+    "summary": "F2 redesign — documentary b-roll backdrop images for each card beat (gpt-image-2 @2K 9:16). Faceless, no readable text in image, news-b-roll style. Type gets comped over these.",
+    "syntax_error": null,
+    "techniques": [
+      "B-roll",
+      "image-generation"
+    ],
+    "providers": [
+      "KIE"
+    ],
+    "lines": 55
+  },
+  {
+    "path": "scripts/cawp_f2_style_samples.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "california-womens-prison",
+    "summary": "F2 redesign — render the SAME card content in 3 type treatments over a photo backdrop so the user can pick the direction. Output: outputs/cawp_f2_form/style_samples/style_{a,b,c}.p",
+    "syntax_error": null,
+    "techniques": [
+      "captions"
+    ],
+    "providers": [],
+    "lines": 144
+  },
+  {
+    "path": "scripts/cawp_f5_assemble.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "california-womens-prison",
+    "summary": "F5 'Three Questions' — assemble one tone wave: word-aware trim -> per-clip static gain -> concat -> true-peak limiter (announcer register overshoots 0 dBFS; limiter mandatory). Pla",
+    "syntax_error": null,
+    "techniques": [
+      "assembly",
+      "audio-QA",
+      "speech-QA"
+    ],
+    "providers": [
+      "ffmpeg"
+    ],
+    "lines": 83
+  },
+  {
+    "path": "scripts/cawp_hf_pip.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "california-womens-prison",
+    "summary": "HyperFrames PIP composite for the women's-prison yapper ads: a matted persona (alpha webm) doing TikTok-native DRIFT motion (seeded random-walk wander + scale swell) as a bottom-an",
+    "syntax_error": null,
+    "techniques": [
+      "B-roll",
+      "captions",
+      "matte-PIP"
+    ],
+    "providers": [
+      "ffmpeg",
+      "HyperFrames"
+    ],
+    "lines": 256
+  },
+  {
+    "path": "scripts/cawp_latina_personas.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "california-womens-prison",
+    "summary": "CA women's-prison campaign — LATINA persona candidates with iPhone-VIDEO-frame look (user spec 2026-06-10: \"image that will look like it's shot on iphone video, not photo\"). For ad",
+    "syntax_error": null,
+    "techniques": [
+      "captions",
+      "image-generation"
+    ],
+    "providers": [
+      "KIE"
+    ],
+    "lines": 92
+  },
+  {
+    "path": "scripts/cawp_latina_personas2.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "california-womens-prison",
+    "summary": "CA women's-prison campaign — Latina persona pool BATCH 2 (l7-l21), same iPhone-VIDEO-frame spec as the approved l1/l2/l4 batch. 15 candidates for user rotation picks. Skip-if-exist",
+    "syntax_error": null,
+    "techniques": [
+      "captions",
+      "image-generation"
+    ],
+    "providers": [
+      "KIE"
+    ],
+    "lines": 67
+  },
+  {
+    "path": "scripts/cawp_persona_candidates.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "california-womens-prison",
+    "summary": "CA women's-prison campaign (cawp) — persona reference candidates for ads F1 (news-reaction PIP) and F5 (three-questions announcer). 6 candidates, user picks one per ad. Skip-if-exi",
+    "syntax_error": null,
+    "techniques": [
+      "captions",
+      "image-generation"
+    ],
+    "providers": [
+      "KIE"
+    ],
+    "lines": 89
+  },
+  {
+    "path": "scripts/cawp_pip_composite.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "california-womens-prison",
+    "summary": "CAWP PIP composite: bg-removed persona talking head over ROTATING static vertical prison backdrops with a slow documentary zoom + subtle PIP drift. Nick captions are a SEPARATE pas",
+    "syntax_error": null,
+    "techniques": [
+      "assembly",
+      "captions"
+    ],
+    "providers": [
+      "ffmpeg"
+    ],
+    "lines": 133
+  },
+  {
+    "path": "scripts/cawp_r10_assemble.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "california-womens-prison",
+    "summary": "R10 — assemble one winner-script ad per persona from outputs/cawp_r10_winner_<slug>/. Word-aware trim per clip (unique-stem dissect transcripts), per-clip gain to -16 LUFS, concat,",
+    "syntax_error": null,
+    "techniques": [
+      "assembly",
+      "audio-QA",
+      "captions",
+      "speech-QA"
+    ],
+    "providers": [
+      "ffmpeg"
+    ],
+    "lines": 95
+  },
+  {
+    "path": "scripts/cawp_r10_blur_finish.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "california-womens-prison",
+    "summary": "R10 blur-background finisher: VEED matte (fal) -> gblur composite -> Nick + disclaimer. Run on an assembled persona master (r10_winner_<slug>_v1.mp4). Produces r10_winner_<slug>_v2",
+    "syntax_error": null,
+    "techniques": [
+      "assembly",
+      "captions",
+      "matte-PIP"
+    ],
+    "providers": [
+      "ffmpeg"
+    ],
+    "lines": 56
+  },
+  {
+    "path": "scripts/cawp_r10_winner_gen.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "california-womens-prison",
+    "summary": "R10 — the ORIGINAL winning Chowchilla script on 10 new personas (user 2026-06-11): exact same script per persona, ONLY the first sentence swapped (slight variants). Compliance fixe",
+    "syntax_error": null,
+    "techniques": [
+      "video-generation"
+    ],
+    "providers": [
+      "Google Flow/useapi",
+      "Veo"
+    ],
+    "lines": 113
+  },
+  {
+    "path": "scripts/cawp_r9_assemble.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "california-womens-prison",
+    "summary": "R9 'Mija' — assemble all 12 hook versions from the l2 spine. Each ad = hook_<slug> + bridge_<map> + body3..body10 (shared), word-aware trimmed, per-clip gain, concat, limiter, Nick",
+    "syntax_error": null,
+    "techniques": [
+      "assembly",
+      "audio-QA",
+      "captions",
+      "speech-QA"
+    ],
+    "providers": [
+      "ffmpeg"
+    ],
+    "lines": 106
+  },
+  {
+    "path": "scripts/cawp_r9_mija_gen.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "california-womens-prison",
+    "summary": "R9 'Mija' v2 — winner script, concerned tone, 12 user-picked hooks (9 Chowchilla / 3 CIW) with per-hook BRIDGE variants so each discovery mechanism flows into the untouched winner ",
+    "syntax_error": null,
+    "techniques": [
+      "video-generation"
+    ],
+    "providers": [
+      "Google Flow/useapi",
+      "Veo"
+    ],
+    "lines": 112
+  },
+  {
+    "path": "scripts/cawp_r_assemble.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "california-womens-prison",
+    "summary": "R-batch finisher — one command per ad, end to end: word-aware trim (intended first/last words derived from the script registry) -> per-clip static gain -> concat -> true-peak limit",
+    "syntax_error": null,
+    "techniques": [
+      "assembly",
+      "audio-QA",
+      "captions",
+      "speech-QA"
+    ],
+    "providers": [
+      "ffmpeg"
+    ],
+    "lines": 100
+  },
+  {
+    "path": "scripts/cawp_r_batch_gen.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "california-womens-prison",
+    "summary": "cawp R-batch — the approved real-story scripts (R1-R7; R8 medical held for firm sign-off). ONE version per ad (user rule 2026-06-10: no tone/persona variants): one persona, one ton",
+    "syntax_error": null,
+    "techniques": [
+      "captions",
+      "matte-PIP",
+      "video-generation"
+    ],
+    "providers": [
+      "Google Flow/useapi",
+      "Veo"
+    ],
+    "lines": 213
+  },
+  {
+    "path": "scripts/cawp_stacked_admachin_stage.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "california-womens-prison",
+    "summary": "Stage the CAWP women's-prison yapper set in AdMachin — DRAFT ONLY, no launch. 8 scripts (P, S1-S7) × 2 cuts (stacked male-guard + non-stacked full-frame) = 16 ads. Each script = 1 ",
+    "syntax_error": null,
+    "techniques": [
+      "AdMachin"
+    ],
+    "providers": [],
+    "lines": 180
+  },
+  {
+    "path": "scripts/cawp_stacked_assemble.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "california-womens-prison",
+    "summary": "CAWP stacked format: top half = rotating static b-roll stills (real news frames + gpt-image-2 generated), bottom half = yapper persona (face crop), Redwood captions burned separate",
+    "syntax_error": null,
+    "techniques": [
+      "assembly",
+      "B-roll",
+      "captions",
+      "image-generation"
+    ],
+    "providers": [
+      "ffmpeg",
+      "KIE"
+    ],
+    "lines": 107
+  },
+  {
+    "path": "scripts/cawp_stage_launchlist.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "california-womens-prison",
+    "summary": "Stage the cawp launch list in AdMachin: 11 tailored primaries (user picks A,D,H,J,M,Q,S,V,Y,CC,FF), upload the 12 not-yet-uploaded finals, assemble one draft ad per video with the ",
+    "syntax_error": null,
+    "techniques": [
+      "AdMachin",
+      "assembly"
+    ],
+    "providers": [],
+    "lines": 171
+  },
+  {
+    "path": "scripts/cawp_stage_r9.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "california-womens-prison",
+    "summary": "Stage the 12 R9 Mija ads in AdMachin: tailored SHORT primaries (hook echo + direct sexual-abuse-to-compensation line + proven constant block), upload combos, assemble drafts. Headl",
+    "syntax_error": null,
+    "techniques": [
+      "AdMachin",
+      "assembly"
+    ],
+    "providers": [],
+    "lines": 110
+  },
+  {
+    "path": "scripts/cawp_wp_broll_gen.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "california-womens-prison",
+    "summary": "CAWP women's-prison b-roll stills — gpt-image-2 (KIE, 2K). News-realistic documentary b-roll of women's-prison life for the stacked format top-half + AdMachin Women's Prison b-roll",
+    "syntax_error": null,
+    "techniques": [
+      "AdMachin",
+      "B-roll",
+      "captions",
+      "image-generation"
+    ],
+    "providers": [
+      "KIE"
+    ],
+    "lines": 102
+  },
+  {
+    "path": "scripts/cawp_wp_broll_vert.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "california-womens-prison",
+    "summary": "Vertical 9:16 women's-prison b-roll stills — gpt-image-2 (KIE, 2K) — for PIP composites (persona bg-removed talking over a static prison backdrop + docu zoom + Nick captions). \"Day",
+    "syntax_error": null,
+    "techniques": [
+      "B-roll",
+      "captions",
+      "image-generation"
+    ],
+    "providers": [
+      "KIE"
+    ],
+    "lines": 88
+  },
+  {
+    "path": "scripts/ccwf_jdcstyle20.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "california-womens-prison",
+    "summary": "Batch 3 — 20 NEW distinct FB image-ad concepts for the CA women's-prison campaign, in the IL-JDC designed/news style (the formats performing well), every ad a DIFFERENT format and ",
+    "syntax_error": null,
+    "techniques": [
+      "captions",
+      "image-generation",
+      "matte-PIP",
+      "speech-QA"
+    ],
+    "providers": [
+      "KIE"
+    ],
+    "lines": 224
+  },
+  {
+    "path": "scripts/ccwf_launch30_stage.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "california-womens-prison",
+    "summary": "Stage the 30 CA women's-prison image ads (jdcstyle20 + social10) to AdMachin as DRAFTS, then they're ready for bulk_launch into WPA - Latina - HJ P1. Per ad: burn the Pulaski/Jones",
+    "syntax_error": null,
+    "techniques": [
+      "AdMachin",
+      "assembly",
+      "matte-PIP"
+    ],
+    "providers": [],
+    "lines": 155
+  },
+  {
+    "path": "scripts/ccwf_social10.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "california-womens-prison",
+    "summary": "Batch 4 — 10 MORE social-proof image ads for the CA women's-prison campaign in the comment / chat / forum style that's performing (per user, 2026-06-26). HARD CONSTRAINT: NO Facebo",
+    "syntax_error": null,
+    "techniques": [
+      "captions",
+      "image-generation"
+    ],
+    "providers": [
+      "KIE"
+    ],
+    "lines": 136
+  },
+  {
+    "path": "scripts/chowchilla_a2_variations.py",
+    "role": "campaign-job",
+    "status": "variant",
+    "campaign": "california-womens-prison",
+    "summary": "Generate 12 Chowchilla script-variation ads using the same persona via Poyo veo3.1-fast. Persona anchor: scene_00 from final_a2_vc_ad copy.mp4 (Latina, \"Loyalty\" tattoo, plaid flan",
+    "syntax_error": null,
+    "techniques": [
+      "captions",
+      "matte-PIP",
+      "video-generation"
+    ],
+    "providers": [
+      "Poyo",
+      "Veo"
+    ],
+    "lines": 396
+  },
+  {
+    "path": "scripts/chowchilla_b01_ads.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "california-womens-prison",
+    "summary": "Chowchilla Black-woman (b01) ads — scripts D, E, C — Veo 3.1 Fast on KIE. Persona anchor: outputs/chowchilla_black_personas/reference/b01.png (mid-40s Black woman, afro puff w/ gre",
+    "syntax_error": null,
+    "techniques": [
+      "captions",
+      "video-generation"
+    ],
+    "providers": [
+      "ffmpeg",
+      "KIE",
+      "Poyo",
+      "Veo"
+    ],
+    "lines": 233
+  },
+  {
+    "path": "scripts/chowchilla_b01_finalize.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "california-womens-prison",
+    "summary": "Finalize a Chowchilla w05 ad: Scribe QA → trim silence → loudnorm → stitch. Per ad (E/D/A/C): 1. ElevenLabs Scribe transcribe each clip (biased keywords) → clip{N}_transcript.json ",
+    "syntax_error": null,
+    "techniques": [
+      "assembly",
+      "matte-PIP",
+      "speech-QA",
+      "voice-processing"
+    ],
+    "providers": [
+      "ElevenLabs",
+      "ffmpeg",
+      "Veo"
+    ],
+    "lines": 255
+  },
+  {
+    "path": "scripts/chowchilla_w05_ads.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "california-womens-prison",
+    "summary": "Chowchilla white-woman (w05) ads — scripts E, D, A, C — Veo 3.1 Fast on Poyo. Persona anchor: outputs/chowchilla_white_personas/reference/w05.png (weathered ash-blonde mid-40s woma",
+    "syntax_error": null,
+    "techniques": [
+      "captions",
+      "video-generation"
+    ],
+    "providers": [
+      "ffmpeg",
+      "Poyo",
+      "Veo"
+    ],
+    "lines": 211
+  },
+  {
+    "path": "scripts/chowchilla_w05_finalize.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "california-womens-prison",
+    "summary": "Finalize a Chowchilla w05 ad: Scribe QA → trim silence → loudnorm → stitch. Per ad (E/D/A/C): 1. ElevenLabs Scribe transcribe each clip (biased keywords) → clip{N}_transcript.json ",
+    "syntax_error": null,
+    "techniques": [
+      "assembly",
+      "speech-QA",
+      "voice-processing"
+    ],
+    "providers": [
+      "ElevenLabs",
+      "ffmpeg",
+      "Veo"
+    ],
+    "lines": 246
+  },
+  {
+    "path": "scripts/chowchilla_w05_kie_fallback.py",
+    "role": "campaign-job",
+    "status": "variant",
+    "campaign": "california-womens-prison",
+    "summary": "KIE veo3_fast fallback for Chowchilla w05 ads when Poyo is in a wide outage. Same Veo model, different infra ($0.30/clip vs Poyo $0.10). Keeps the missing clips on the SAME 'fast' ",
+    "syntax_error": null,
+    "techniques": [
+      "assembly",
+      "video-generation"
+    ],
+    "providers": [
+      "KIE",
+      "Poyo",
+      "Veo"
+    ],
+    "lines": 86
+  },
+  {
+    "path": "scripts/cilocala_ads_gen.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "cilocala",
+    "summary": "CILOCALA Facebook image-ad batch — 10 concepts. gpt-image-2 image-to-image (KIE) anchored on the pink CILOCALA Classic backpack. Run: .venv/bin/python scripts/cilocala_ads_gen.py [",
+    "syntax_error": null,
+    "techniques": [
+      "captions",
+      "image-generation",
+      "matte-PIP"
+    ],
+    "providers": [
+      "KIE"
+    ],
+    "lines": 139
+  },
+  {
+    "path": "scripts/cilocala_ads_v2.py",
+    "role": "campaign-job",
+    "status": "variant",
+    "campaign": "cilocala",
+    "summary": "CILOCALA FB image ads v2 — YELLOW, with faithful hardware (zipper pulls / webbing / toggle / patch). Anchors on a multi-angle collage (+ flat-zipper-pull close-up) so gpt-image-2 r",
+    "syntax_error": null,
+    "techniques": [
+      "captions",
+      "image-generation",
+      "matte-PIP"
+    ],
+    "providers": [
+      "KIE"
+    ],
+    "lines": 142
+  },
+  {
+    "path": "scripts/cilocala_templates.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "cilocala",
+    "summary": "CILOCALA ad TEMPLATES with product-placement placeholders. Workflow: gpt-image-2 generates the ad design (background + Korean text + callouts) with an EMPTY product zone (no AI-ren",
+    "syntax_error": null,
+    "techniques": [
+      "image-generation"
+    ],
+    "providers": [
+      "KIE"
+    ],
+    "lines": 119
+  },
+  {
+    "path": "scripts/cilocala_templates40.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "cilocala",
+    "summary": "CILOCALA — 40 DISTINCT ad TEMPLATES (photo-insertable version only). Each template: gpt-image-2 t2i generates background + Korean copy + callouts/decorative with an EMPTY product z",
+    "syntax_error": null,
+    "techniques": [
+      "captions",
+      "image-generation"
+    ],
+    "providers": [
+      "KIE"
+    ],
+    "lines": 229
+  },
+  {
+    "path": "scripts/cilocala_ugc20.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "cilocala",
+    "summary": "CILOCALA testimonial UGC ads — 20 distinct cuts, authentic real-customer phone-photo style. No text in image (testimonial = primary text). Board-anchored yellow for product fidelit",
+    "syntax_error": null,
+    "techniques": [
+      "captions",
+      "image-generation"
+    ],
+    "providers": [
+      "KIE"
+    ],
+    "lines": 78
+  },
+  {
+    "path": "scripts/cilocala_ugc_500g.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "cilocala",
+    "summary": "CILOCALA 'under 500g ultralight' UGC angle — 2 cuts. Board-anchored, no text.",
+    "syntax_error": null,
+    "techniques": [
+      "captions",
+      "image-generation"
+    ],
+    "providers": [
+      "KIE"
+    ],
+    "lines": 51
+  },
+  {
+    "path": "scripts/cilocala_ugc_test.py",
+    "role": "campaign-job",
+    "status": "variant",
+    "campaign": "cilocala",
+    "summary": "CILOCALA testimonial UGC images — TEST (3 cuts, one per target). Authentic real-customer phone-photo look, NO text (testimonial lives in primary text). gpt-image-2 i2i anchored on ",
+    "syntax_error": null,
+    "techniques": [
+      "captions",
+      "image-generation"
+    ],
+    "providers": [
+      "KIE"
+    ],
+    "lines": 68
+  },
+  {
+    "path": "scripts/ciw_porchtop_anchor_variants.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "california-womens-prison",
+    "summary": "Create video-safe anchor variants for CIW persona 05. The picked source has a hand too close to the lens, which can make Veo drift. These i2i variants preserve the same woman while",
+    "syntax_error": null,
+    "techniques": [
+      "captions",
+      "image-generation"
+    ],
+    "providers": [
+      "KIE",
+      "Veo"
+    ],
+    "lines": 109
+  },
+  {
+    "path": "scripts/ciw_private_form_personas.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "california-womens-prison",
+    "summary": "Generate persona references for the CIW private-form explainer ad. Output: outputs/ciw_private_form/personas/<slug>.png Provider: KIE gpt-image-2 at 2K, 9:16.",
+    "syntax_error": null,
+    "techniques": [
+      "captions",
+      "image-generation"
+    ],
+    "providers": [
+      "KIE"
+    ],
+    "lines": 109
+  },
+  {
+    "path": "scripts/ciw_private_form_personas_v2.py",
+    "role": "campaign-job",
+    "status": "variant",
+    "campaign": "california-womens-prison",
+    "summary": "Generate more grounded CIW private-form personas. These are fictional reentry/community-helper style references: lived-in faces, plain clothes, modest environments, and imperfect p",
+    "syntax_error": null,
+    "techniques": [
+      "captions",
+      "image-generation"
+    ],
+    "providers": [
+      "KIE"
+    ],
+    "lines": 142
+  },
+  {
+    "path": "scripts/ciw_private_form_personas_v3_extra.py",
+    "role": "campaign-job",
+    "status": "variant",
+    "campaign": "california-womens-prison",
+    "summary": "Generate 5 extra realistic CIW private-form persona references.",
+    "syntax_error": null,
+    "techniques": [
+      "captions",
+      "image-generation"
+    ],
+    "providers": [
+      "KIE"
+    ],
+    "lines": 87
+  },
+  {
+    "path": "scripts/ciw_private_form_v1_porchtop_gen.py",
+    "role": "campaign-job",
+    "status": "variant",
+    "campaign": "california-womens-prison",
+    "summary": "CIW private-form ad v1 using persona 05c porch anchor. Provider: useapi google-flow Veo 3.1 Lite low priority (free/no-credit). Usage: .venv/bin/python scripts/ciw_private_form_v1_",
+    "syntax_error": null,
+    "techniques": [
+      "anchor-continuity",
+      "captions",
+      "video-generation"
+    ],
+    "providers": [
+      "Google Flow/useapi",
+      "Veo"
+    ],
+    "lines": 168
+  },
+  {
+    "path": "scripts/cosmechef_dakbalm_anchors.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "cosmechef",
+    "summary": "COSME CHEF — DAK BALM (tinted lip balm) UGC anchors — PERSONA ONLY (no product in shot). 6 white-woman (30-40) candidates, USA home, talking-to-camera UGC selfie. 9:16, 2K. gpt-ima",
+    "syntax_error": null,
+    "techniques": [
+      "captions",
+      "image-generation"
+    ],
+    "providers": [
+      "KIE",
+      "Seedance"
+    ],
+    "lines": 69
+  },
+  {
+    "path": "scripts/cosmechef_dakbalm_assemble_broll.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "cosmechef",
+    "summary": "Insert application B-ROLL into the DAK BALM testimonial (_raw.mp4), keeping the testimonial audio continuous, then crop the Veo watermark once + limiter. Face-first, ~15% b-roll. v",
+    "syntax_error": null,
+    "techniques": [
+      "assembly",
+      "B-roll"
+    ],
+    "providers": [
+      "ffmpeg",
+      "Seedance",
+      "Veo"
+    ],
+    "lines": 65
+  },
+  {
+    "path": "scripts/cosmechef_dakbalm_broll.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "cosmechef",
+    "summary": "DAK BALM application B-ROLL — FREE Veo 3.1 Lite (useapi google-flow), i2v from clip-1 frames. She USES the product: swipes the balm on her lips. NO talking (testimonial VO plays un",
+    "syntax_error": null,
+    "techniques": [
+      "B-roll",
+      "captions",
+      "matte-PIP",
+      "video-generation"
+    ],
+    "providers": [
+      "Google Flow/useapi",
+      "Veo"
+    ],
+    "lines": 63
+  },
+  {
+    "path": "scripts/cosmechef_dakbalm_composite_D.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "cosmechef",
+    "summary": "Composite the REAL DAK BALM (black tube, red domed balm tip) into face D (d_blonde_vanity). nano-banana-2 multi-image edit: keep the woman + vanity setting from image 1, place the ",
+    "syntax_error": null,
+    "techniques": [
+      "captions",
+      "image-generation",
+      "matte-PIP"
+    ],
+    "providers": [
+      "KIE",
+      "Seedance"
+    ],
+    "lines": 71
+  },
+  {
+    "path": "scripts/cosmechef_dakbalm_extend916.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "cosmechef",
+    "summary": "Extend the 1:1 nano-banana composites (D + real product) to vertical 9:16 for the Seedance anchor. gpt-image-2 i2i, aspect_ratio=9:16: keep the woman + product EXACTLY, add natural",
+    "syntax_error": null,
+    "techniques": [
+      "captions",
+      "image-generation",
+      "matte-PIP"
+    ],
+    "providers": [
+      "KIE",
+      "Seedance"
+    ],
+    "lines": 53
+  },
+  {
+    "path": "scripts/cosmechef_dakbalm_finalize.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "cosmechef",
+    "summary": "Finalize DAK BALM 30s ad: 1. per-clip static gain -> -16 LUFS (even loudness, no pumping) 2. concat the 4 normalized trimmed clips 3. crop the Veo free-tier watermark once (720x128",
+    "syntax_error": null,
+    "techniques": [
+      "assembly",
+      "audio-QA"
+    ],
+    "providers": [
+      "ffmpeg",
+      "Veo"
+    ],
+    "lines": 55
+  },
+  {
+    "path": "scripts/cosmechef_dakbalm_trim.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "cosmechef",
+    "summary": "Word-aware trailing trim for the 4 DAK BALM clips — cut to each clip's last INTENDED word (removes Veo trailing improv: 'and-', 'Mm', 'Mmm. Hm.'). Uniform re-encode for clean conca",
+    "syntax_error": null,
+    "techniques": [
+      "assembly",
+      "audio-QA",
+      "speech-QA"
+    ],
+    "providers": [
+      "ffmpeg",
+      "Veo"
+    ],
+    "lines": 56
+  },
+  {
+    "path": "scripts/cosmechef_dakbalm_veo30.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "cosmechef",
+    "summary": "COSME CHEF — DAK BALM — 30s testimonial, FREE Veo 3.1 Lite (useapi google-flow), 4x ~8s clips. She HOLDS the product the whole time (never applies it). startImage i2v. Clip 1 = use",
+    "syntax_error": null,
+    "techniques": [
+      "anchor-continuity",
+      "captions",
+      "video-generation"
+    ],
+    "providers": [
+      "Google Flow/useapi",
+      "Veo"
+    ],
+    "lines": 79
+  },
+  {
+    "path": "scripts/crop_4x5.py",
+    "role": "reusable-tool",
+    "status": "canonical",
+    "campaign": null,
+    "summary": "Convert a tall/portrait video (9:16, 3:5, etc.) to 4:5 with letterbox auto-detection. Veo outputs at 720x1280 with ~64-100px black letterbox bars baked in. Naive cropping to 4:5 ke",
+    "syntax_error": null,
+    "techniques": [],
+    "providers": [
+      "ffmpeg",
+      "Veo"
+    ],
+    "lines": 177
+  },
+  {
+    "path": "scripts/depo_admachin_stage.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "depo-provera",
+    "summary": "Stage the 20 Depo-Provera image ads into AdMachin as DRAFTS (no launch). For each ad: upload creative -> create headline copy -> create primary copy -> assemble ONE draft ad under ",
+    "syntax_error": null,
+    "techniques": [
+      "AdMachin",
+      "assembly"
+    ],
+    "providers": [],
+    "lines": 210
+  },
+  {
+    "path": "scripts/depo_admachin_upload_product_broll.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "depo-provera",
+    "summary": "Upload the Depo campaign product B-roll set to AdMachin and write native generation fields. REST multipart upload (POST /brolls/clips/upload) then PATCH the Creative-Studio gen col",
+    "syntax_error": null,
+    "techniques": [
+      "AdMachin",
+      "anchor-continuity",
+      "B-roll",
+      "image-generation",
+      "video-generation"
+    ],
+    "providers": [
+      "Google Flow/useapi",
+      "KIE",
+      "Poyo"
+    ],
+    "lines": 78
+  },
+  {
+    "path": "scripts/depo_ads_gen.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "depo-provera",
+    "summary": "Depo-Provera / brain-meningioma image-ad batch — 20 formats, deliberately VARIED. Angle (LOCKED): LEAD WITH THE DIAGNOSIS (meningioma / brain tumor) — the high-value, claim-ready l",
+    "syntax_error": null,
+    "techniques": [
+      "B-roll",
+      "captions",
+      "image-generation"
+    ],
+    "providers": [
+      "KIE"
+    ],
+    "lines": 653
+  },
+  {
+    "path": "scripts/depo_clay_face.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "depo-provera",
+    "summary": "Depo claymation explainer — REFERENCE FACE candidates (the consistent protagonist). One claymation Black woman ~45 becomes THE face for every shot: the picked candidate is uploaded",
+    "syntax_error": null,
+    "techniques": [
+      "captions",
+      "image-generation",
+      "matte-PIP"
+    ],
+    "providers": [
+      "KIE",
+      "Seedance"
+    ],
+    "lines": 72
+  },
+  {
+    "path": "scripts/depo_claymation_assemble.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "depo-provera",
+    "summary": "Depo-Provera brain-meningioma CLAYMATION explainer — ASSEMBLY. Sync the 8 clay b-roll shots to the first-person female VO (survivor_f49.mp3, 41.3s). One shot per VO beat, in order.",
+    "syntax_error": null,
+    "techniques": [
+      "assembly",
+      "B-roll",
+      "captions",
+      "speech-QA"
+    ],
+    "providers": [
+      "ElevenLabs",
+      "ffmpeg"
+    ],
+    "lines": 92
+  },
+  {
+    "path": "scripts/depo_claymation_broll.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "depo-provera",
+    "summary": "Depo-Provera brain-meningioma — CLAYMATION B-ROLL set (Seedance 2 Fast, KIE, 480p 9:16). Diagnosis-first explainer, ~41s VO (depo_claymation_vo.py). Aardman/Wallace-&-Gromit clay. ",
+    "syntax_error": null,
+    "techniques": [
+      "B-roll",
+      "captions",
+      "matte-PIP",
+      "video-generation"
+    ],
+    "providers": [
+      "KIE",
+      "Seedance"
+    ],
+    "lines": 145
+  },
+  {
+    "path": "scripts/depo_claymation_vo.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "depo-provera",
+    "summary": "Depo-Provera brain-meningioma CLAYMATION explainer — first-person female VO. Voice: Black_F_49Y (LENRS9nvWdqPqUc8kYRq) — African-American female ~49, matches the persona (Black wom",
+    "syntax_error": null,
+    "techniques": [
+      "voice-processing"
+    ],
+    "providers": [
+      "ElevenLabs"
+    ],
+    "lines": 63
+  },
+  {
+    "path": "scripts/depo_diag_admachin_stage.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "depo-provera",
+    "summary": "Stage the 70 Depo \"speak-to-the-diagnosed\" image ads into AdMachin as full DRAFT ads (no launch). Combines the 20 (outputs/depo_ads/diagnosed20/) + the 50 (outputs/depo_ads/diagnos",
+    "syntax_error": null,
+    "techniques": [
+      "AdMachin",
+      "assembly"
+    ],
+    "providers": [],
+    "lines": 99
+  },
+  {
+    "path": "scripts/depo_diagnosed20_gen.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "depo-provera",
+    "summary": "Depo-Provera — 20 NEW image ads, \"SPEAK TO THE ALREADY-DIAGNOSED\" angle (user pivot 2026-06-19). Every ad addresses a woman who ALREADY has a meningioma/brain-tumor diagnosis — val",
+    "syntax_error": null,
+    "techniques": [
+      "captions",
+      "image-generation"
+    ],
+    "providers": [
+      "KIE"
+    ],
+    "lines": 124
+  },
+  {
+    "path": "scripts/depo_diagnosed50_gen.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "depo-provera",
+    "summary": "Depo — 50 MORE \"speak-to-the-diagnosed\" image ads (n21-70), gpt-image-2 full-render, 1:1 2K, KIE. Reads outputs/depo_ads/diagnosed50/prompts.json (authored by 3 agents, compliance+",
+    "syntax_error": null,
+    "techniques": [
+      "image-generation"
+    ],
+    "providers": [
+      "KIE"
+    ],
+    "lines": 57
+  },
+  {
+    "path": "scripts/depo_docu_broll_i2v.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "depo-provera",
+    "summary": "Depo docu b-roll library — animate approved stills into clips (veo-3.1-lite i2v). Each approved still (gpt2 v01-v24 portrait, nano nn_*/rp_* landscape) becomes an 8s muted-use b-ro",
+    "syntax_error": null,
+    "techniques": [
+      "anchor-continuity",
+      "B-roll",
+      "captions",
+      "video-generation"
+    ],
+    "providers": [
+      "ffmpeg",
+      "Google Flow/useapi",
+      "Veo"
+    ],
+    "lines": 129
+  },
+  {
+    "path": "scripts/depo_docu_montage_gen.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "depo-provera",
+    "summary": "Depo docu-series generator v3 — YouTube-docu montage. User-locked (2026-07-09): NO plain black text cards. Every text card (study / labels / counter / JUNE-15 / CTA) rides OVER a r",
+    "syntax_error": null,
+    "techniques": [
+      "B-roll"
+    ],
+    "providers": [
+      "ffmpeg",
+      "HyperFrames"
+    ],
+    "lines": 135
+  },
+  {
+    "path": "scripts/depo_formats100_gen.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "depo-provera",
+    "summary": "Depo-Provera — 100 DISTINCT image ads (image-ad-formats skill: format × style × angle). Pure gpt-image-2 full-render via OpenAI-direct (KIE gpt-image-2 was down 2026-06-19). Prompt",
+    "syntax_error": null,
+    "techniques": [
+      "image-generation"
+    ],
+    "providers": [
+      "KIE"
+    ],
+    "lines": 87
+  },
+  {
+    "path": "scripts/depo_hospital_meningioma_veo_unlimited.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "depo-provera",
+    "summary": "Produce the 45-50s hospital meningioma UGC ad on free Veo 3.1 Lite. Generate and QA one clip at a time so every output can be shown before inspection.",
+    "syntax_error": null,
+    "techniques": [
+      "anchor-continuity",
+      "assembly",
+      "audio-QA",
+      "captions",
+      "matte-PIP",
+      "speech-QA",
+      "video-generation"
+    ],
+    "providers": [
+      "ElevenLabs",
+      "ffmpeg",
+      "Google Flow/useapi",
+      "Veo"
+    ],
+    "lines": 241
+  },
+  {
+    "path": "scripts/depo_lite_fix.py",
+    "role": "campaign-job",
+    "status": "variant",
+    "campaign": "depo-provera",
+    "summary": "Re-roll the problem Depo clips on useapi google-flow Veo 3.1 Lite (the locked generation path). Fixes: p4 clip03 (Depo pron), p5 clip01 (was missing — Lite failed it earlier), p5 c",
+    "syntax_error": null,
+    "techniques": [
+      "anchor-continuity",
+      "video-generation"
+    ],
+    "providers": [
+      "Google Flow/useapi",
+      "Veo"
+    ],
+    "lines": 49
+  },
+  {
+    "path": "scripts/depo_meningioma20_gen.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "depo-provera",
+    "summary": "Depo — 20 MENINGIOMA-ONLY image ads (dead-targeted to a meningioma diagnosis). Full gpt-image-2 render (baked exact on-image text), 1:1 2K, KIE. NO PIL. Targeting rule (feedback_me",
+    "syntax_error": null,
+    "techniques": [
+      "captions",
+      "image-generation",
+      "matte-PIP"
+    ],
+    "providers": [
+      "KIE"
+    ],
+    "lines": 407
+  },
+  {
+    "path": "scripts/depo_meningioma_admachin_stage.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "depo-provera",
+    "summary": "Stage the 20 meningioma-only Depo ads into AdMachin as full DRAFT ads (no launch). Per ad: upload creative -> headline copy -> primary copy -> assemble draft ad, Tort / Depo Prover",
+    "syntax_error": null,
+    "techniques": [
+      "AdMachin",
+      "assembly"
+    ],
+    "providers": [],
+    "lines": 83
+  },
+  {
+    "path": "scripts/depo_meningioma_openers_omni.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "depo-provera",
+    "summary": "Depo meningioma-focused 30s openers on omni-flash. White-woman first pass for scripts #2/#3/#4 from the meningioma opener brainstorm. Each ad uses a different KIE gpt-image-2 perso",
+    "syntax_error": null,
+    "techniques": [
+      "anchor-continuity",
+      "assembly",
+      "audio-QA",
+      "captions",
+      "image-generation",
+      "matte-PIP",
+      "speech-QA",
+      "video-generation"
+    ],
+    "providers": [
+      "ElevenLabs",
+      "ffmpeg",
+      "Google Flow/useapi",
+      "KIE",
+      "Veo"
+    ],
+    "lines": 345
+  },
+  {
+    "path": "scripts/depo_meningioma_voice_finalize.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "depo-provera",
+    "summary": "Normalize Omni voice drift without changing native video timing. Each ad gets a separate instant voice clone from two central, clean clips. Speech-to-speech then replaces only the ",
+    "syntax_error": null,
+    "techniques": [
+      "assembly",
+      "audio-QA",
+      "voice-processing"
+    ],
+    "providers": [
+      "ElevenLabs",
+      "ffmpeg"
+    ],
+    "lines": 138
+  },
+  {
+    "path": "scripts/depo_p5clip01_fix.py",
+    "role": "campaign-job",
+    "status": "variant",
+    "campaign": "depo-provera",
+    "summary": "p5 clip01 deterministically TIMES OUT on Veo across all model tiers (free low-pri + paid veo-3.1-lite/fast) — it's the specific anchor+prompt combo, not priority/throttle. Fix by c",
+    "syntax_error": null,
+    "techniques": [
+      "video-generation"
+    ],
+    "providers": [
+      "ffmpeg",
+      "Google Flow/useapi",
+      "Veo"
+    ],
+    "lines": 37
+  },
+  {
+    "path": "scripts/depo_p5clip01_hipri.py",
+    "role": "campaign-job",
+    "status": "variant",
+    "campaign": "depo-provera",
+    "summary": "One-off: generate the stuck p5 clip01 on the PAID normal-priority useapi google-flow Lite tier (`veo-3.1-lite`, NOT the free `veo-3.1-lite-low-priority` queue that keeps timing out",
+    "syntax_error": null,
+    "techniques": [
+      "video-generation"
+    ],
+    "providers": [
+      "Google Flow/useapi",
+      "Veo"
+    ],
+    "lines": 30
+  },
+  {
+    "path": "scripts/depo_pixar_assemble.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "depo-provera",
+    "summary": "Depo-Provera brain-meningioma PIXAR explainer — ASSEMBLY. Same beat map as the claymation assembler; reuses the SAME VO (style-independent). Sync the 11 Pixar b-roll shots to survi",
+    "syntax_error": null,
+    "techniques": [
+      "assembly",
+      "B-roll",
+      "captions"
+    ],
+    "providers": [
+      "ffmpeg"
+    ],
+    "lines": 78
+  },
+  {
+    "path": "scripts/depo_pixar_broll.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "depo-provera",
+    "summary": "Depo-Provera brain-meningioma — PIXAR-style B-ROLL set (Seedance 2 Fast, KIE, 480p 9:16). Pixar/3D-CG sibling of depo_claymation_broll.py. Same diagnosis-first beats, same ~41s VO ",
+    "syntax_error": null,
+    "techniques": [
+      "B-roll",
+      "captions",
+      "video-generation"
+    ],
+    "providers": [
+      "KIE",
+      "Seedance"
+    ],
+    "lines": 135
+  },
+  {
+    "path": "scripts/depo_pixar_face.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "depo-provera",
+    "summary": "Depo PIXAR-style explainer — REFERENCE FACE candidates (the consistent protagonist). Same role as depo_clay_face.py but in a modern 3D animated feature-film look. The picked face i",
+    "syntax_error": null,
+    "techniques": [
+      "captions",
+      "image-generation"
+    ],
+    "providers": [
+      "KIE",
+      "Seedance"
+    ],
+    "lines": 72
+  },
+  {
+    "path": "scripts/depo_pixar_myth_assemble.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "depo-provera",
+    "summary": "Depo Pixar Myth-buster — ASSEMBLY. Sync 12 Pixar b-roll shots to outputs/depo_pixar_myth/vo.mp3. All clips 9:16 480p (Seedance Fast). Pipeline: trim each shot to its target dur fro",
+    "syntax_error": null,
+    "techniques": [
+      "assembly",
+      "B-roll",
+      "captions"
+    ],
+    "providers": [
+      "ffmpeg",
+      "Seedance"
+    ],
+    "lines": 79
+  },
+  {
+    "path": "scripts/depo_pixar_myth_broll.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "depo-provera",
+    "summary": "Depo Myth-buster — PIXAR-style B-ROLL set (Seedance 2 Fast, KIE, 480p 9:16). 12 shots for the myth-buster register (objection-killer, knowing host + b-roll metaphor for each myth).",
+    "syntax_error": null,
+    "techniques": [
+      "B-roll",
+      "captions",
+      "video-generation"
+    ],
+    "providers": [
+      "KIE",
+      "Seedance"
+    ],
+    "lines": 151
+  },
+  {
+    "path": "scripts/depo_pixar_myth_vo.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "depo-provera",
+    "summary": "Depo Pixar Myth-buster — first-person female VO (ElevenLabs). Voice: Black_F_49Y (LENRS9nvWdqPqUc8kYRq) — same voice as depo_claymation / depo_pixar so the campaign's Pixar-style a",
+    "syntax_error": null,
+    "techniques": [
+      "voice-processing"
+    ],
+    "providers": [
+      "ElevenLabs"
+    ],
+    "lines": 52
+  },
+  {
+    "path": "scripts/depo_podcast_1419_final_gen.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "depo-provera",
+    "summary": "Generate the approved Depo podcast host read on useapi Google Flow unlimited. The runner is intentionally sequential: generate one clip, inspect it, then continue. Clips 2-N use ro",
+    "syntax_error": null,
+    "techniques": [
+      "anchor-continuity",
+      "captions",
+      "speech-QA",
+      "video-generation"
+    ],
+    "providers": [
+      "ElevenLabs",
+      "Google Flow/useapi",
+      "Veo"
+    ],
+    "lines": 249
+  },
+  {
+    "path": "scripts/depo_podcast_1419_finalize.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "depo-provera",
+    "summary": "Finalize the approved Depo podcast ad without changing native playback speed. Steps: 1. Trim each host clip to scripted speech and remove timestamped internal backchannels. 2. Norm",
+    "syntax_error": null,
+    "techniques": [
+      "assembly",
+      "audio-QA",
+      "B-roll",
+      "matte-PIP",
+      "voice-processing"
+    ],
+    "providers": [
+      "ElevenLabs",
+      "ffmpeg"
+    ],
+    "lines": 471
+  },
+  {
+    "path": "scripts/depo_podcast_broll_veo.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "depo-provera",
+    "summary": "Generate the two missing human-context B-roll clips for the #1419 podcast clone.",
+    "syntax_error": null,
+    "techniques": [
+      "B-roll",
+      "captions",
+      "video-generation"
+    ],
+    "providers": [
+      "KIE",
+      "Veo"
+    ],
+    "lines": 63
+  },
+  {
+    "path": "scripts/depo_poyo_fix.py",
+    "role": "campaign-job",
+    "status": "variant",
+    "campaign": "depo-provera",
+    "summary": "Escalate the stuck/flagged Depo testimonial clips to Veo 3.1 Fast on Poyo ($0.10/clip), after free google-flow Lite failed them. Same prompt locks + persona-still anchors as depo_t",
+    "syntax_error": null,
+    "techniques": [
+      "video-generation"
+    ],
+    "providers": [
+      "KIE",
+      "Poyo",
+      "Veo"
+    ],
+    "lines": 54
+  },
+  {
+    "path": "scripts/depo_scan_ads_gen.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "depo-provera",
+    "summary": "Depo-Provera brain-tumor image ads — MEDICAL-IMAGERY subset, PURE gpt-image-2 full-render (model bakes the text — NOT the PIL pipeline). Brain-scan / hospital / shows-the-tumor ang",
+    "syntax_error": null,
+    "techniques": [
+      "captions",
+      "image-generation"
+    ],
+    "providers": [
+      "KIE"
+    ],
+    "lines": 115
+  },
+  {
+    "path": "scripts/depo_story20_gen.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "depo-provera",
+    "summary": "Depo — 20 story/news ads (the long-form testimonial winner format + news-article ads). Testimonials (1-15): KIE gpt-image-2 persona (4:5 2K, no text) + PIL bold on-image headline +",
+    "syntax_error": null,
+    "techniques": [
+      "image-generation"
+    ],
+    "providers": [
+      "KIE"
+    ],
+    "lines": 88
+  },
+  {
+    "path": "scripts/depo_story_admachin_stage.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "depo-provera",
+    "summary": "Stage the 20 story/news Depo ads into AdMachin as full DRAFT ads (no launch). Per ad: upload creative -> headline copy -> primary copy -> assemble draft ad, Tort / Depo Provera. Re",
+    "syntax_error": null,
+    "techniques": [
+      "AdMachin",
+      "assembly"
+    ],
+    "providers": [],
+    "lines": 83
+  },
+  {
+    "path": "scripts/depo_testi_admachin_stage.py",
+    "role": "campaign-job",
+    "status": "variant",
+    "campaign": "depo-provera",
+    "summary": "Stage the 5 Depo TESTIMONIAL ads (headline variant) into AdMachin as full DRAFT ads (no launch). Per ad: upload creative (the *_headline_4x5.png) -> create headline copy -> create ",
+    "syntax_error": null,
+    "techniques": [
+      "AdMachin",
+      "assembly",
+      "matte-PIP"
+    ],
+    "providers": [],
+    "lines": 168
+  },
+  {
+    "path": "scripts/depo_testimonial_finalize.py",
+    "role": "campaign-job",
+    "status": "variant",
+    "campaign": "depo-provera",
+    "summary": "Finalize the Depo testimonial ads (p4, p5). Per clip: word-aware trailing trim (subsequence-match the intended line in the Scribe transcript, cut to the last INTENDED word -> drops",
+    "syntax_error": null,
+    "techniques": [
+      "assembly",
+      "audio-QA",
+      "speech-QA",
+      "voice-processing"
+    ],
+    "providers": [
+      "ElevenLabs",
+      "ffmpeg",
+      "Veo"
+    ],
+    "lines": 140
+  },
+  {
+    "path": "scripts/depo_testimonial_gen.py",
+    "role": "campaign-job",
+    "status": "variant",
+    "campaign": "depo-provera",
+    "summary": "Depo-Provera brain-meningioma — First-Person Testimonial UGC ad (diagnosis-first). Messenger: ordinary Black woman ~45. Two anchors (p4 porch/locs, p5 couch/headwrap), SAME script ",
+    "syntax_error": null,
+    "techniques": [
+      "anchor-continuity",
+      "captions",
+      "video-generation"
+    ],
+    "providers": [
+      "Google Flow/useapi",
+      "Veo"
+    ],
+    "lines": 122
+  },
+  {
+    "path": "scripts/depo_testimonial_personas.py",
+    "role": "campaign-job",
+    "status": "variant",
+    "campaign": "depo-provera",
+    "summary": "Depo-Provera brain-meningioma — First-Person Testimonial persona candidates. Messenger: ordinary Black woman ~45 (the long-term-Depo / meningioma demographic). Diagnosis-first conf",
+    "syntax_error": null,
+    "techniques": [
+      "captions",
+      "image-generation"
+    ],
+    "providers": [
+      "KIE"
+    ],
+    "lines": 93
+  },
+  {
+    "path": "scripts/depo_tt_composite.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "depo-provera",
+    "summary": "Depo_tt composite — scan/scar backdrop + big MENINGIOMA word + persona PIP (bottom-right). Layers (720x1280 canvas): 1. backdrop still -> cover + slow push-in zoom (documentary \"th",
+    "syntax_error": null,
+    "techniques": [
+      "assembly",
+      "captions",
+      "matte-PIP"
+    ],
+    "providers": [
+      "ffmpeg"
+    ],
+    "lines": 81
+  },
+  {
+    "path": "scripts/depo_tt_finalize.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "depo-provera",
+    "summary": "Finalize + Nick-caption a depo_tt TikTok-voice ad (9:16). Per clip: dissect -> word-aware trailing trim (intended line vs Scribe transcript, drops veo improv on the 8s-in-short-lin",
+    "syntax_error": null,
+    "techniques": [
+      "assembly",
+      "audio-QA",
+      "captions",
+      "speech-QA"
+    ],
+    "providers": [
+      "ElevenLabs",
+      "ffmpeg",
+      "Veo"
+    ],
+    "lines": 122
+  },
+  {
+    "path": "scripts/depo_tt_gen.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "depo-provera",
+    "summary": "Depo TikTok-voice UGC series (depo_tt) — distinct-ARC scripts, punchy spoken register. Series extends the ugc10 machinery for the TikTok-voiced batch (2026-07). Currently: ad05 THE",
+    "syntax_error": null,
+    "techniques": [
+      "anchor-continuity",
+      "captions",
+      "video-generation"
+    ],
+    "providers": [
+      "Google Flow/useapi",
+      "Veo"
+    ],
+    "lines": 165
+  },
+  {
+    "path": "scripts/depo_tt_personas.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "depo-provera",
+    "summary": "Depo TikTok-voice series (depo_tt) — persona candidates. Ad 05 \"THE GATEKEEPER\": direct, confident, playful-stern Black woman ~45, talking straight into the lens. 3 candidate ident",
+    "syntax_error": null,
+    "techniques": [
+      "captions",
+      "image-generation"
+    ],
+    "providers": [
+      "KIE"
+    ],
+    "lines": 77
+  },
+  {
+    "path": "scripts/depo_ugc10_chorus.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "depo-provera",
+    "summary": "5 'chorus of voices' stitch videos from the 10 UGC meningioma ads. Each chorus intercuts fragments from MANY personas into one arc: a chorus of the meningioma diagnosis -> the Depo",
+    "syntax_error": null,
+    "techniques": [
+      "assembly",
+      "audio-QA",
+      "captions"
+    ],
+    "providers": [
+      "ffmpeg"
+    ],
+    "lines": 92
+  },
+  {
+    "path": "scripts/depo_ugc10_finalize.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "depo-provera",
+    "summary": "Finalize + Nick-caption the 10 UGC meningioma ads (9:16). Per ad: dissect each clip -> word-aware trailing trim (intended line vs Scribe transcript, drops Veo trailing improv) -> p",
+    "syntax_error": null,
+    "techniques": [
+      "assembly",
+      "audio-QA",
+      "captions",
+      "speech-QA"
+    ],
+    "providers": [
+      "ElevenLabs",
+      "ffmpeg",
+      "Veo"
+    ],
+    "lines": 143
+  },
+  {
+    "path": "scripts/depo_ugc10_gen.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "depo-provera",
+    "summary": "Depo meningioma UGC scale-out — 10 distinct-format testimonials, 1 persona each. Diagnosis-first: \"meningioma\"/\"brain tumor\" lands in the FIRST sentence (3-5s filter). Each script ",
+    "syntax_error": null,
+    "techniques": [
+      "captions",
+      "matte-PIP",
+      "video-generation"
+    ],
+    "providers": [
+      "Google Flow/useapi",
+      "Veo"
+    ],
+    "lines": 229
+  },
+  {
+    "path": "scripts/depo_ugc10_personas.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "depo-provera",
+    "summary": "Depo meningioma UGC scale-out — 10 distinct Black-woman ~45 personas for 10 unique scripts. Diagnosis-first testimonial messengers. gpt-image-2 (KIE) 4:5 2K, iPhone-front-camera-fr",
+    "syntax_error": null,
+    "techniques": [
+      "captions",
+      "image-generation"
+    ],
+    "providers": [
+      "KIE",
+      "Veo"
+    ],
+    "lines": 105
+  },
+  {
+    "path": "scripts/detect_card_flips.py",
+    "role": "reusable-tool",
+    "status": "canonical",
+    "campaign": null,
+    "summary": "Detect caption CARD-FLIP timestamps in a (Submagic) captioned video by diffing a binary text mask of the caption band. A full card change flips many text pixels; an active-word col",
+    "syntax_error": null,
+    "techniques": [
+      "captions"
+    ],
+    "providers": [
+      "ffmpeg"
+    ],
+    "lines": 45
+  },
+  {
+    "path": "scripts/detect_emojis.py",
+    "role": "reusable-tool",
+    "status": "canonical",
+    "campaign": null,
+    "summary": "Detect the emoji blob in a captioned video frame-by-frame (for reverse-engineering Submagic's emoji size/position/motion). Emoji = a compact, FILLED, MULTI-HUE blob (text is single",
+    "syntax_error": null,
+    "techniques": [
+      "captions"
+    ],
+    "providers": [
+      "ffmpeg"
+    ],
+    "lines": 76
+  },
+  {
+    "path": "scripts/emoji_anim_extract.py",
+    "role": "reusable-tool",
+    "status": "canonical",
+    "campaign": null,
+    "summary": "Exact per-frame emoji animation extraction (24fps) via MULTI-SCALE template matching. For each emoji event, tracks position AND scale every frame across its lifetime, so we recover",
+    "syntax_error": null,
+    "techniques": [],
+    "providers": [
+      "ffmpeg"
+    ],
+    "lines": 84
+  },
+  {
+    "path": "scripts/emoji_diff_track.py",
+    "role": "reusable-tool",
+    "status": "canonical",
+    "campaign": null,
+    "summary": "Per-frame emoji position+size measurement by DIFFING a captioned video against its clean master. Both Submagic's export and our render overlay captions on the SAME master (story_e_",
+    "syntax_error": null,
+    "techniques": [
+      "captions"
+    ],
+    "providers": [
+      "ffmpeg"
+    ],
+    "lines": 91
+  },
+  {
+    "path": "scripts/emoji_entrance_track.py",
+    "role": "reusable-tool",
+    "status": "canonical",
+    "campaign": null,
+    "summary": "Trace each emoji's TRUE entrance trajectory by tracking it BACKWARD from its settled position. Starting from certainty (the settled emoji, isolated by diffing captioned vs master) ",
+    "syntax_error": null,
+    "techniques": [
+      "captions"
+    ],
+    "providers": [
+      "ffmpeg"
+    ],
+    "lines": 124
+  },
+  {
+    "path": "scripts/emoji_match_report.py",
+    "role": "reusable-tool",
+    "status": "canonical",
+    "campaign": null,
+    "summary": "Frame-by-frame Submagic-vs-ours emoji match report. For each inventory emoji, diff-track it in BOTH the Submagic export and our render, align by first-appearance frame, and report:",
+    "syntax_error": null,
+    "techniques": [
+      "captions",
+      "matte-PIP"
+    ],
+    "providers": [],
+    "lines": 68
+  },
+  {
+    "path": "scripts/emoji_slide_measure.py",
+    "role": "reusable-tool",
+    "status": "canonical",
+    "campaign": null,
+    "summary": "Measure each emoji's TRUE slide-in vector by template-tracking its settled appearance BACKWARD through the entrance, on the DIFF image (captioned - master, which isolates the emoji",
+    "syntax_error": null,
+    "techniques": [
+      "captions"
+    ],
+    "providers": [
+      "ffmpeg"
+    ],
+    "lines": 132
+  },
+  {
+    "path": "scripts/emoji_template_probe.py",
+    "role": "reusable-tool",
+    "status": "canonical",
+    "campaign": null,
+    "summary": "Caption a short test clip through several Submagic templates to find which animate emojis. Output: outputs/_emoji_probe/<template>.mp4",
+    "syntax_error": null,
+    "techniques": [
+      "captions"
+    ],
+    "providers": [],
+    "lines": 38
+  },
+  {
+    "path": "scripts/extract_submagic_cards.py",
+    "role": "reusable-tool",
+    "status": "canonical",
+    "campaign": null,
+    "summary": "Dissect a Submagic-captioned video to extract its EXACT card structure: for each card, the time window, the words shown, and the line count. Reads the burned captions via a value/s",
+    "syntax_error": null,
+    "techniques": [
+      "captions"
+    ],
+    "providers": [
+      "ffmpeg"
+    ],
+    "lines": 119
+  },
+  {
+    "path": "scripts/finalize_a2_variations.py",
+    "role": "campaign-job",
+    "status": "variant",
+    "campaign": "california-womens-prison",
+    "summary": "End-to-end finalize pipeline for the 12 a2-persona Chowchilla script variations. Per variation: 1. ElevenLabs Scribe-transcribe each clip -> save transcript JSON next to clip 2. Co",
+    "syntax_error": null,
+    "techniques": [
+      "assembly",
+      "speech-QA",
+      "voice-processing"
+    ],
+    "providers": [
+      "ElevenLabs",
+      "ffmpeg",
+      "Poyo",
+      "Veo"
+    ],
+    "lines": 212
+  },
+  {
+    "path": "scripts/framewise_video_qa.py",
+    "role": "reusable-tool",
+    "status": "canonical",
+    "campaign": null,
+    "summary": "Audit every extracted frame for flashes, blanks, freezes, and short visual runs.",
+    "syntax_error": null,
+    "techniques": [],
+    "providers": [],
+    "lines": 173
+  },
+  {
+    "path": "scripts/gen_black_personas.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "california-womens-prison",
+    "summary": "Generate mid-40s BLACK-woman photoreal living-room personas via KIE gpt-image-2 (2K, 9:16). Theme: Black women who could plausibly have been incarcerated at California women's pris",
+    "syntax_error": null,
+    "techniques": [
+      "captions",
+      "image-generation"
+    ],
+    "providers": [
+      "KIE"
+    ],
+    "lines": 131
+  },
+  {
+    "path": "scripts/gen_living_real.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "california-womens-prison",
+    "summary": "Generate 10 photoreal Latina living-room personas via OpenAI gpt-image-2. Theme: women who could plausibly have been incarcerated at California women's prisons (CCWF / CIW) between",
+    "syntax_error": null,
+    "techniques": [
+      "captions",
+      "image-generation"
+    ],
+    "providers": [
+      "KIE"
+    ],
+    "lines": 194
+  },
+  {
+    "path": "scripts/gen_personas.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "california-womens-prison",
+    "summary": "Generate 4 reference persona portraits in parallel via GPT Image 2.",
+    "syntax_error": null,
+    "techniques": [
+      "captions",
+      "image-generation",
+      "matte-PIP"
+    ],
+    "providers": [
+      "KIE"
+    ],
+    "lines": 94
+  },
+  {
+    "path": "scripts/gen_white_personas.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "california-womens-prison",
+    "summary": "Generate mid-40s WHITE-woman photoreal living-room personas via KIE gpt-image-2 (2K, 9:16). Theme: white women who could plausibly have been incarcerated at California women's pris",
+    "syntax_error": null,
+    "techniques": [
+      "captions",
+      "image-generation"
+    ],
+    "providers": [
+      "KIE"
+    ],
+    "lines": 132
+  },
+  {
+    "path": "scripts/il_jdc_image_ads.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "illinois-jdc",
+    "summary": "IL JDC — 20 DISTINCT image ads (image-ad-formats system: format x style x angle). 10 UGC testimonial longforms (photoreal adult survivor + pull-quote; long FB primary) + 10 designe",
+    "syntax_error": null,
+    "techniques": [
+      "AdMachin",
+      "image-generation",
+      "matte-PIP"
+    ],
+    "providers": [
+      "KIE"
+    ],
+    "lines": 541
+  },
+  {
+    "path": "scripts/il_jdc_imageads_stage.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "illinois-jdc",
+    "summary": "Stage the 20 IL JDC image ads to AdMachin as DRAFTS (no launch, no spend). Per ad: upload creative -> create its primary_text copy -> assemble ad (reuse the proven headline 'TAP TO",
+    "syntax_error": null,
+    "techniques": [
+      "AdMachin",
+      "assembly"
+    ],
+    "providers": [],
+    "lines": 87
+  },
+  {
+    "path": "scripts/il_jdc_news_ads.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "illinois-jdc",
+    "summary": "IL JDC — rebuild the 10 DESIGNED ads (11-20) as NEWS-HEADLINE-ARTICLE images. Replaces the abstract designed formats with credible news-article looks; the on-image HEADLINE explici",
+    "syntax_error": null,
+    "techniques": [
+      "image-generation",
+      "matte-PIP"
+    ],
+    "providers": [
+      "KIE"
+    ],
+    "lines": 240
+  },
+  {
+    "path": "scripts/il_juvie_a_clips.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "illinois-jdc",
+    "summary": "Generate IL juvenile-detention survivor ad (Script A) clips via KIE Veo 3.1 Lite @ 1080p. Persona anchor: outputs/il_juvie_a/reference/character_A_livingroom.png (Black man, early ",
+    "syntax_error": null,
+    "techniques": [
+      "captions",
+      "matte-PIP",
+      "video-generation"
+    ],
+    "providers": [
+      "KIE",
+      "Veo"
+    ],
+    "lines": 134
+  },
+  {
+    "path": "scripts/il_juvie_personas.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "illinois-jdc",
+    "summary": "Generate reference-character candidates for the IL juvenile-detention survivor ad (Script A persona: Black man, early-to-mid 30s, survivor testimonial). 6 candidates varied by sett",
+    "syntax_error": null,
+    "techniques": [
+      "captions",
+      "image-generation"
+    ],
+    "providers": [
+      "KIE",
+      "Veo"
+    ],
+    "lines": 119
+  },
+  {
+    "path": "scripts/jdc_a_broll_refs.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "juvenile-detention",
+    "summary": "Generate gpt-image-2 storyboard reference frames for B-roll scenes. 12 reference images, 9:16 portrait (1024x1536), quality=medium for speed. Each is a candidate first-frame anchor",
+    "syntax_error": null,
+    "techniques": [
+      "B-roll",
+      "captions",
+      "image-generation"
+    ],
+    "providers": [
+      "KIE",
+      "Seedance",
+      "Veo"
+    ],
+    "lines": 131
+  },
+  {
+    "path": "scripts/jdc_a_doc_broll.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "juvenile-detention",
+    "summary": "Generate 2 documentary-style moving B-roll clips via OpenRouter Seedance. Theme: chaotic institutional documentary realism — multiple guards + teens in motion, handheld camera, des",
+    "syntax_error": null,
+    "techniques": [
+      "B-roll",
+      "captions"
+    ],
+    "providers": [
+      "Seedance"
+    ],
+    "lines": 93
+  },
+  {
+    "path": "scripts/jdc_a_docu_zoom.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "juvenile-detention",
+    "summary": "Apply varied docu-zoom + letterbox-with-blur preservation to 6 inmate backdrops. Each backdrop: - Background: scaled+blurred source filling 720x1280 (context-aware filler) - Foregr",
+    "syntax_error": null,
+    "techniques": [],
+    "providers": [
+      "ffmpeg"
+    ],
+    "lines": 105
+  },
+  {
+    "path": "scripts/jdc_a_inmate_backdrops.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "juvenile-detention",
+    "summary": "Generate 6 news-realistic JDC backdrops — ALL with inmates + guards in the prison. Documentary news b-roll energy. Real-world authenticity. NO press conferences, NO courtrooms, NO ",
+    "syntax_error": null,
+    "techniques": [
+      "B-roll",
+      "captions"
+    ],
+    "providers": [],
+    "lines": 118
+  },
+  {
+    "path": "scripts/jdc_a_mistreatment_broll.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "juvenile-detention",
+    "summary": "Generate 8 IL JDC mistreatment B-roll clips via OpenRouter Seedance 2.0 Fast. Text-to-video only (no reference images → OpenRouter privacy filter doesn't trigger). 480p 9:16, 5s ea",
+    "syntax_error": null,
+    "techniques": [
+      "B-roll",
+      "captions"
+    ],
+    "providers": [
+      "Seedance"
+    ],
+    "lines": 124
+  },
+  {
+    "path": "scripts/jdc_a_news_backdrops.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "juvenile-detention",
+    "summary": "Generate 6 news-realistic JDC/prison scene backdrops via gpt-image-2. These should look like actual news b-roll — documentary realism, real lighting, authentic environments. NOT ci",
+    "syntax_error": null,
+    "techniques": [
+      "B-roll",
+      "image-generation"
+    ],
+    "providers": [
+      "KIE"
+    ],
+    "lines": 115
+  },
+  {
+    "path": "scripts/jdc_a_pa_broll.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "juvenile-detention",
+    "summary": "Generate 6 IL JDC physical-abuse-suggestive B-roll clips via OpenRouter Seedance 2.0 Fast. Documentary observational style — hallway scenes. Implied physical abuse via grip, postur",
+    "syntax_error": null,
+    "techniques": [
+      "B-roll",
+      "captions"
+    ],
+    "providers": [
+      "Seedance"
+    ],
+    "lines": 113
+  },
+  {
+    "path": "scripts/jdc_a_seedance.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "juvenile-detention",
+    "summary": "Illinois JDC ad — Persona A (Urban Peer) via KIE Seedance. Pipeline: - 2 talking-head clips of persona A (12s each, KIE Seedance with ref image) - 5 B-roll clips (text-to-video, no",
+    "syntax_error": null,
+    "techniques": [
+      "B-roll",
+      "captions",
+      "video-generation"
+    ],
+    "providers": [
+      "KIE",
+      "Seedance"
+    ],
+    "lines": 183
+  },
+  {
+    "path": "scripts/jdc_a_veo_broll.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "juvenile-detention",
+    "summary": "Generate 3 random Veo 3 B-roll clips via Poyo for Illinois JDC ad. Text-to-video, no reference images. 8s each, 9:16 720p. Output: outputs/illinois_jdc_urban_peer/veo_broll_{name}.",
+    "syntax_error": null,
+    "techniques": [
+      "B-roll",
+      "captions",
+      "video-generation"
+    ],
+    "providers": [
+      "Poyo",
+      "Veo"
+    ],
+    "lines": 73
+  },
+  {
+    "path": "scripts/jdc_action_broll_v2.py",
+    "role": "campaign-job",
+    "status": "variant",
+    "campaign": "juvenile-detention",
+    "summary": "IL JDC action b-rolls v2 (clips 4-6) via OpenRouter Seedance 2.0 (NON-fast / quality). Three high-action JDC scenes — text-to-video, no reference image. Black teen persona. 4. soli",
+    "syntax_error": null,
+    "techniques": [
+      "captions",
+      "video-generation"
+    ],
+    "providers": [
+      "Seedance"
+    ],
+    "lines": 102
+  },
+  {
+    "path": "scripts/jdc_ads124_clips.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "juvenile-detention",
+    "summary": "Ads 1, 2, 4 — remaining clips (2+), all on ONE host (KIE Veo 3.1 Lite), parallel. Ad 1 (Confession, persona 3 / 34): clips 2,3,4,5 Ad 2 (Memory Trigger, persona 2 / 26): clips 2,3,",
+    "syntax_error": null,
+    "techniques": [
+      "captions",
+      "matte-PIP",
+      "video-generation"
+    ],
+    "providers": [
+      "ElevenLabs",
+      "KIE",
+      "Veo"
+    ],
+    "lines": 209
+  },
+  {
+    "path": "scripts/jdc_claymation_abuse_anchor.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "juvenile-detention",
+    "summary": "IL JDC explainer — CLAYMATION ABUSE-ANCHOR shots (Seedance KIE 480p 9:16). The context b-roll (jdc_claymation_broll.py) reads as generic institutional sadness. Per the campaign's l",
+    "syntax_error": null,
+    "techniques": [
+      "B-roll",
+      "captions",
+      "matte-PIP",
+      "video-generation"
+    ],
+    "providers": [
+      "KIE",
+      "Seedance"
+    ],
+    "lines": 98
+  },
+  {
+    "path": "scripts/jdc_claymation_assemble.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "juvenile-detention",
+    "summary": "IL JDC claymation explainer — ASSEMBLY (sync 22 clips to Brian VO + caption). VO: outputs/illinois_jdc_claymation/vo/survivor_brian.mp3 (54.64s, eleven_v3). Beat timings (from Scri",
+    "syntax_error": null,
+    "techniques": [
+      "assembly",
+      "captions",
+      "speech-QA"
+    ],
+    "providers": [
+      "ElevenLabs",
+      "ffmpeg"
+    ],
+    "lines": 126
+  },
+  {
+    "path": "scripts/jdc_claymation_assemble_v2.py",
+    "role": "campaign-job",
+    "status": "variant",
+    "campaign": "juvenile-detention",
+    "summary": "IL JDC claymation explainer — ASSEMBLY (sync 22 clips to Brian VO + caption). VO: outputs/illinois_jdc_claymation/vo/survivor_brian.mp3 (54.64s, eleven_v3). Beat timings (from Scri",
+    "syntax_error": null,
+    "techniques": [
+      "assembly",
+      "captions",
+      "speech-QA"
+    ],
+    "providers": [
+      "ElevenLabs",
+      "ffmpeg"
+    ],
+    "lines": 126
+  },
+  {
+    "path": "scripts/jdc_claymation_broll.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "juvenile-detention",
+    "summary": "IL JDC explainer — CLAYMATION B-ROLL set (Seedance 2 Fast, KIE, 480p 9:16). Wordless symbolic b-roll for the ~38s \"What The State Doesn't Advertise\" explainer. Claymation is delibe",
+    "syntax_error": null,
+    "techniques": [
+      "B-roll",
+      "captions",
+      "matte-PIP",
+      "video-generation"
+    ],
+    "providers": [
+      "KIE",
+      "Seedance"
+    ],
+    "lines": 135
+  },
+  {
+    "path": "scripts/jdc_claymation_emotion.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "juvenile-detention",
+    "summary": "IL JDC explainer — CLAYMATION EMOTIONAL ARC (Seedance KIE 480p 9:16). The emotional spine. Tells \"how bad it was\" through ONE clay character — a child, then the same person grown u",
+    "syntax_error": null,
+    "techniques": [
+      "captions",
+      "matte-PIP",
+      "video-generation"
+    ],
+    "providers": [
+      "KIE",
+      "Seedance"
+    ],
+    "lines": 134
+  },
+  {
+    "path": "scripts/jdc_claymation_emotion_v2.py",
+    "role": "campaign-job",
+    "status": "variant",
+    "campaign": "juvenile-detention",
+    "summary": "IL JDC explainer — CLAYMATION EMOTIONAL ARC v2 (demographic re-roll). The v1 arc (jdc_claymation_emotion.py) rendered the adult survivor as an older ~50-60s white man — off-demogra",
+    "syntax_error": null,
+    "techniques": [
+      "captions",
+      "matte-PIP",
+      "video-generation"
+    ],
+    "providers": [
+      "Seedance"
+    ],
+    "lines": 134
+  },
+  {
+    "path": "scripts/jdc_claymation_facility.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "juvenile-detention",
+    "summary": "IL JDC explainer — CLAYMATION PRISON-AREA scenes (Seedance KIE 480p 9:16). Inside-the-walls establishing b-roll so the ad unmistakably reads as a juvie/lockup. Mostly EMPTY institu",
+    "syntax_error": null,
+    "techniques": [
+      "B-roll",
+      "captions",
+      "matte-PIP",
+      "video-generation"
+    ],
+    "providers": [
+      "KIE",
+      "Seedance"
+    ],
+    "lines": 112
+  },
+  {
+    "path": "scripts/jdc_claymation_facility2_or.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "juvenile-detention",
+    "summary": "IL JDC explainer — CLAYMATION faceless EXPANSION (OpenRouter Seedance 480p). Additional faceless prison/institutional b-roll to round out the library and give cutting variety. ALL ",
+    "syntax_error": null,
+    "techniques": [
+      "B-roll",
+      "captions",
+      "matte-PIP",
+      "video-generation"
+    ],
+    "providers": [
+      "Seedance"
+    ],
+    "lines": 127
+  },
+  {
+    "path": "scripts/jdc_claymation_lockup.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "juvenile-detention",
+    "summary": "IL JDC explainer — CLAYMATION \"getting locked up\" narrative clips. The opening (beat 1: \"When I was a kid, Illinois locked me up...\") was boring — a static facility exterior + fenc",
+    "syntax_error": null,
+    "techniques": [
+      "B-roll",
+      "captions",
+      "matte-PIP",
+      "video-generation"
+    ],
+    "providers": [
+      "KIE",
+      "Seedance"
+    ],
+    "lines": 96
+  },
+  {
+    "path": "scripts/jdc_claymation_police_open.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "juvenile-detention",
+    "summary": "IL JDC explainer v2 — opening \"taken by police\" shot (shows the kid's FACE). Director note: open on a CHARACTER, not the lockup building — a face is more relatable / scroll-stoppin",
+    "syntax_error": null,
+    "techniques": [
+      "B-roll",
+      "captions",
+      "matte-PIP",
+      "video-generation"
+    ],
+    "providers": [
+      "KIE",
+      "Seedance"
+    ],
+    "lines": 75
+  },
+  {
+    "path": "scripts/jdc_claymation_revisions.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "juvenile-detention",
+    "summary": "IL JDC explainer — CLAYMATION revision clips (round 2, KIE Seedance Fast). Addresses director notes: - \"paid out millions\" -> survivor sees NEWS on his phone, totally SHOCKED - \"to",
+    "syntax_error": null,
+    "techniques": [
+      "B-roll",
+      "captions",
+      "matte-PIP",
+      "video-generation"
+    ],
+    "providers": [
+      "KIE",
+      "Seedance"
+    ],
+    "lines": 130
+  },
+  {
+    "path": "scripts/jdc_confession_clip1_batch.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "juvenile-detention",
+    "summary": "Clip 1 of all 4 Tier-1 ads, in parallel. Each establishes its persona. Ad 1 (Confession) → persona 3 (34) Ad 2 (Memory Trigger) → persona 2 (26) Ad 3 (He's Still Out There) → perso",
+    "syntax_error": null,
+    "techniques": [
+      "captions",
+      "matte-PIP",
+      "video-generation"
+    ],
+    "providers": [
+      "KIE",
+      "Veo"
+    ],
+    "lines": 137
+  },
+  {
+    "path": "scripts/jdc_confession_p02_clip1.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "juvenile-detention",
+    "summary": "IL JDC 'First-Person Confession' ad (Script A) — persona 02, CLIP 1. Persona 02 = West Side Chicago, 26, dark brown skin, low fade + full beard, black puffer over grey hoodie, unde",
+    "syntax_error": null,
+    "techniques": [
+      "captions",
+      "video-generation"
+    ],
+    "providers": [
+      "KIE",
+      "Veo"
+    ],
+    "lines": 79
+  },
+  {
+    "path": "scripts/jdc_demographic_personas.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "juvenile-detention",
+    "summary": "10 IL JDC abuse-survivor personas spanning the 18-39 demographic. Demographic basis (from litigation + IL juvenile-justice data): - Overwhelmingly Black men, secondary Latino, ~85-",
+    "syntax_error": null,
+    "techniques": [
+      "captions",
+      "image-generation"
+    ],
+    "providers": [
+      "KIE"
+    ],
+    "lines": 163
+  },
+  {
+    "path": "scripts/jdc_e_emotion_test.py",
+    "role": "campaign-job",
+    "status": "variant",
+    "campaign": "juvenile-detention",
+    "summary": "Emotion audition for b14: 3 takes of the hook clip with different sad/sobbing voice. KIE veo3_lite, FIRST_AND_LAST_FRAMES from the bed_b14 host image. Output: outputs/illinois_jdc_",
+    "syntax_error": null,
+    "techniques": [
+      "captions",
+      "video-generation"
+    ],
+    "providers": [
+      "KIE",
+      "Veo"
+    ],
+    "lines": 70
+  },
+  {
+    "path": "scripts/jdc_e_emotion_test2.py",
+    "role": "campaign-job",
+    "status": "variant",
+    "campaign": "juvenile-detention",
+    "summary": "Emotion audition v2 for b14 hook: 5 LOW-PITCHED takes (sobbing was too high). All force a deep chest-voice register while varying the emotional delivery. KIE veo3_lite, FIRST_AND_L",
+    "syntax_error": null,
+    "techniques": [
+      "captions",
+      "video-generation"
+    ],
+    "providers": [
+      "KIE",
+      "Veo"
+    ],
+    "lines": 85
+  },
+  {
+    "path": "scripts/jdc_e_isolate.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "juvenile-detention",
+    "summary": "Full-track ElevenLabs audio-isolation on Story E masters (remove background music). Extract master audio -> isolate -> re-gain to -16 LUFS + limiter -> re-mux. Keeps a _premusic ba",
+    "syntax_error": null,
+    "techniques": [
+      "audio-QA"
+    ],
+    "providers": [
+      "ElevenLabs",
+      "ffmpeg"
+    ],
+    "lines": 65
+  },
+  {
+    "path": "scripts/jdc_finalize.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "juvenile-detention",
+    "summary": "Generalized finalize for the IL JDC Tier-1 ads (one persona per ad). Pipeline (same as Ad 3 / He's Still Out There): Scribe-trim each clip (speech window, prints transcript for QA)",
+    "syntax_error": null,
+    "techniques": [
+      "assembly",
+      "captions",
+      "speech-QA",
+      "voice-processing"
+    ],
+    "providers": [
+      "ElevenLabs",
+      "ffmpeg"
+    ],
+    "lines": 147
+  },
+  {
+    "path": "scripts/jdc_finalize_v2.py",
+    "role": "campaign-job",
+    "status": "variant",
+    "campaign": "juvenile-detention",
+    "summary": "Higher-quality voice-change finalize (fixes the muffled VC). Changes vs jdc_finalize.py: - STS output is LOSSLESS pcm_44100 (was 128k mp3) — no codec muffle, single AAC encode at t",
+    "syntax_error": null,
+    "techniques": [
+      "assembly",
+      "audio-QA",
+      "captions",
+      "speech-QA",
+      "voice-processing"
+    ],
+    "providers": [
+      "ElevenLabs",
+      "ffmpeg"
+    ],
+    "lines": 170
+  },
+  {
+    "path": "scripts/jdc_flow_test.py",
+    "role": "campaign-job",
+    "status": "variant",
+    "campaign": "juvenile-detention",
+    "summary": "Validate the FREE google-flow veo-3.1-lite-low-priority path on one b14 clip.",
+    "syntax_error": null,
+    "techniques": [
+      "captions",
+      "video-generation"
+    ],
+    "providers": [
+      "Google Flow/useapi",
+      "Veo"
+    ],
+    "lines": 37
+  },
+  {
+    "path": "scripts/jdc_kid_clip3_reroll.py",
+    "role": "campaign-job",
+    "status": "variant",
+    "campaign": "juvenile-detention",
+    "summary": "Re-roll Ad 4 (You Were a Kid) clip 3 — the CTA clip came out with a broad SMILE, which reads commercial/wrong on a sexual-abuse CTA. Regenerate with a hard VISUAL no-smile lock (th",
+    "syntax_error": null,
+    "techniques": [
+      "captions",
+      "matte-PIP",
+      "video-generation"
+    ],
+    "providers": [
+      "KIE",
+      "Veo"
+    ],
+    "lines": 48
+  },
+  {
+    "path": "scripts/jdc_news_clip1.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "juvenile-detention",
+    "summary": "IL JDC news-interview ad — CLIP 1 of 3 via KIE Veo 3.1 Lite. Two-person Chicago L-tracks news interview, both characters in frame, but ONLY the REPORTER speaks. Interviewee stays s",
+    "syntax_error": null,
+    "techniques": [
+      "captions",
+      "video-generation"
+    ],
+    "providers": [
+      "KIE",
+      "Veo"
+    ],
+    "lines": 163
+  },
+  {
+    "path": "scripts/jdc_news_clip1_kling.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "juvenile-detention",
+    "summary": "IL JDC news-interview ad — CLIP 1 via KIE Kling 3.0 with element-refs. Kling 3.0 \"Omni\" approach: 2 character element-refs (@reporter + @interviewee) + composite scene baseline. Ea",
+    "syntax_error": null,
+    "techniques": [
+      "B-roll",
+      "captions",
+      "video-generation"
+    ],
+    "providers": [
+      "KIE",
+      "Veo"
+    ],
+    "lines": 120
+  },
+  {
+    "path": "scripts/jdc_news_clip1_kling_v2.py",
+    "role": "campaign-job",
+    "status": "variant",
+    "campaign": "juvenile-detention",
+    "summary": "IL JDC news-interview CLIP 1 — Kling 3.0 STD with 3 element-refs, NO first-frame. Approach: pure element-ref composition (no image_urls / no first-frame anchor). Kling generates th",
+    "syntax_error": null,
+    "techniques": [
+      "B-roll",
+      "captions",
+      "video-generation"
+    ],
+    "providers": [
+      "KIE"
+    ],
+    "lines": 122
+  },
+  {
+    "path": "scripts/jdc_news_clip1_rerolls.py",
+    "role": "campaign-job",
+    "status": "variant",
+    "campaign": "juvenile-detention",
+    "summary": "Re-roll clip 1 on Veo 3.1 Lite, 3 candidates in parallel. The v3 we had passed Whisper but at ~7.0-7.5s the interviewee's mouth started to part (likely the start of an unrendered \"",
+    "syntax_error": null,
+    "techniques": [
+      "captions",
+      "video-generation"
+    ],
+    "providers": [
+      "KIE",
+      "Veo"
+    ],
+    "lines": 150
+  },
+  {
+    "path": "scripts/jdc_news_clip1_serial.py",
+    "role": "campaign-job",
+    "status": "variant",
+    "campaign": "juvenile-detention",
+    "summary": "Submit ONE Veo Lite 1080p clip 1 candidate. Serial submission to avoid KIE host rate-limit (HTTP 429) hit by 3 parallel image fetches. Strategy: submit one, wait for completion, au",
+    "syntax_error": null,
+    "techniques": [
+      "video-generation"
+    ],
+    "providers": [
+      "KIE",
+      "Veo"
+    ],
+    "lines": 53
+  },
+  {
+    "path": "scripts/jdc_news_clip2_kling.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "juvenile-detention",
+    "summary": "IL JDC news-interview CLIP 2 — Kling 3.0 std with element-refs. INTERVIEWEE speaks (5s). Reporter silent in frame. Dialogue: \"Yeah, I did.\" Same Kling std setup as clip 1 (which us",
+    "syntax_error": null,
+    "techniques": [
+      "B-roll",
+      "captions",
+      "video-generation"
+    ],
+    "providers": [
+      "KIE"
+    ],
+    "lines": 113
+  },
+  {
+    "path": "scripts/jdc_news_clip3_kling.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "juvenile-detention",
+    "summary": "IL JDC news-interview CLIP 3 — Kling 3.0 std with element-refs. REPORTER speaks (15s). Interviewee silent in frame. Dialogue: abuse trigger + \"millions paid out\" social-proof beat.",
+    "syntax_error": null,
+    "techniques": [
+      "B-roll",
+      "captions",
+      "video-generation"
+    ],
+    "providers": [
+      "KIE"
+    ],
+    "lines": 109
+  },
+  {
+    "path": "scripts/jdc_news_clip4_kling.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "juvenile-detention",
+    "summary": "IL JDC news-interview CLIP 4 — Kling 3.0 std with element-refs. INTERVIEWEE speaks (5s). Reporter silent in frame. Dialogue: \"I didn't know that was even an option.\" Camera STARTS ",
+    "syntax_error": null,
+    "techniques": [
+      "B-roll",
+      "captions",
+      "video-generation"
+    ],
+    "providers": [
+      "KIE"
+    ],
+    "lines": 106
+  },
+  {
+    "path": "scripts/jdc_news_clip5_kling.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "juvenile-detention",
+    "summary": "IL JDC news-interview CLIP 5 — Kling 3.0 std with element-refs. REPORTER speaks (15s). Interviewee silent in frame. Dialogue: \"You could be owed money too. Take the free two-minute",
+    "syntax_error": null,
+    "techniques": [
+      "B-roll",
+      "captions",
+      "video-generation"
+    ],
+    "providers": [
+      "KIE"
+    ],
+    "lines": 108
+  },
+  {
+    "path": "scripts/jdc_news_composite_anchor.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "juvenile-detention",
+    "summary": "Composite reporter_4 + interviewee_1 into one Chicago L-tracks two-shot (the Veo IMAGE_2_VIDEO scene anchor). Uses gpt-image-2 image-edit (multi-input) — feeds both persona refs an",
+    "syntax_error": null,
+    "techniques": [
+      "B-roll",
+      "captions",
+      "image-generation"
+    ],
+    "providers": [
+      "KIE",
+      "Veo"
+    ],
+    "lines": 117
+  },
+  {
+    "path": "scripts/jdc_news_crop_solos.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "juvenile-detention",
+    "summary": "Crop the wide L-tracks shot into 2 single-character portrait anchors. Source: outputs/illinois_jdc_news_eltracks/wide/wide_shot.png (1536x1024 landscape) Reporter (LEFT character, ",
+    "syntax_error": null,
+    "techniques": [],
+    "providers": [
+      "Veo"
+    ],
+    "lines": 54
+  },
+  {
+    "path": "scripts/jdc_news_crop_solos_nomic.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "juvenile-detention",
+    "summary": "Re-crop the wide L-tracks shot into head/shoulders single-character anchors — WITHOUT showing the microphone. User flagged mic-hold rendering as visually odd. For both reporter and",
+    "syntax_error": null,
+    "techniques": [],
+    "providers": [
+      "Veo"
+    ],
+    "lines": 62
+  },
+  {
+    "path": "scripts/jdc_news_eltracks_personas.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "juvenile-detention",
+    "summary": "Generate persona refs for the IL JDC NEWS INTERVIEW clone (under Chicago El tracks). Format: field reporter (polished, station-branded mic flag) interviewing a passerby under eleva",
+    "syntax_error": null,
+    "techniques": [
+      "B-roll",
+      "captions",
+      "image-generation",
+      "matte-PIP"
+    ],
+    "providers": [
+      "KIE",
+      "Veo"
+    ],
+    "lines": 166
+  },
+  {
+    "path": "scripts/jdc_news_evolink_test.py",
+    "role": "campaign-job",
+    "status": "variant",
+    "campaign": "juvenile-detention",
+    "summary": "Test EvoLink Veo 3.1 Fast — reporter + interviewee solo pair. Uses Poyo's storage.poyo.ai URLs (already uploaded, publicly accessible). EvoLink Veo's fetcher should reach them. Out",
+    "syntax_error": null,
+    "techniques": [
+      "video-generation"
+    ],
+    "providers": [
+      "Poyo",
+      "Veo"
+    ],
+    "lines": 61
+  },
+  {
+    "path": "scripts/jdc_news_interviewee_only.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "juvenile-detention",
+    "summary": "Re-roll JUST the interviewee no-mic test (reporter already passed). Same prompt + anchor. Will retry on transient 500 errors up to 3 times.",
+    "syntax_error": null,
+    "techniques": [
+      "video-generation"
+    ],
+    "providers": [
+      "KIE",
+      "Veo"
+    ],
+    "lines": 39
+  },
+  {
+    "path": "scripts/jdc_news_interviewee_poyo.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "juvenile-detention",
+    "summary": "Test interviewee no-mic via Poyo Veo 3.1 Fast ($0.10/clip flat). Switching providers from KIE Fast (3 consecutive Internal Error 500s on this prompt+anchor) to Poyo Fast. Same mode",
+    "syntax_error": null,
+    "techniques": [
+      "captions",
+      "video-generation"
+    ],
+    "providers": [
+      "Poyo",
+      "Veo"
+    ],
+    "lines": 74
+  },
+  {
+    "path": "scripts/jdc_news_kling_background.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "juvenile-detention",
+    "summary": "Generate 2 background-only images of the Chicago L-tracks setting (NO PEOPLE) to use as the `element_setting` Kling element-ref. Kling needs 2-4 imgs per element so we make 2 sligh",
+    "syntax_error": null,
+    "techniques": [
+      "B-roll",
+      "captions"
+    ],
+    "providers": [],
+    "lines": 82
+  },
+  {
+    "path": "scripts/jdc_news_kling_element_variants.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "juvenile-detention",
+    "summary": "Generate 2nd-angle variant per persona so Kling 3.0's element-ref has the required 2-4 images per element. Inputs (the picked persona refs): reference/reporter_4.png → reference/re",
+    "syntax_error": null,
+    "techniques": [
+      "captions",
+      "image-generation"
+    ],
+    "providers": [
+      "KIE"
+    ],
+    "lines": 79
+  },
+  {
+    "path": "scripts/jdc_news_safe_test.py",
+    "role": "campaign-job",
+    "status": "variant",
+    "campaign": "juvenile-detention",
+    "summary": "MAXIMALLY SAFE prompt — to test if Veo failures are moderation-related. Strips out EVERYTHING potentially sensitive: - No skin tone / race / age / character demographics - No locat",
+    "syntax_error": null,
+    "techniques": [
+      "captions",
+      "matte-PIP",
+      "video-generation"
+    ],
+    "providers": [
+      "Poyo",
+      "Veo"
+    ],
+    "lines": 85
+  },
+  {
+    "path": "scripts/jdc_news_solo_pair_nomic.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "juvenile-detention",
+    "summary": "Reporter + interviewee solo test pair — NO MIC visible in either clip. User flagged mic-holding rendering as visually odd. Removing mic entirely: - Tighter head/shoulders crop (mic",
+    "syntax_error": null,
+    "techniques": [
+      "captions",
+      "video-generation"
+    ],
+    "providers": [
+      "KIE",
+      "Veo"
+    ],
+    "lines": 186
+  },
+  {
+    "path": "scripts/jdc_news_solo_pair_poyo.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "juvenile-detention",
+    "summary": "Regen both solo clips on POYO Veo 3.1 Fast w/ Poyo's own storage host. KIE Fast has been hitting consistent 500 Internal Errors. Switching to Poyo: - Upload via api.poyo.ai/common/",
+    "syntax_error": null,
+    "techniques": [
+      "video-generation"
+    ],
+    "providers": [
+      "Poyo",
+      "Veo"
+    ],
+    "lines": 58
+  },
+  {
+    "path": "scripts/jdc_news_solo_pair_test.py",
+    "role": "campaign-job",
+    "status": "variant",
+    "campaign": "juvenile-detention",
+    "summary": "Submit ONE reporter solo clip + ONE interviewee solo clip (serial test pair). Approach validated: single-character per clip, no two-person confusion, news-style cutaway grammar. Ve",
+    "syntax_error": null,
+    "techniques": [
+      "captions",
+      "video-generation"
+    ],
+    "providers": [
+      "KIE",
+      "Veo"
+    ],
+    "lines": 189
+  },
+  {
+    "path": "scripts/jdc_news_stitch.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "juvenile-detention",
+    "summary": "Trim weird dead air from each Kling clip, then concat into final ad. For each clip: 1. Transcribe with ElevenLabs Scribe 2. Find first-word start + last-word end 3. Trim to [first_",
+    "syntax_error": null,
+    "techniques": [
+      "assembly",
+      "speech-QA"
+    ],
+    "providers": [
+      "ElevenLabs",
+      "ffmpeg"
+    ],
+    "lines": 135
+  },
+  {
+    "path": "scripts/jdc_news_wide_shot.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "juvenile-detention",
+    "summary": "Generate ONE wide L-tracks shot (1536x1024 landscape, gpt-image-2 max-size) showing BOTH characters in their established positions. Then crop into 2 portrait shots, one per charact",
+    "syntax_error": null,
+    "techniques": [
+      "B-roll",
+      "captions",
+      "image-generation"
+    ],
+    "providers": [
+      "KIE",
+      "Veo"
+    ],
+    "lines": 94
+  },
+  {
+    "path": "scripts/jdc_persona_clone.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "juvenile-detention",
+    "summary": "Build ONE clean voice clone per persona, from the CLEANEST clips across all that persona's ads (ranked by spectral centroid), audio-isolated for maximum clarity. Cloning from the c",
+    "syntax_error": null,
+    "techniques": [
+      "assembly",
+      "voice-processing"
+    ],
+    "providers": [
+      "ElevenLabs",
+      "ffmpeg"
+    ],
+    "lines": 68
+  },
+  {
+    "path": "scripts/jdc_pod_audit.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "juvenile-detention",
+    "summary": "Full per-clip audit of the podcast videos: - mouth-region motion (dead lip-sync proxy: low motion + present audio = static mouth) - full-frame motion (frozen-frame proxy) - audio m",
+    "syntax_error": null,
+    "techniques": [
+      "speech-QA"
+    ],
+    "providers": [
+      "ElevenLabs",
+      "ffmpeg"
+    ],
+    "lines": 85
+  },
+  {
+    "path": "scripts/jdc_pod_clip1_batch.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "juvenile-detention",
+    "summary": "Podcast monologue ads — clip 1 (opener) of the 7 remaining scripts, parallel on KIE Veo 3.1 Lite. (#1 agepower/real_07 already done as the format proof.) Conversational podcast-gue",
+    "syntax_error": null,
+    "techniques": [
+      "captions",
+      "matte-PIP",
+      "video-generation"
+    ],
+    "providers": [
+      "KIE",
+      "Veo"
+    ],
+    "lines": 96
+  },
+  {
+    "path": "scripts/jdc_pod_clips_rest.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "juvenile-detention",
+    "summary": "Podcast monologues — clips 2+ for the 6 ready videos. Parallel on KIE Veo 3.1 Lite. Rules baked in: - SOLO framing lock (no second person in shot) — kept the off-camera conversatio",
+    "syntax_error": null,
+    "techniques": [
+      "captions",
+      "matte-PIP",
+      "video-generation"
+    ],
+    "providers": [
+      "KIE",
+      "Veo"
+    ],
+    "lines": 108
+  },
+  {
+    "path": "scripts/jdc_pod_clone.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "juvenile-detention",
+    "summary": "One clean voice clone per PODCAST HOST, from the crispest clips across that host's videos (ranked by spectral centroid, audio-isolated). Reused across all that host's videos. Cache",
+    "syntax_error": null,
+    "techniques": [
+      "assembly",
+      "voice-processing"
+    ],
+    "providers": [
+      "ElevenLabs",
+      "ffmpeg"
+    ],
+    "lines": 82
+  },
+  {
+    "path": "scripts/jdc_pod_finalize.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "juvenile-detention",
+    "summary": "Finalize one podcast monologue video. Pipeline: WORD-AWARE trim each clip (cut leading/trailing Veo improv at the intended first/last word — silence-trim can't catch trailing *spee",
+    "syntax_error": null,
+    "techniques": [
+      "assembly",
+      "audio-QA",
+      "captions",
+      "speech-QA",
+      "voice-processing"
+    ],
+    "providers": [
+      "ElevenLabs",
+      "ffmpeg",
+      "Veo"
+    ],
+    "lines": 224
+  },
+  {
+    "path": "scripts/jdc_pod_real02_retry.py",
+    "role": "campaign-job",
+    "status": "variant",
+    "campaign": "juvenile-detention",
+    "summary": "real_02 clip-1 retry with split-safe openers (kid-context and 'sexually abused' moved to separate clips), to clear the child-safety block. KIE Veo 3.1 Lite, i2v. 9:16 720p.",
+    "syntax_error": null,
+    "techniques": [
+      "captions",
+      "matte-PIP",
+      "video-generation"
+    ],
+    "providers": [
+      "KIE",
+      "Veo"
+    ],
+    "lines": 69
+  },
+  {
+    "path": "scripts/jdc_pod_replace_clip1.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "juvenile-detention",
+    "summary": "real_02 replacements — clip-1 of #3 (Number bomb -> real_01) and #8 (Scale money -> real_05). No headphones, split-safe clip-1 (no 'sexually abused' + 'kid' in the same generation)",
+    "syntax_error": null,
+    "techniques": [
+      "captions",
+      "matte-PIP",
+      "video-generation"
+    ],
+    "providers": [
+      "KIE",
+      "Veo"
+    ],
+    "lines": 68
+  },
+  {
+    "path": "scripts/jdc_pod_reroll_nohp.py",
+    "role": "campaign-job",
+    "status": "variant",
+    "campaign": "juvenile-detention",
+    "summary": "Stage 1 re-rolls: remove headphones (prompt said 'headphones on' — that was the bug; host images are clean). clip1 redos start from the source host IMAGE; clip 2+ re-rolls start fr",
+    "syntax_error": null,
+    "techniques": [
+      "captions",
+      "matte-PIP",
+      "video-generation"
+    ],
+    "providers": [
+      "KIE",
+      "Veo"
+    ],
+    "lines": 93
+  },
+  {
+    "path": "scripts/jdc_pod_stage2.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "juvenile-detention",
+    "summary": "Stage 2b: clips 2+ for the 4 rebuilt videos (no headphones), from fresh clean anchors. agepower + barbershop (re-roll 2-5), #3 thousand_h01 + #8 scalemoney_h05 (new 2-4, kid/sexual",
+    "syntax_error": null,
+    "techniques": [
+      "matte-PIP"
+    ],
+    "providers": [],
+    "lines": 67
+  },
+  {
+    "path": "scripts/jdc_pod_upscale_4k.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "juvenile-detention",
+    "summary": "Upscale picked podcast hosts to true 4K (2160x3840), IDENTITY-PRESERVING via Real-ESRGAN. (gpt-image-2 i2i was tried first and REGENERATED a different person — wrong tool. Real-ESR",
+    "syntax_error": null,
+    "techniques": [
+      "image-generation"
+    ],
+    "providers": [
+      "ffmpeg",
+      "KIE"
+    ],
+    "lines": 46
+  },
+  {
+    "path": "scripts/jdc_pod_winner_gen.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "juvenile-detention",
+    "summary": "Generate the 3 'winning-structure' announcer-style podcast videos, start to finish (clips only). Register = DIRECT-TO-CAMERA announcer (addresses the viewer), NOT off-camera confes",
+    "syntax_error": null,
+    "techniques": [
+      "anchor-continuity",
+      "captions",
+      "video-generation"
+    ],
+    "providers": [
+      "KIE",
+      "Veo"
+    ],
+    "lines": 155
+  },
+  {
+    "path": "scripts/jdc_podcast_image.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "juvenile-detention",
+    "summary": "Podcast / radio-show key image — persona 3 (reflective 34) as host. Warm & intimate late-night studio. i2i off the persona ref (same face), 9:16, 2K. 4 variations. Output: outputs/",
+    "syntax_error": null,
+    "techniques": [
+      "captions",
+      "image-generation"
+    ],
+    "providers": [
+      "KIE"
+    ],
+    "lines": 67
+  },
+  {
+    "path": "scripts/jdc_podcast_personas.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "juvenile-detention",
+    "summary": "5 NEW distinct podcast-host personas, in the v4 style (intimate close-up speaking into the mic, headphones on). Mix of moods: warm/intimate + modern/bright + gritty. Distinct peopl",
+    "syntax_error": null,
+    "techniques": [
+      "captions",
+      "image-generation"
+    ],
+    "providers": [
+      "KIE"
+    ],
+    "lines": 71
+  },
+  {
+    "path": "scripts/jdc_podcast_proof.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "juvenile-detention",
+    "summary": "Podcast-monologue FORMAT PROOF — script #1 (age/power) on host real_07. Clip 1 only, to validate look/voice/pacing of the new conversational podcast format before batching all 8. K",
+    "syntax_error": null,
+    "techniques": [
+      "captions",
+      "matte-PIP",
+      "video-generation"
+    ],
+    "providers": [
+      "KIE",
+      "Veo"
+    ],
+    "lines": 49
+  },
+  {
+    "path": "scripts/jdc_podcast_real.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "juvenile-detention",
+    "summary": "10 MORE podcast personas — ages 27-37, ORDINARY/REAL-looking (NOT celebrity/model). Context: survivors who will confess childhood abuse, so they must read as everyday, relatable, v",
+    "syntax_error": null,
+    "techniques": [
+      "captions",
+      "image-generation"
+    ],
+    "providers": [
+      "KIE"
+    ],
+    "lines": 72
+  },
+  {
+    "path": "scripts/jdc_podcast_real2.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "juvenile-detention",
+    "summary": "10 MORE podcast personas (real_11..real_20) — ages 27-37, ORDINARY/REAL-looking. Distinct from real_01..10. Headphone-FREE (headphones caused video-gen issues), podcast-mic studio.",
+    "syntax_error": null,
+    "techniques": [
+      "captions",
+      "image-generation"
+    ],
+    "providers": [
+      "KIE"
+    ],
+    "lines": 72
+  },
+  {
+    "path": "scripts/jdc_power_broll_20.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "juvenile-detention",
+    "summary": "IL JDC power-dynamics b-roll pool (20 clips) via useapi.net Seedance 2.0. Brief: power-over / access / surveillance imagery that LINKS to sexual abuse without depicting it — the ki",
+    "syntax_error": null,
+    "techniques": [
+      "B-roll",
+      "captions",
+      "video-generation"
+    ],
+    "providers": [
+      "Google Flow/useapi",
+      "Seedance"
+    ],
+    "lines": 262
+  },
+  {
+    "path": "scripts/jdc_power_broll_recover.py",
+    "role": "campaign-job",
+    "status": "variant",
+    "campaign": "juvenile-detention",
+    "summary": "Poll 2 already-submitted Seedance task IDs (03, 18) that survived the killed batch and are still THROTTLED on useapi's queue. Download when they complete. Reuses the patched useapi",
+    "syntax_error": null,
+    "techniques": [],
+    "providers": [
+      "Google Flow/useapi",
+      "Seedance"
+    ],
+    "lines": 52
+  },
+  {
+    "path": "scripts/jdc_refinish.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "juvenile-detention",
+    "summary": "Re-finish the audio without pumping/clipping. Root issue: per-clip single-pass `loudnorm` runs in DYNAMIC mode (time-varying gain) → audible \"volume cutting off\"/pumping, and hot S",
+    "syntax_error": null,
+    "techniques": [
+      "assembly",
+      "audio-QA",
+      "captions"
+    ],
+    "providers": [
+      "ElevenLabs",
+      "ffmpeg"
+    ],
+    "lines": 96
+  },
+  {
+    "path": "scripts/jdc_stillout_clips23.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "juvenile-detention",
+    "summary": "Ad 3 (He's Still Out There) — clips 2 + 3, persona 2, parallel. Clip 1 (done): \"The staff member who sexually abused you in that juvenile hall? He got away with it.\" Clip 2: \"Survi",
+    "syntax_error": null,
+    "techniques": [
+      "captions",
+      "matte-PIP",
+      "video-generation"
+    ],
+    "providers": [
+      "KIE",
+      "Veo"
+    ],
+    "lines": 97
+  },
+  {
+    "path": "scripts/jdc_stillout_stitch.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "juvenile-detention",
+    "summary": "Ad 3 (He's Still Out There) stitch — trim → loudnorm -16 → concat → 4:5. 3 clips, no overlap-trim needed. ElevenLabs Scribe for speech-window trim. Output: outputs/illinois_jdc_sti",
+    "syntax_error": null,
+    "techniques": [
+      "assembly",
+      "speech-QA"
+    ],
+    "providers": [
+      "ElevenLabs",
+      "ffmpeg"
+    ],
+    "lines": 81
+  },
+  {
+    "path": "scripts/jdc_stillout_voicechange.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "juvenile-detention",
+    "summary": "Ad 3 — unify all 3 clips to one voice via ElevenLabs voice_changer. Clip 3's timbre drifted from clips 1/2. Fix: clone the voice from clip 1+2 audio (the reference), run all 3 trim",
+    "syntax_error": null,
+    "techniques": [
+      "assembly",
+      "voice-processing"
+    ],
+    "providers": [
+      "ElevenLabs",
+      "ffmpeg"
+    ],
+    "lines": 109
+  },
+  {
+    "path": "scripts/jdc_storyboard_a.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "juvenile-detention",
+    "summary": "Generate a single director's-deck storyboard sheet via gpt-image-2. Matches the LUMI & MOCHI reference style: two-page spread layout. LEFT page = character / cast sheet (persona A)",
+    "syntax_error": null,
+    "techniques": [
+      "captions",
+      "image-generation"
+    ],
+    "providers": [
+      "KIE"
+    ],
+    "lines": 101
+  },
+  {
+    "path": "scripts/jdc_storytime_a_finalize.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "juvenile-detention",
+    "summary": "Finalize Story A (b1, FREE google-flow path): trim -> WATERMARK-CROP -> static gain -> concat -> master. Free tier burns a bottom-right \"Veo\" mark, so crop 664x1180 (center, off th",
+    "syntax_error": null,
+    "techniques": [
+      "assembly",
+      "audio-QA",
+      "speech-QA"
+    ],
+    "providers": [
+      "ffmpeg",
+      "Veo"
+    ],
+    "lines": 77
+  },
+  {
+    "path": "scripts/jdc_storytime_a_gen.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "juvenile-detention",
+    "summary": "Story A (Illinois juvie storytime, \"The counselor\") — persona bed_b1. FREE path: useapi google-flow veo-3.1-lite-low-priority (no credit, ultra-low-priority). i2v startImage person",
+    "syntax_error": null,
+    "techniques": [
+      "anchor-continuity",
+      "captions",
+      "matte-PIP",
+      "video-generation"
+    ],
+    "providers": [
+      "Google Flow/useapi",
+      "Veo"
+    ],
+    "lines": 122
+  },
+  {
+    "path": "scripts/jdc_storytime_b_finalize.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "juvenile-detention",
+    "summary": "Finalize Story B (b2, FREE google-flow path): trim -> WATERMARK-CROP -> static gain -> concat -> master. Free tier burns a bottom-right \"Veo\" mark, so crop 664x1180 (center, off th",
+    "syntax_error": null,
+    "techniques": [
+      "assembly",
+      "audio-QA",
+      "speech-QA"
+    ],
+    "providers": [
+      "ffmpeg",
+      "Veo"
+    ],
+    "lines": 77
+  },
+  {
+    "path": "scripts/jdc_storytime_b_gen.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "juvenile-detention",
+    "summary": "Story B (Illinois juvie storytime, \"I never told a soul\") — persona bed_b2. FREE path: useapi google-flow veo-3.1-lite-low-priority (no credit, ultra-low-priority). i2v startImage ",
+    "syntax_error": null,
+    "techniques": [
+      "anchor-continuity",
+      "captions",
+      "matte-PIP",
+      "video-generation"
+    ],
+    "providers": [
+      "Google Flow/useapi",
+      "Veo"
+    ],
+    "lines": 122
+  },
+  {
+    "path": "scripts/jdc_storytime_bed_personas.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "juvenile-detention",
+    "summary": "Storytime-confession personas, IN BED selfie style (matches reference media.1780116952093). Ordinary/relatable survivors in their 30s, lying back in bed filming a front-camera conf",
+    "syntax_error": null,
+    "techniques": [
+      "captions",
+      "image-generation"
+    ],
+    "providers": [
+      "KIE"
+    ],
+    "lines": 104
+  },
+  {
+    "path": "scripts/jdc_storytime_c_finalize.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "juvenile-detention",
+    "summary": "Finalize Story C (b5, FREE google-flow path): trim -> WATERMARK-CROP -> static gain -> concat -> master. Free tier burns a bottom-right \"Veo\" mark, so crop 664x1180 (center, off th",
+    "syntax_error": null,
+    "techniques": [
+      "assembly",
+      "audio-QA",
+      "speech-QA"
+    ],
+    "providers": [
+      "ffmpeg",
+      "Veo"
+    ],
+    "lines": 77
+  },
+  {
+    "path": "scripts/jdc_storytime_c_gen.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "juvenile-detention",
+    "summary": "Story C (Illinois juvie storytime, \"The chaplain\") — persona bed_b5. FREE path: useapi google-flow veo-3.1-lite-low-priority (no credit, ultra-low-priority). i2v startImage persona",
+    "syntax_error": null,
+    "techniques": [
+      "anchor-continuity",
+      "captions",
+      "matte-PIP",
+      "video-generation"
+    ],
+    "providers": [
+      "Google Flow/useapi",
+      "Veo"
+    ],
+    "lines": 122
+  },
+  {
+    "path": "scripts/jdc_storytime_e_finalize.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "juvenile-detention",
+    "summary": "Finalize Story E (b14): word-aware trim -> per-clip static gain -> concat -> master limiter. No voice_changer (single persona, same anchor -> Veo voice already consistent; raw Veo ",
+    "syntax_error": null,
+    "techniques": [
+      "assembly",
+      "audio-QA",
+      "speech-QA",
+      "voice-processing"
+    ],
+    "providers": [
+      "ffmpeg",
+      "Veo"
+    ],
+    "lines": 87
+  },
+  {
+    "path": "scripts/jdc_storytime_e_gen.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "juvenile-detention",
+    "summary": "Story E (Illinois juvie storytime confession) — persona bed_b14. Confession selfie register, in bed. KIE veo3_lite, FIRST_AND_LAST_FRAMES_2_VIDEO (anchor x2). clip01 from the bed_b",
+    "syntax_error": null,
+    "techniques": [
+      "anchor-continuity",
+      "captions",
+      "matte-PIP",
+      "speech-QA",
+      "video-generation"
+    ],
+    "providers": [
+      "ElevenLabs",
+      "KIE",
+      "Veo"
+    ],
+    "lines": 148
+  },
+  {
+    "path": "scripts/jdc_storytime_f_finalize.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "juvenile-detention",
+    "summary": "Finalize Story C (b5, FREE google-flow path): trim -> WATERMARK-CROP -> static gain -> concat -> master. Free tier burns a bottom-right \"Veo\" mark, so crop 664x1180 (center, off th",
+    "syntax_error": null,
+    "techniques": [
+      "assembly",
+      "audio-QA",
+      "speech-QA"
+    ],
+    "providers": [
+      "ffmpeg",
+      "Veo"
+    ],
+    "lines": 77
+  },
+  {
+    "path": "scripts/jdc_storytime_f_gen.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "juvenile-detention",
+    "summary": "Story C (Illinois juvie storytime, \"The nurse\") — persona bed_b7. FREE path: useapi google-flow veo-3.1-lite-low-priority (no credit, ultra-low-priority). i2v startImage persona lo",
+    "syntax_error": null,
+    "techniques": [
+      "anchor-continuity",
+      "captions",
+      "matte-PIP",
+      "video-generation"
+    ],
+    "providers": [
+      "Google Flow/useapi",
+      "Veo"
+    ],
+    "lines": 122
+  },
+  {
+    "path": "scripts/jdc_storytime_g_finalize.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "juvenile-detention",
+    "summary": "Finalize Story C (b5, FREE google-flow path): trim -> WATERMARK-CROP -> static gain -> concat -> master. Free tier burns a bottom-right \"Veo\" mark, so crop 664x1180 (center, off th",
+    "syntax_error": null,
+    "techniques": [
+      "assembly",
+      "audio-QA",
+      "speech-QA"
+    ],
+    "providers": [
+      "ffmpeg",
+      "Veo"
+    ],
+    "lines": 77
+  },
+  {
+    "path": "scripts/jdc_storytime_g_gen.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "juvenile-detention",
+    "summary": "Story C (Illinois juvie storytime, \"The search that wasnt a search\") — persona bed_b11. FREE path: useapi google-flow veo-3.1-lite-low-priority (no credit, ultra-low-priority). i2v",
+    "syntax_error": null,
+    "techniques": [
+      "anchor-continuity",
+      "captions",
+      "matte-PIP",
+      "video-generation"
+    ],
+    "providers": [
+      "Google Flow/useapi",
+      "Veo"
+    ],
+    "lines": 122
+  },
+  {
+    "path": "scripts/jdc_storytime_h_finalize.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "juvenile-detention",
+    "summary": "Finalize Story C (b5, FREE google-flow path): trim -> WATERMARK-CROP -> static gain -> concat -> master. Free tier burns a bottom-right \"Veo\" mark, so crop 664x1180 (center, off th",
+    "syntax_error": null,
+    "techniques": [
+      "assembly",
+      "audio-QA",
+      "speech-QA"
+    ],
+    "providers": [
+      "ffmpeg",
+      "Veo"
+    ],
+    "lines": 77
+  },
+  {
+    "path": "scripts/jdc_storytime_h_gen.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "juvenile-detention",
+    "summary": "Story C (Illinois juvie storytime, \"How they bought my silence\") — persona bed_b10. FREE path: useapi google-flow veo-3.1-lite-low-priority (no credit, ultra-low-priority). i2v sta",
+    "syntax_error": null,
+    "techniques": [
+      "anchor-continuity",
+      "captions",
+      "matte-PIP",
+      "video-generation"
+    ],
+    "providers": [
+      "Google Flow/useapi",
+      "Veo"
+    ],
+    "lines": 122
+  },
+  {
+    "path": "scripts/jdc_storytime_vc_fix.py",
+    "role": "campaign-job",
+    "status": "variant",
+    "campaign": "juvenile-detention",
+    "summary": "Voice-unify a free-path storytime ad (clips have cross-clip voice drift). Clone the persona voice from its cleanest clips -> voice_changer every clip -> re-gain -> re-stitch. Outpu",
+    "syntax_error": null,
+    "techniques": [
+      "assembly",
+      "audio-QA",
+      "voice-processing"
+    ],
+    "providers": [
+      "ElevenLabs",
+      "ffmpeg"
+    ],
+    "lines": 87
+  },
+  {
+    "path": "scripts/jdc_streetint_personas.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "juvenile-detention",
+    "summary": "Generate persona reference candidates for the IL JDC street-interview clone. Two roles, 4 candidates each (parallel via OpenAI gpt-image-2 medium quality): - INTERVIEWER: Black man",
+    "syntax_error": null,
+    "techniques": [
+      "captions",
+      "image-generation",
+      "matte-PIP"
+    ],
+    "providers": [
+      "KIE",
+      "Veo"
+    ],
+    "lines": 158
+  },
+  {
+    "path": "scripts/jdc_submagic_batch.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "juvenile-detention",
+    "summary": "Subtitle-only via Submagic on the 7 finished 9:16 storytime ads. Varied template pick; proper-noun dictionary for facilities. Skip-if-exists. Output: <slug>/<stem>_submagic_<templa",
+    "syntax_error": null,
+    "techniques": [
+      "captions"
+    ],
+    "providers": [],
+    "lines": 51
+  },
+  {
+    "path": "scripts/jdc_submagic_redownload.py",
+    "role": "campaign-job",
+    "status": "variant",
+    "campaign": "juvenile-detention",
+    "summary": "Re-export + re-download the 7 Submagic storytime projects AFTER manual caption edits. Triggers a fresh export on each existing project, waits for the NEW render, downloads it. Run ",
+    "syntax_error": null,
+    "techniques": [
+      "captions",
+      "speech-QA"
+    ],
+    "providers": [],
+    "lines": 60
+  },
+  {
+    "path": "scripts/jdc_tier2_clip1.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "juvenile-detention",
+    "summary": "Tier-2 ads — clip 1 of each (establishes persona), parallel on KIE Veo 3.1 Lite. Ad 5 (Pattern Interrupt / \"Stop scrolling\") -> persona 2 (westside guarded) Ad 6 (The Secret You Ne",
+    "syntax_error": null,
+    "techniques": [
+      "captions",
+      "matte-PIP",
+      "video-generation"
+    ],
+    "providers": [
+      "KIE",
+      "Veo"
+    ],
+    "lines": 130
+  },
+  {
+    "path": "scripts/jdc_tier2_clips_rest.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "juvenile-detention",
+    "summary": "Tier-2 ads — clips 2+ (after clip 1), parallel on KIE Veo 3.1 Lite. Ad 5 (stopscroll, persona 2): clips 2,3 Ad 6 (secret, persona 3): clips 2,3 Ad 7 (statshock, persona 1): clips 2",
+    "syntax_error": null,
+    "techniques": [
+      "captions",
+      "matte-PIP",
+      "video-generation"
+    ],
+    "providers": [
+      "KIE",
+      "Veo"
+    ],
+    "lines": 208
+  },
+  {
+    "path": "scripts/jdc_tort_finalize.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "juvenile-detention",
+    "summary": "Finalize the tort IL JDC testimonial videos (FREE google-flow path). Per video: word-aware trim (uses the per-clip dissect transcript) -> WATERMARK-CROP the bottom-right \"Veo\" mark",
+    "syntax_error": null,
+    "techniques": [
+      "assembly",
+      "audio-QA",
+      "speech-QA"
+    ],
+    "providers": [
+      "ffmpeg",
+      "Veo"
+    ],
+    "lines": 75
+  },
+  {
+    "path": "scripts/jdc_tort_gen.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "juvenile-detention",
+    "summary": "Tort IL JDC — single-person UGC testimonial ads (#1 whistleblower, #4 brother, #5 cousin/Audy). Front-loaded scripts: sexual-abuse + juvenile-detention context + \"significant compe",
+    "syntax_error": null,
+    "techniques": [
+      "anchor-continuity",
+      "captions",
+      "matte-PIP",
+      "video-generation"
+    ],
+    "providers": [
+      "Google Flow/useapi",
+      "Veo"
+    ],
+    "lines": 144
+  },
+  {
+    "path": "scripts/jdc_tort_personas.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "juvenile-detention",
+    "summary": "UGC testimonial personas for the tort IL JDC campaign (new single-person direct-address format). 5 candidates each for: #1 whistleblower (former facility STAFF, older/credible, rac",
+    "syntax_error": null,
+    "techniques": [
+      "captions",
+      "image-generation",
+      "matte-PIP"
+    ],
+    "providers": [
+      "KIE"
+    ],
+    "lines": 105
+  },
+  {
+    "path": "scripts/jdc_ugc_p08_all_lite720.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "juvenile-detention",
+    "summary": "Regenerate ALL 5 clips on KIE Veo 3.1 Lite at 720p for uniform UGC aesthetic. Lite 720p delivers: natural softness (no over-sharpening), broadcast audio, exact transcripts, smaller",
+    "syntax_error": null,
+    "techniques": [
+      "speech-QA",
+      "video-generation"
+    ],
+    "providers": [
+      "KIE",
+      "Veo"
+    ],
+    "lines": 76
+  },
+  {
+    "path": "scripts/jdc_ugc_p08_clip1.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "juvenile-detention",
+    "summary": "IL JDC UGC ad — CLIP 1 (Script B, persona 08). Dialogue (REPORTER would be wrong term — this is persona 08 himself, a young guy doing UGC selfie disclosure): \"I was at Saint Charle",
+    "syntax_error": null,
+    "techniques": [
+      "captions",
+      "video-generation"
+    ],
+    "providers": [
+      "KIE",
+      "Poyo",
+      "Veo"
+    ],
+    "lines": 95
+  },
+  {
+    "path": "scripts/jdc_ugc_p08_clip1_lite720.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "juvenile-detention",
+    "summary": "Step 1: regenerate CLIP 1 only on KIE Veo 3.1 Lite at 720p. Once landed, run jdc_ugc_p08_others_from_clip1.py to extract fresh anchors from this new clip 1 and generate clips 2a/2b",
+    "syntax_error": null,
+    "techniques": [
+      "video-generation"
+    ],
+    "providers": [
+      "KIE",
+      "Veo"
+    ],
+    "lines": 38
+  },
+  {
+    "path": "scripts/jdc_ugc_p08_clip2_split.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "juvenile-detention",
+    "summary": "Split clip 2 into 2 pieces with overlapping 'Just found out' for smooth pace. Clip 2a (15 words, ~6s slow pace): \"A guard sexually abused me. I held it in for years. Just found out",
+    "syntax_error": null,
+    "techniques": [
+      "assembly",
+      "captions",
+      "video-generation"
+    ],
+    "providers": [
+      "ffmpeg",
+      "Poyo",
+      "Veo"
+    ],
+    "lines": 177
+  },
+  {
+    "path": "scripts/jdc_ugc_p08_clip2_split_kie.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "juvenile-detention",
+    "summary": "Submit clip 2a + 2b via KIE Veo 3.1 Lite (Poyo Fast is in outage). Per provider-match rule: KIE gen → KIE storage upload. Reuses anchors already extracted (1.5s, 4.5s from clip 1) ",
+    "syntax_error": null,
+    "techniques": [
+      "video-generation"
+    ],
+    "providers": [
+      "KIE",
+      "Poyo",
+      "Veo"
+    ],
+    "lines": 59
+  },
+  {
+    "path": "scripts/jdc_ugc_p08_clip2b_dynamic.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "juvenile-detention",
+    "summary": "3 variants of clip 2b with more dynamic emotion + natural facial movement. User wants the v2 base (gradient lift energy) but with LIVELIER face — less static, more micro-expression",
+    "syntax_error": null,
+    "techniques": [
+      "captions",
+      "video-generation"
+    ],
+    "providers": [
+      "KIE",
+      "Veo"
+    ],
+    "lines": 157
+  },
+  {
+    "path": "scripts/jdc_ugc_p08_clip2b_regen.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "juvenile-detention",
+    "summary": "Re-roll clip 2b on KIE Lite 720p with stronger energy-gradient prompt. Issue: previous 2b had abrupt energy shift from quiet 2a → too informational. Fix: explicit gradient directio",
+    "syntax_error": null,
+    "techniques": [
+      "video-generation"
+    ],
+    "providers": [
+      "KIE",
+      "Veo"
+    ],
+    "lines": 42
+  },
+  {
+    "path": "scripts/jdc_ugc_p08_clip4_regen.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "juvenile-detention",
+    "summary": "Re-roll clip 4 on KIE Lite 720p with same-tone prompt (not commercial). Issue: previous clip 4 read as a CTA / ad. Fix: explicit \"same quiet tone as rest of video, NOT commercial, ",
+    "syntax_error": null,
+    "techniques": [
+      "video-generation"
+    ],
+    "providers": [
+      "KIE",
+      "Veo"
+    ],
+    "lines": 39
+  },
+  {
+    "path": "scripts/jdc_ugc_p08_clips234.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "juvenile-detention",
+    "summary": "IL JDC UGC ad — CLIPS 2, 3, 4 (Script B, persona 08). Anchor rotation: extract 3 clean frames from clip 1 at varied pause moments (0.7s, 3.0s, 6.0s) and use a different one for eac",
+    "syntax_error": null,
+    "techniques": [
+      "captions",
+      "matte-PIP",
+      "video-generation"
+    ],
+    "providers": [
+      "ffmpeg",
+      "KIE",
+      "Veo"
+    ],
+    "lines": 216
+  },
+  {
+    "path": "scripts/jdc_ugc_p08_clips234_poyo.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "juvenile-detention",
+    "summary": "Regenerate clips 2/3/4 on POYO Veo 3.1 Fast (different infra, same prompts). Uses Poyo storage for uploads (per provider-match rule: Poyo gen → Poyo upload). Re-uploads the rotated",
+    "syntax_error": null,
+    "techniques": [
+      "video-generation"
+    ],
+    "providers": [
+      "Poyo",
+      "Veo"
+    ],
+    "lines": 60
+  },
+  {
+    "path": "scripts/jdc_ugc_p08_others_from_clip1.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "juvenile-detention",
+    "summary": "Step 2+3: Extract fresh anchors from new clip 1 (Lite 720p) and submit clips 2a/2b/3/4 in parallel. Source clip 1: outputs/illinois_jdc_ugc/clips/p08_clip1_lite720.mp4 Anchors extr",
+    "syntax_error": null,
+    "techniques": [
+      "video-generation"
+    ],
+    "providers": [
+      "ffmpeg",
+      "KIE",
+      "Veo"
+    ],
+    "lines": 81
+  },
+  {
+    "path": "scripts/jdc_ugc_p08_stitch.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "juvenile-detention",
+    "summary": "End-to-end stitch: trim → loudnorm → concat → 4:5 crop. Sources (all Lite 720p): clip 1 : p08_clip1_lite720.mp4 clip 2a : p08_clip2a_lite720.mp4 (ends with \"Just found out\" — overl",
+    "syntax_error": null,
+    "techniques": [
+      "assembly",
+      "audio-QA",
+      "matte-PIP",
+      "speech-QA"
+    ],
+    "providers": [
+      "ElevenLabs",
+      "ffmpeg"
+    ],
+    "lines": 163
+  },
+  {
+    "path": "scripts/jdc_ugc_persona07_test.py",
+    "role": "campaign-job",
+    "status": "variant",
+    "campaign": "juvenile-detention",
+    "summary": "Persona 07 test — Humboldt Park bench UGC, safe neutral line, KIE Veo 3.1 Lite. Sentence is intentionally generic (no JDC / abuse / Illinois mentions) so we isolate whether Veo can",
+    "syntax_error": null,
+    "techniques": [
+      "captions",
+      "video-generation"
+    ],
+    "providers": [
+      "KIE",
+      "Poyo",
+      "Veo"
+    ],
+    "lines": 84
+  },
+  {
+    "path": "scripts/jdc_ugc_persona_batch_test.py",
+    "role": "campaign-job",
+    "status": "variant",
+    "campaign": "juvenile-detention",
+    "summary": "Test personas 02, 06, 08, 09 with the same safe line via KIE Veo 3.1 Lite. Each persona uses its OWN anchor URL (different upload), submitted in parallel (safe — different URLs don",
+    "syntax_error": null,
+    "techniques": [
+      "audio-QA",
+      "captions",
+      "video-generation"
+    ],
+    "providers": [
+      "KIE",
+      "Poyo",
+      "Veo"
+    ],
+    "lines": 131
+  },
+  {
+    "path": "scripts/jdc_ugc_persona_voice_v2.py",
+    "role": "campaign-job",
+    "status": "variant",
+    "campaign": "juvenile-detention",
+    "summary": "Re-roll all 5 persona tests with per-persona DISTINCT voice descriptions. Original batch had uniform VOICE clause → all 4 personas sounded similar. This batch uses a unique voice p",
+    "syntax_error": null,
+    "techniques": [
+      "captions",
+      "video-generation"
+    ],
+    "providers": [
+      "KIE",
+      "Poyo",
+      "Veo"
+    ],
+    "lines": 161
+  },
+  {
+    "path": "scripts/jdc_ugc_personas.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "juvenile-detention",
+    "summary": "Generate 10 Black male UGC persona refs in Chicago via gpt-image-2. For IL JDC sexual abuse compensation campaign. Young men in their late teens to early 20s — old enough to have a",
+    "syntax_error": null,
+    "techniques": [
+      "captions",
+      "image-generation"
+    ],
+    "providers": [
+      "KIE"
+    ],
+    "lines": 158
+  },
+  {
+    "path": "scripts/jdc_vo_audition.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "juvenile-detention",
+    "summary": "IL JDC claymation explainer — first-person survivor VO auditions. Generates the opening lines with 4 candidate voices so the user can pick. 2 campaign clones (demographically authe",
+    "syntax_error": null,
+    "techniques": [
+      "voice-processing"
+    ],
+    "providers": [
+      "ElevenLabs"
+    ],
+    "lines": 67
+  },
+  {
+    "path": "scripts/jdc_vo_full.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "juvenile-detention",
+    "summary": "IL JDC claymation explainer — FULL first-person survivor VO (Brian). Voice: Brian - Deep, Resonant and Comforting (nPczCjzI2devNBz1zQrb), user-picked. Tries eleven_v3 (expressive, ",
+    "syntax_error": null,
+    "techniques": [
+      "voice-processing"
+    ],
+    "providers": [
+      "ElevenLabs"
+    ],
+    "lines": 75
+  },
+  {
+    "path": "scripts/jdc_voice_normalize.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "juvenile-detention",
+    "summary": "Voice-normalize B and C via ElevenLabs voice_changer. Per CLAUDE.md tier-2 recipe: 1. Extract clip 1 mp3 per persona → voice clone source 2. Clone voice → voice_id per persona 3. E",
+    "syntax_error": null,
+    "techniques": [
+      "audio-QA",
+      "voice-processing"
+    ],
+    "providers": [
+      "ElevenLabs",
+      "ffmpeg"
+    ],
+    "lines": 137
+  },
+  {
+    "path": "scripts/jds_personas_gen.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "juvenile-detention",
+    "summary": "Generate gpt-image-2 reference frames for the 5 Illinois JDC personas. All 5 personas: Black men, authentic Chicago neighborhood / streetwear aesthetic. Demographic mix mirrors act",
+    "syntax_error": null,
+    "techniques": [
+      "captions",
+      "image-generation",
+      "matte-PIP"
+    ],
+    "providers": [
+      "KIE"
+    ],
+    "lines": 139
+  },
+  {
+    "path": "scripts/k4_clips_2_10.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "california-womens-prison",
+    "summary": "Generate clips 2-10 of k4 Pixar Latina ad in parallel via Poyo veo3.1-fast. Settings: - 720p 9:16 8s per clip - frame mode with k4 as both start + end frame (Poyo requires exactly ",
+    "syntax_error": null,
+    "techniques": [
+      "captions",
+      "matte-PIP",
+      "video-generation"
+    ],
+    "providers": [
+      "Poyo",
+      "Veo"
+    ],
+    "lines": 175
+  },
+  {
+    "path": "scripts/l2_clips.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "california-womens-prison",
+    "summary": "Generate 10 clips for the l2 Pixar Latina ad (East LA living room) on Poyo veo3.1-fast. Same 10-line Chowchilla script as the k4 ad, but: - More emotional delivery (voice carries w",
+    "syntax_error": null,
+    "techniques": [
+      "captions",
+      "video-generation"
+    ],
+    "providers": [
+      "Poyo",
+      "Veo"
+    ],
+    "lines": 195
+  },
+  {
+    "path": "scripts/lr_multi_ads.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "california-womens-prison",
+    "summary": "Generate 4 photoreal Latina ads in parallel via Poyo veo3.1-fast. Personas: lr01, lr04, lr08, lr10 (each in their own living room). Script: 10-line Chowchilla dialogue with line 1 ",
+    "syntax_error": null,
+    "techniques": [
+      "captions",
+      "video-generation"
+    ],
+    "providers": [
+      "Poyo",
+      "Veo"
+    ],
+    "lines": 223
+  },
+  {
+    "path": "scripts/normalize_a2_variations.py",
+    "role": "campaign-job",
+    "status": "variant",
+    "campaign": "california-womens-prison",
+    "summary": "Normalize all 12 a2-persona variations through ElevenLabs voice_changer. Pipeline: 1. Clone voice ONCE from the original 0502 source video's audio → voice_id 2. For each variation,",
+    "syntax_error": null,
+    "techniques": [
+      "assembly",
+      "voice-processing"
+    ],
+    "providers": [
+      "ElevenLabs",
+      "ffmpeg",
+      "Poyo"
+    ],
+    "lines": 152
+  },
+  {
+    "path": "scripts/opusclip_client.py",
+    "role": "reusable-tool",
+    "status": "canonical",
+    "campaign": null,
+    "summary": "Minimal OpusClip API client — upload a LOCAL video, caption it with a brand template (skip the clipping pass), poll, and download the rendered result. Flow (per https://help.opus.p",
+    "syntax_error": null,
+    "techniques": [
+      "captions"
+    ],
+    "providers": [],
+    "lines": 127
+  },
+  {
+    "path": "scripts/pick_clean_anchors.py",
+    "role": "reusable-tool",
+    "status": "canonical",
+    "campaign": null,
+    "summary": "Pick clean, eyes-open anchor frames for multi-clip image-to-video generation. Repeatedly seeding from one generated frame can compound transient defects and make later clips look p",
+    "syntax_error": null,
+    "techniques": [
+      "anchor-continuity"
+    ],
+    "providers": [
+      "ffmpeg"
+    ],
+    "lines": 237
+  },
+  {
+    "path": "scripts/pixar_themed_personas.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "california-womens-prison",
+    "summary": "Generate 10 themed Pixar-style Latina personas (5 living room, 5 kitchen) via OpenAI gpt-image-2 t2i. Theme: Latina women's prison survivors (Chowchilla / California women's prison",
+    "syntax_error": null,
+    "techniques": [
+      "captions",
+      "image-generation"
+    ],
+    "providers": [
+      "KIE"
+    ],
+    "lines": 216
+  },
+  {
+    "path": "scripts/pixarify_personas.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "california-womens-prison",
+    "summary": "Stylize 11 Latina persona portraits into Pixar 3D characters via OpenAI gpt-image-2 i2i. Keeps the background photoreal; only the person is converted to Pixar style. Runs all 11 in",
+    "syntax_error": null,
+    "techniques": [
+      "image-generation"
+    ],
+    "providers": [
+      "KIE"
+    ],
+    "lines": 104
+  },
+  {
+    "path": "scripts/podcast_omni_produce.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "california-womens-prison",
+    "summary": "",
+    "syntax_error": null,
+    "techniques": [
+      "anchor-continuity",
+      "assembly",
+      "matte-PIP",
+      "speech-QA",
+      "video-generation"
+    ],
+    "providers": [
+      "ElevenLabs",
+      "ffmpeg",
+      "Google Flow/useapi",
+      "Veo"
+    ],
+    "lines": 456
+  },
+  {
+    "path": "scripts/qa_clip1s.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "california-womens-prison",
+    "summary": "Quick QA for the 11 new clip-1 generations. For each variation: - Extract two QA frames (t=0.5s, t=7s) via ffmpeg in parallel - Transcribe via ElevenLabs Scribe (with biased_keywor",
+    "syntax_error": null,
+    "techniques": [
+      "speech-QA"
+    ],
+    "providers": [
+      "ElevenLabs",
+      "ffmpeg",
+      "Poyo"
+    ],
+    "lines": 71
+  },
+  {
+    "path": "scripts/rederive_emoji.py",
+    "role": "reusable-tool",
+    "status": "canonical",
+    "campaign": null,
+    "summary": "Build the final, ready-to-render emoji inventory from the VISUALLY-VERIFIED emoji list. Input: inventory/submagic_emoji_inventory.json with each emoji's {emoji, t} (human-verified ",
+    "syntax_error": null,
+    "techniques": [
+      "captions"
+    ],
+    "providers": [
+      "ffmpeg"
+    ],
+    "lines": 158
+  },
+  {
+    "path": "scripts/render_minimal_ad.py",
+    "role": "compatibility-wrapper",
+    "status": "legacy",
+    "campaign": null,
+    "summary": "Compatibility wrapper for the Pulaski/Jones minimalist campaign renderer.",
+    "syntax_error": null,
+    "techniques": [],
+    "providers": [],
+    "lines": 15
+  },
+  {
+    "path": "scripts/render_pulaski_jones_minimal_ad.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "pulaski-jones",
+    "summary": "Render a Pulaski/Jones minimalist 4:5 text-on-black campaign ad. Input: any video with usable audio (the \"winning script\") Output: two MP4s in <out_dir>/ minimal_ad_hardcut.mp4 — d",
+    "syntax_error": null,
+    "techniques": [
+      "captions",
+      "speech-QA"
+    ],
+    "providers": [
+      "ElevenLabs",
+      "ffmpeg"
+    ],
+    "lines": 310
+  },
+  {
+    "path": "scripts/scan_burned_text.py",
+    "role": "reusable-tool",
+    "status": "canonical",
+    "campaign": null,
+    "summary": "Detect burned-in subtitles/text on Veo-generated clips via tesseract OCR. Veo sometimes hallucinates burned-in subtitle text mid-clip, ignoring our \"no on-screen text\" prompt. This",
+    "syntax_error": null,
+    "techniques": [
+      "captions"
+    ],
+    "providers": [
+      "ffmpeg",
+      "Veo"
+    ],
+    "lines": 159
+  },
+  {
+    "path": "scripts/style_test_seedance.py",
+    "role": "reusable-tool",
+    "status": "experiment",
+    "campaign": null,
+    "summary": "Two quick STYLE TESTS via Seedance 2 Fast on KIE (480p, 9:16, no dialogue). Generic/neutral subjects — the point is to see how each aesthetic renders, not to carry a script. Two se",
+    "syntax_error": null,
+    "techniques": [
+      "B-roll",
+      "captions",
+      "matte-PIP",
+      "video-generation"
+    ],
+    "providers": [
+      "KIE",
+      "Seedance"
+    ],
+    "lines": 89
+  },
+  {
+    "path": "scripts/submagic_client.py",
+    "role": "reusable-tool",
+    "status": "canonical",
+    "campaign": null,
+    "summary": "Minimal Submagic API client — upload a LOCAL video, caption it with a Submagic template (e.g. \"Hormozi 3\"), export, poll, and download the rendered result. Flow (https://docs.subma",
+    "syntax_error": null,
+    "techniques": [
+      "captions",
+      "speech-QA"
+    ],
+    "providers": [
+      "ElevenLabs"
+    ],
+    "lines": 105
+  },
+  {
+    "path": "scripts/subtitle_style_registry.py",
+    "role": "reusable-tool",
+    "status": "canonical",
+    "campaign": null,
+    "summary": "List subtitle/caption style presets from inventory/subtitle_styles/styles.json.",
+    "syntax_error": null,
+    "techniques": [
+      "captions"
+    ],
+    "providers": [],
+    "lines": 48
+  },
+  {
+    "path": "scripts/track_emojis.py",
+    "role": "reusable-tool",
+    "status": "canonical",
+    "campaign": null,
+    "summary": "Per-emoji-event motion extraction via template matching (robust to the moving caption). Uses the coarse <video>.emoji.json events to locate emojis, then for each event: - extracts ",
+    "syntax_error": null,
+    "techniques": [
+      "captions"
+    ],
+    "providers": [
+      "ffmpeg"
+    ],
+    "lines": 80
+  },
+  {
+    "path": "scripts/trim_silence.py",
+    "role": "reusable-tool",
+    "status": "canonical",
+    "campaign": null,
+    "summary": "Trim leading/trailing silence from a clip using word-level transcript timing. Default: keep one continuous window from first-word-start (- lead) to last-word-end (+ tail). Internal",
+    "syntax_error": null,
+    "techniques": [
+      "assembly",
+      "speech-QA"
+    ],
+    "providers": [
+      "ffmpeg"
+    ],
+    "lines": 97
+  },
+  {
+    "path": "scripts/trimrx_ads_extra.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "trimrx",
+    "summary": "TrimRx GLP-1 — EXTRA image-ad formats (additive to scripts/trimrx_ads_gen.py). The main generator (trimrx_ads_gen.py) already defines 24 formats (01-24). This adds 6 GENUINELY-NEW ",
+    "syntax_error": null,
+    "techniques": [
+      "matte-PIP",
+      "speech-QA"
+    ],
+    "providers": [
+      "ElevenLabs"
+    ],
+    "lines": 151
+  },
+  {
+    "path": "scripts/trimrx_ads_gen.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "trimrx",
+    "summary": "TrimRx GLP-1 weight-loss image-ad batch — 10 ads, every one a DIFFERENT ad style. Compliance-locked to the TrimRx affiliate sheet (NO branded names Ozempic/Wegovy/etc, NO branded p",
+    "syntax_error": null,
+    "techniques": [
+      "captions",
+      "image-generation",
+      "speech-QA"
+    ],
+    "providers": [
+      "ElevenLabs",
+      "KIE"
+    ],
+    "lines": 1217
+  },
+  {
+    "path": "scripts/trimrx_angles.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "trimrx",
+    "summary": "TrimRx — 60 MORE ads spanning unique angles + personas + styles (full gpt-image-2 banners). Combined with the existing 43 (v01-10 viral, s01-20 styles, 30g compare, c01-12 clean) t",
+    "syntax_error": null,
+    "techniques": [
+      "captions",
+      "image-generation",
+      "matte-PIP",
+      "speech-QA"
+    ],
+    "providers": [
+      "ElevenLabs",
+      "KIE"
+    ],
+    "lines": 437
+  },
+  {
+    "path": "scripts/trimrx_compare_gpt.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "trimrx",
+    "summary": "Full 'STOP OVERPAYING' comparison banner generated ENTIRELY by gpt-image-2 (KIE). NO PIL / code compositing — gpt-image-2 renders the whole creative (headline, review, price ladder",
+    "syntax_error": null,
+    "techniques": [
+      "image-generation",
+      "speech-QA"
+    ],
+    "providers": [
+      "ElevenLabs",
+      "KIE"
+    ],
+    "lines": 72
+  },
+  {
+    "path": "scripts/trimrx_copyled.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "trimrx",
+    "summary": "Copy-led / minimal-image TrimRx ads — a STRUCTURAL break from the busy banners. The idea: the FB PRIMARY TEXT does the selling; the IMAGE is minimal (a news photo, a plain candid s",
+    "syntax_error": null,
+    "techniques": [
+      "captions",
+      "image-generation",
+      "matte-PIP",
+      "speech-QA"
+    ],
+    "providers": [
+      "ElevenLabs",
+      "KIE"
+    ],
+    "lines": 191
+  },
+  {
+    "path": "scripts/trimrx_formats.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "trimrx",
+    "summary": "TrimRx — ~58 ads, EACH A UNIQUE FORMAT not used in the other batches (full gpt-image-2). Goal bar: every ad unique in FORMAT *and* angle/persona. The viral(10)+styles(20)+clean(12)",
+    "syntax_error": null,
+    "techniques": [
+      "captions",
+      "image-generation",
+      "speech-QA"
+    ],
+    "providers": [
+      "ElevenLabs",
+      "KIE"
+    ],
+    "lines": 142
+  },
+  {
+    "path": "scripts/trimrx_styles20.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "trimrx",
+    "summary": "20 completely-different VISUAL STYLES for TrimRx — each a full gpt-image-2 (KIE) banner. NO PIL compositing. Each ad = gpt-image-2 IMAGE-TO-IMAGE with a real TrimRx vial PNG as ref",
+    "syntax_error": null,
+    "techniques": [
+      "captions",
+      "image-generation",
+      "matte-PIP",
+      "speech-QA"
+    ],
+    "providers": [
+      "ElevenLabs",
+      "KIE"
+    ],
+    "lines": 174
+  },
+  {
+    "path": "scripts/trimrx_viral_gpt.py",
+    "role": "campaign-job",
+    "status": "active-or-historical",
+    "campaign": "trimrx",
+    "summary": "10 viral / direct-response TrimRx banners — each rendered ENTIRELY by gpt-image-2 (KIE). NO PIL / code compositing. Each ad is gpt-image-2 IMAGE-TO-IMAGE with a real TrimRx vial PN",
+    "syntax_error": null,
+    "techniques": [
+      "captions",
+      "image-generation",
+      "speech-QA"
+    ],
+    "providers": [
+      "ElevenLabs",
+      "KIE"
+    ],
+    "lines": 124
+  },
+  {
+    "path": "scripts/voice_consistency.py",
+    "role": "reusable-tool",
+    "status": "canonical",
+    "campaign": null,
+    "summary": "Voice consistency detector — catches what audio_match.py misses. Per-clip metrics: - Speaker embedding (resemblyzer / GE2E) → cosine similarity to reference clip - Mean F0 (pitch) ",
+    "syntax_error": null,
+    "techniques": [
+      "audio-QA",
+      "matte-PIP"
+    ],
+    "providers": [
+      "ffmpeg"
+    ],
+    "lines": 113
+  },
+  {
+    "path": "useapi_client.py",
+    "role": "reusable-tool",
+    "status": "canonical",
+    "campaign": null,
+    "summary": "useapi.net — RunwayML API v1 All video generation routes through one endpoint: POST https://api.useapi.net/v1/runwayml/videos/create Polling: GET https://api.useapi.net/v1/runwayml",
+    "syntax_error": null,
+    "techniques": [
+      "video-generation"
+    ],
+    "providers": [
+      "Google Flow/useapi",
+      "Seedance",
+      "Veo"
+    ],
+    "lines": 324
+  }
+]

@@ -24,13 +24,13 @@
 **Background:** Pure flat #000 black, full-frame, full duration. No texture, no vignette, no grain, no gradient.
 
 **Subtitles:**
-- Source: original audio from `0502(2).mp4`, transcribed via Whisper (`small` model)
+- Source: original audio from `0502(2).mp4`, transcribed via ElevenLabs Scribe
 - Phrasing: 2–4 word chunks, split on >0.35s pauses or word count (current `caption.py` default)
 - Style: bold heavy sans-serif (Arial Black or equivalent), white fill, thin black outline, soft drop shadow (matches existing `caption.py` look)
 - Font size: ~3.5% of frame height (existing default), with adaptive shrink up to 10× if a chunk exceeds 2 lines
 - Position: **dead center vertically (y ≈ 50% of frame height)** — change from default 16%-from-bottom
 - Position horizontally: centered
-- Whisper proper-noun substitutions: existing `SUBSTITUTIONS` dict in `caption.py` (handles "Chow-chilluh" → "Chowchilla", etc.)
+- Proper-noun substitutions: `config/campaigns/pulaski-jones/caption_substitutions.json`
 
 **Disclaimer overlay:**
 - Text (verbatim): "Paid legal advertisement. Jordan M. Jones, Attorney at Law (360 E 2nd St #820, Los Angeles, CA 90012) and Adam Pulaski, Attorney at Law (2925 Richmond Ave #1725, Houston, TX 77098) are responsible for this advertisement. A California-licensed attorney is associated for CA cases. This ad uses paid actors, dramatizations, and AI-generated imagery for illustration only and does not depict real clients or events. No guarantee or prediction of outcome is made. Cases may be referred to other attorneys."
@@ -53,12 +53,13 @@ Both variants use identical subtitles, identical BG, identical audio. Only the d
 
 ## Build pipeline
 
-A single new script: `scripts/render_minimal_ad.py <source.mp4> <out_dir>`
+A single campaign script:
+`scripts/render_pulaski_jones_minimal_ad.py <source.mp4> <out_dir>`
 
 Steps:
 
-1. **Extract audio for Whisper** from `<source.mp4>` → `<out_dir>/tmp/audio.wav` (mono, 16kHz). This is for transcription only; the final mux pulls the audio stream directly from `<source.mp4>` via ffmpeg `-map 1:a -c:a aac -b:a 192k` (re-encoded to AAC for MP4 compatibility, no extra extract step).
-2. **Whisper transcribe** with `small` model, word-level timestamps → `<out_dir>/tmp/transcript.json`
+1. **Extract audio for Scribe** from `<source.mp4>` -> `<out_dir>/tmp/audio.wav` (mono, 16kHz). This is for transcription only; the final mux pulls the audio stream directly from `<source.mp4>` via ffmpeg `-map 1:a -c:a aac -b:a 192k` (re-encoded to AAC for MP4 compatibility, no extra extract step).
+2. **ElevenLabs Scribe transcribe** with word-level timestamps -> `<out_dir>/tmp/transcript.json`
 3. **Chunk into caption phrases** using existing logic in `caption.py` (refactor that function out into a reusable helper if needed)
 4. **Generate base black video** with audio:
    ```
@@ -75,7 +76,8 @@ Steps:
 
 ## Files touched / created
 
-- **New:** `scripts/render_minimal_ad.py` (the orchestrator)
+- **New:** `scripts/render_pulaski_jones_minimal_ad.py` (campaign orchestrator; the old generic
+  filename is retained as a compatibility wrapper)
 - **Modified:** `caption.py` — add a `position` parameter (`"bottom"` default | `"center"`) to the function that renders the per-chunk PNG and computes its y-coordinate. Default behavior unchanged for existing CLI users. The new script imports and calls this function directly with `position="center"`.
 - **Output dir:** `outputs/0502_minimal/` (already exists from BG mockup work)
 
@@ -89,7 +91,7 @@ Steps:
 ## Acceptance criteria
 
 1. Both output MP4s play 61.8s ± 0.2s with original audio audible and undistorted
-2. Captions appear on the same words as the source audio (Whisper word timing within ~150ms)
+2. Captions appear on the same words as the source audio (Scribe word timing within ~150ms)
 3. Captions are vertically centered, horizontally centered, all chunks fit within frame
 4. Disclaimer is fully readable on a phone screen (1080w viewport) and visible only during 5–10s window
 5. Variant B's disclaimer fades in/out smoothly (no flicker, no double-render)

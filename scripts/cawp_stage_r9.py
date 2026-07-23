@@ -5,6 +5,7 @@ import json
 import os
 import sys
 import time
+from pathlib import Path
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import admachin_client as am
@@ -17,13 +18,9 @@ STATE_PATH = "outputs/cawp_admachin_r9_state.json"
 AD_TYPE = "cawp-mija-2026-06"
 
 DISCLAIMER = (
-    "Paid legal advertisement. Jordan M. Jones, Attorney at Law (360 E 2nd St #820, Los Angeles, "
-    "CA 90012) and Adam Pulaski, Attorney at Law (2925 Richmond Ave #1725, Houston, TX 77098) are "
-    "responsible for this advertisement. A California-licensed attorney is associated for CA "
-    "cases. This ad uses paid actors, dramatizations, and AI-generated imagery for illustration "
-    "only and does not depict real clients or events. No guarantee or prediction of outcome is "
-    "made. Cases may be referred to other attorneys."
-)
+    Path(__file__).resolve().parent.parent
+    / "config/campaigns/pulaski-jones/disclaimer.txt"
+).read_text().strip()
 
 CONSTANT = (
     "Women from these facilities may qualify:\n\n"

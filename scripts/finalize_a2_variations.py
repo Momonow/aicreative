@@ -1,7 +1,7 @@
 """End-to-end finalize pipeline for the 12 a2-persona Chowchilla script variations.
 
 Per variation:
-  1. Whisper-transcribe each clip → save transcript JSON next to clip
+  1. ElevenLabs Scribe-transcribe each clip -> save transcript JSON next to clip
   2. Compare transcript vs intended → print PASS/FAIL summary
   3. Trim leading/trailing silence per clip via scripts/trim_silence.py
      → produces clip{N}_trimmed.mp4
@@ -65,7 +65,7 @@ def transcribe_clip(model, clip_path, transcript_path):
 
 
 def qa_variation(model, v):
-    """Whisper-QA each clip in variation. Returns list of dicts."""
+    """Scribe-QA each clip in variation. Returns list of dicts."""
     chunks = VARIATIONS[v]["clips"]
     results = []
     for i, intended in enumerate(chunks, start=1):

@@ -1,7 +1,7 @@
 """Trim weird dead air from each Kling clip, then concat into final ad.
 
 For each clip:
-  1. Transcribe with Whisper medium (more accurate than small)
+  1. Transcribe with ElevenLabs Scribe
   2. Find first-word start + last-word end
   3. Trim to [first_word_start - 0.15s, last_word_end + 0.25s]
      (small pre-roll for natural breath, slightly longer tail so word doesn't clip)

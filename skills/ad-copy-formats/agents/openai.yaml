@@ -1,0 +1,4 @@
+interface:
+  display_name: "Ad Copy Formats"
+  short_description: "Create structurally varied paid-social copy"
+  default_prompt: "Use $ad-copy-formats to make this ad-copy batch structurally distinct."

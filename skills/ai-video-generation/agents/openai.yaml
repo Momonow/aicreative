@@ -1,0 +1,4 @@
+interface:
+  display_name: "AI Video Generation"
+  short_description: "Generate consistent AI video clips and personas"
+  default_prompt: "Use $ai-video-generation to generate these clips with continuity and QA."

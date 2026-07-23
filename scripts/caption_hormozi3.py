@@ -28,7 +28,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 from scripts.caption_styled import (extract_audio, probe_size, chunk_words, auto_vertical_pos, run,
-                                     render_disclaimer, find_font, DEFAULT_DISCLAIMER, apply_subs)
+                                     render_disclaimer, find_font, apply_subs, load_substitutions)
 
 FONT = str(ROOT / "assets/fonts/Montserrat-Black.ttf")
 EMOJI_DIR = ROOT / "assets/emoji"
@@ -68,7 +68,7 @@ KEYWORD_EMOJI = {
     "remember": "💭", "thought": "💭", "knew": "💭", "think": "💭", "thinking": "💭",
     "figured": "💭", "figure": "💭", "wondered": "💭",
     "fire": "🔥", "amazing": "🔥", "fight": "🔥",
-    # --- expanded coverage so more cards get an emoji (legal-ad vocabulary) ---
+    # Expanded general creator-caption vocabulary.
     "ago": "⏳", "spent": "⏳", "long": "⏳",
     "thirty": "⏱️", "seconds": "⏱️", "second": "⏱️", "couple": "✌️", "two": "✌️",
     "today": "📅", "days": "📅", "day": "📅",
@@ -86,17 +86,30 @@ KEYWORD_EMOJI = {
     "lawyers": "⚖️", "complete": "✅", "completely": "✅", "done": "✅", "over": "✅",
     "happened": "❓", "happen": "❓",
     "stays": "🤫",
-    # --- IL JDC abuse-survivor campaign vocabulary (morphological variants + topic words) ---
+    # Additional common legal, institutional, and lead-generation terms.
     "abused": "💔", "abusing": "💔", "sexually": "💔", "assault": "💔", "assaulted": "💔",
     "compensated": "💰", "compensate": "💰", "paying": "💰", "pay": "💰", "pays": "💰",
     "survivor": "💪", "survivors": "💪", "changing": "🔄", "change": "🔄", "changed": "🔄",
     "free": "🆓", "check": "🔍", "checking": "🔍", "link": "🔗",
     "juvenile": "🔒", "juvie": "🔒", "hall": "🔒", "detention": "🔒", "facility": "🔒",
     "staff": "🚨", "member": "🚨", "warden": "🚨", "officer": "🚨",
-    "crime": "🚔", "criminal": "🚔", "illinois": "📍", "away": "🏃",
+    "crime": "🚔", "criminal": "🚔", "away": "🏃",
     "child": "🧒", "kid": "🧒", "children": "🧒", "kids": "🧒",
     "quietly": "🤫", "now": "⚡",
 }
+
+
+def load_emoji_keywords(path):
+    """Merge an explicit campaign keyword-to-emoji map."""
+    if not path:
+        return
+    data = json.loads(Path(path).read_text())
+    if not isinstance(data, dict) or not all(
+        isinstance(key, str) and isinstance(value, str)
+        for key, value in data.items()
+    ):
+        raise ValueError("emoji keyword JSON must map strings to emoji strings")
+    KEYWORD_EMOJI.update({key.lower(): value for key, value in data.items()})
 
 # Emoji art sources:
 #  - PRIMARY: Google Noto ANIMATED emoji GIFs — internally animated (flag waves, money jingles),
@@ -429,17 +442,10 @@ def probe_duration(video):
 
 
 def scribe_transcribe(video, biased):
-    import os
     from dotenv import load_dotenv
-    load_dotenv()  # ensure .env keys are in os.environ before getenv checks
-    if os.getenv("ELEVENLABS_API_KEY"):
-        from elevenlabs_client import scribe_whisper_compat
-        return scribe_whisper_compat(str(video), biased_keywords=biased, language_code="en")
-    elif os.getenv("FAL_KEY"):
-        from fal_client import scribe_whisper_compat as fal_scribe
-        return fal_scribe(str(video), biased_keywords=biased, language_code="en")
-    else:
-        raise RuntimeError("Neither ELEVENLABS_API_KEY nor FAL_KEY set in .env")
+    load_dotenv()
+    from elevenlabs_client import scribe_whisper_compat
+    return scribe_whisper_compat(str(video), biased_keywords=biased, language_code="en")
 
 
 TEXT_POP_DUR = 0.12      # text scale-pop on card appearance (measured: 96->105->100% over ~0.12s)
@@ -839,16 +845,31 @@ def main():
                          "Submagic's ~10/min; default keeps the emoji-heavy look).")
     ap.add_argument("--submagic-emojis", default=None,
                     help="JSON inventory (submagic_emoji_inventory.json) — place its exact emoji types/positions on the cards holding each timestamp, to match Submagic.")
-    ap.add_argument("--biased", default="Chowchilla:3.0,CCWF:2.0",
+    ap.add_argument("--biased", default="",
                     help="comma-sep Scribe biased keywords (proper nouns). Empty for generic text.")
+    ap.add_argument("--substitutions-json", default=None,
+                    help="campaign-specific post-Scribe correction map")
+    ap.add_argument("--emoji-keywords-json", default=None,
+                    help="optional campaign keyword-to-emoji map")
     ap.add_argument("--disclaimer", action="store_true",
                     help="overlay the legal disclaimer at the bottom during the calmest (most boring) window.")
-    ap.add_argument("--disclaimer-text", default=DEFAULT_DISCLAIMER)
+    disclaimer = ap.add_mutually_exclusive_group()
+    disclaimer.add_argument("--disclaimer-text", default=None,
+                            help="exact campaign-approved disclaimer text; used with --disclaimer")
+    disclaimer.add_argument("--disclaimer-file", default=None,
+                            help="path to exact campaign-approved disclaimer text; used with --disclaimer")
     ap.add_argument("--disclaimer-secs", type=float, default=6.0, help="how long the disclaimer stays up.")
     ap.add_argument("--disclaimer-start", type=float, default=None,
                     help="force disclaimer start (sec). Default: auto-detect calmest window.")
     ap.add_argument("--end", type=float, default=None)
     args = ap.parse_args()
+    load_substitutions(args.substitutions_json)
+    load_emoji_keywords(args.emoji_keywords_json)
+    disclaimer_text = args.disclaimer_text
+    if args.disclaimer_file:
+        disclaimer_text = Path(args.disclaimer_file).read_text().strip()
+    if args.disclaimer and not disclaimer_text:
+        ap.error("--disclaimer requires --disclaimer-text or --disclaimer-file")
     if args.emoji_gap is not None:
         global EMOJI_MIN_GAP
         EMOJI_MIN_GAP = args.emoji_gap
@@ -891,7 +912,7 @@ def main():
             else:
                 disc_start, _ = find_boring_window(video, length=args.disclaimer_secs)
             disc_end = disc_start + args.disclaimer_secs
-            disc_text = args.disclaimer_text
+            disc_text = disclaimer_text
         emoji_plan = None
         if args.submagic_emojis:
             inv = json.load(open(args.submagic_emojis))

@@ -43,20 +43,17 @@ If working in a project without it, the source is at `/Users/harry/aicreative/sc
 |---|---|
 | **`top`** (default) | Selfie / talking-head UGC. Keep face + upper body; drop chest/floor below. |
 | `center` | Generic content where the subject is mid-frame. |
-| `bias` | Rare. Use only if the important content is at the bottom of the source. |
+| `bottom` | Rare. Use only if the important content is at the bottom of the source. |
 
 ## Workflow with captions (full chain)
 
-For the aicreative women's-prison ad pipeline:
+Generic chain:
 
 ```bash
-# 1. Stitch Veo clips → final_<slug>.mp4 (720x1200, has internal letterbox)
-# 2. Convert to 4:5 (auto-removes letterbox)
-.venv/bin/python scripts/crop_4x5.py outputs/.../final_lr01.mp4 \
-  --out outputs/.../final_lr01_4x5.mp4
-# 3. Burn captions on the cleaned 4:5 source (caption_styled.py auto-positions for the new aspect)
-.venv/bin/python scripts/caption_styled.py outputs/.../final_lr01_4x5.mp4 \
-  --out outputs/.../final_lr01_4x5_styled.mp4 \
+.venv/bin/python scripts/crop_4x5.py input_9x16.mp4 \
+  --out output_4x5.mp4
+.venv/bin/python scripts/caption_styled.py output_4x5.mp4 \
+  --out output_4x5_captioned.mp4 \
   --highlight-style yellow_text
 ```
 
@@ -80,4 +77,3 @@ Width is preserved; height is recomputed to width / 0.8.
 ## Related skills
 
 - `yellow-text-sub` — burns the per-word yellow-highlight captions onto the 4:5 video. Auto-adjusts caption Y by aspect so they always land below the chin.
-- `pulaski-jones-disclaimer` — exact disclaimer text for the women's-prison-abuse campaign.

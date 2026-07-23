@@ -33,11 +33,8 @@ Invoke for requests like:
 - "calm phrase captions"
 - "use the Nick style for this legal ad"
 
-Especially good for:
-- women's-prison legal ads
-- prison-abuse / sexual-abuse compensation ads
-- calm UGC talking-head videos
-- any case where Hormozi / yellow-text would feel too loud
+Especially good for calm UGC, interviews, podcast clips, sensitive topics, and any case where
+Hormozi or yellow-text captions would feel too loud.
 
 ## The locked look
 
@@ -59,14 +56,10 @@ If the user wants:
 .venv/bin/python scripts/caption_nick.py <in.mp4> --out <out.mp4>
 ```
 
-If the campaign also needs the Pulaski/Jones disclaimer:
+Use `--biased` and `--substitutions-json` only with campaign-owned inputs.
 
-```bash
-.venv/bin/python scripts/caption_nick.py <in.mp4> --out <captions.mp4>
-.venv/bin/python scripts/burn_disclaimer.py <captions.mp4> <combo.mp4>
-```
-
-The disclaimer text/styling itself is governed by `pulaski-jones-disclaimer`. Do not paraphrase that copy.
+If the campaign needs a disclaimer, apply it through the relevant campaign disclaimer skill after
+rendering Nick captions. Keep the clean master and caption-only file.
 
 ## Do not repeat
 

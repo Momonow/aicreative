@@ -16,12 +16,9 @@ SUB     = "acf1b974-9721-488b-a4e0-ffe0664070c5"      # Women's Prison
 POD     = os.path.join(ROOT, "outputs", "chowchilla_podcast")
 STATE   = os.path.join(ROOT, "outputs", "cawp_stacked_admachin_state.json")
 
-DISCLAIMER = ("Paid legal advertisement. Jordan M. Jones, Attorney at Law (360 E 2nd St #820, "
-    "Los Angeles, CA 90012) and Adam Pulaski, Attorney at Law (2925 Richmond Ave #1725, Houston, "
-    "TX 77098) are responsible for this advertisement. A California-licensed attorney is associated "
-    "for CA cases. This ad uses paid actors, dramatizations, and AI-generated imagery for "
-    "illustration only and does not depict real clients or events. No guarantee or prediction of "
-    "outcome is made. Cases may be referred to other attorneys.")
+DISCLAIMER = open(
+    os.path.join(ROOT, "config", "campaigns", "pulaski-jones", "disclaimer.txt")
+).read().strip()
 
 HEADLINES = {
  "P":  "You're Not the Only One Who Remembers",

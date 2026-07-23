@@ -1,17 +1,33 @@
-# Skills (backup mirror)
+# Skills
 
-These are copies of the user's aicreative caption/campaign skills that should
-also live in the assistant's auto-loaded skill folders. For Codex desktop
-sessions, the live copy is under `~/.codex/skills/`. Mirrored here for version
-control / backup. Personal or non-aicreative skills should stay live-only in
-`~/.codex/skills/` unless they become repo-relevant.
+This directory is the version-controlled mirror of aicreative skills. Live Codex copies are under `~/.codex/skills/`.
 
-| Skill | Purpose |
-|---|---|
-| `hormozi3` | Submagic "Hormozi 3" captions (`scripts/caption_hormozi3.py`). |
-| `nick-subtitle` | Submagic "Nick" captions via the internal `scripts/caption_nick.py` renderer. |
-| `pulaski-jones-disclaimer` | Verbatim Pulaski/Jones legal disclaimer text + overlay (auto "most boring window" placement). |
-| `yellow-text-sub` | Per-word yellow-text captions (`scripts/caption_styled.py`). |
-| `feed-4x5` | 4:5 feed crop with letterbox auto-detection (`scripts/crop_4x5.py`). |
-| `admachin-video-ads` | AdSwipe/tort UGC ad analysis, scripts, Veo workflow, sensitive legal captions, and QA rules. |
-| `session-memory-pass` | End-of-session learning extraction: save user preferences, mistakes, rules, skills, and campaign notes without staging unrelated work. |
+## Video Hierarchy
+
+Start with the broadest relevant skill, then load specialists:
+
+| Layer | Skill | Purpose |
+|---|---|---|
+| Core | `video-production` | Universal brief-to-delivery workflow and skill router |
+| Generation | `ai-video-generation` | Providers, anchors, prompts, personas, continuity, transcript and cost QA |
+| Finishing | `video-post-production` | Editing, B-roll timing, audio, captions, mobile safety, framewise QA |
+| Domain | `admachin-video-ads` | Performance-ad strategy, regulated copy, AdMachin staging and launch |
+| Copy | `ad-copy-formats` | Primary-text and headline structure diversity |
+| Format | `podcast-video` | Podcast/interview register, host, script, reaction, and edit decisions |
+| Format | `pip-composite`, `hf-pip-composite`, `stacked-format`, `feed-4x5` | Reusable edit and layout formats |
+| Provider adapter | `podcast-omni` | Legacy Omni execution rules only when explicitly requested |
+| Captions | `redwood-subtitle`, `hormozi3`, `nick-subtitle`, `yellow-text-sub`, `embedded-captions` | Named caption treatments |
+| Caption authoring | `caption-engine-builder` | Clone a genuinely new caption style |
+| Legal | `pulaski-jones-disclaimer` | Verbatim regulated disclaimer and rendering |
+| Motion | `hyperframes` and its specialists | Motion graphics and custom compositions |
+
+`general-video` is the HyperFrames fallback for freeform compositions. It is not the universal production router.
+
+## Knowledge Placement
+
+- Reusable video craft belongs in the three general video skills.
+- Ad strategy, legal constraints, and publishing belong in `admachin-video-ads`.
+- One campaign's scripts, people, assets, IDs, rejects, and launch state belong in memory or `inventory/`.
+- Detailed historical incidents remain searchable in `docs/video-production-learnings-archive.md`.
+
+When a mirrored skill changes, update its live `~/.codex/skills/` copy in the same session.

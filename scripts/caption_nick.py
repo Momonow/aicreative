@@ -1,6 +1,6 @@
-"""Internal clone of Submagic's "Nick" caption template (reverse-engineered frame-by-frame from
-story_C_aftermath_final_submagic_nick.mp4, 2026-06-04). Unlike the Submagic API, this uses OUR
-verbatim transcript (Scribe) and gives full position/size control.
+"""Internal clone of Submagic's "Nick" caption template, calibrated frame by frame against an
+approved reference. Unlike the Submagic API, this uses our verbatim Scribe transcript and gives
+full position and size control.
 
 The Nick look (measured via diff-vs-master):
   - sentence-case (preserve original case — NOT all-caps)
@@ -11,11 +11,10 @@ The Nick look (measured via diff-vs-master):
   - subtle scale-pop on card appearance (~0.94 -> 1.0 over ~0.12s)
   - NO color accent, NO emoji (that's the Hormozi-3 look — use caption_hormozi3.py for that)
 
-Disclaimer is a separate layer — run scripts/burn_disclaimer.py on the output for the combo
-(same as the Submagic flow).
+Any campaign disclaimer is a separate, explicitly selected layer.
 
   .venv/bin/python scripts/caption_nick.py <in.mp4> --out <out.mp4>
-  .venv/bin/python scripts/caption_nick.py <in.mp4> --out <out.mp4> --font arial --biased ""
+  .venv/bin/python scripts/caption_nick.py <in.mp4> --out <out.mp4> --font arial
 """
 import argparse
 import shutil
@@ -26,7 +25,7 @@ import sys
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from PIL import Image, ImageFont, ImageDraw
 from caption_hormozi3 import scribe_transcribe, probe_fps, probe_duration
-from caption_styled import probe_size
+from caption_styled import apply_subs, load_substitutions, probe_size
 
 
 def build_cards_nick(segments, max_words=2, min_pause=0.35):
@@ -35,7 +34,7 @@ def build_cards_nick(segments, max_words=2, min_pause=0.35):
     words = []
     for sg in segments:
         for w in sg.get("words", []):
-            raw = (w.get("word") or w.get("text", "")).strip()
+            raw = apply_subs((w.get("word") or w.get("text", "")).strip())
             # strip sentence punctuation (verified vs the real Submagic Nick export 2026-06-10:
             # it drops ALL .,!?;:" even at sentence ends — keeps internal apostrophes) but REMEMBER
             # sentence-final punctuation so cards never straddle a sentence boundary.
@@ -181,9 +180,13 @@ def main():
     ap.add_argument("--vertical-pos", type=float, default=VPOS)
     ap.add_argument("--max-words", type=int, default=2)
     ap.add_argument("--min-pause", type=float, default=0.35)
-    ap.add_argument("--biased", default="Chowchilla:3.0,CCWF:2.0,Chino:2.0")
+    ap.add_argument("--biased", default="",
+                    help="comma-separated Scribe proper nouns; empty for generic text")
+    ap.add_argument("--substitutions-json", default=None,
+                    help="campaign-specific post-Scribe correction map")
     ap.add_argument("--end", type=float, default=None)
     args = ap.parse_args()
+    load_substitutions(args.substitutions_json)
 
     video = Path(args.video)
     out = Path(args.out) if args.out else video.with_name(video.stem + "_nick.mp4")

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Video Production"
+  short_description: "Plan, produce, finish, and QA any video"
+  default_prompt: "Use $video-production to take this video from brief through final delivery."

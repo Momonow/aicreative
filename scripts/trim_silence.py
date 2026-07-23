@@ -1,4 +1,4 @@
-"""Trim leading/trailing silence from a clip using Whisper word timing.
+"""Trim leading/trailing silence from a clip using word-level transcript timing.
 
 Default: keep one continuous window from first-word-start (- lead) to last-word-end (+ tail).
 Internal pauses (between sentences, dramatic beats) are preserved.

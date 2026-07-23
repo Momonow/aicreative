@@ -144,7 +144,7 @@ def scribe(audio_path, model_id="scribe_v1", biased_keywords=None,
 
     audio_path:        path to audio/video file (mp3/wav/m4a/mp4 etc.)
     model_id:          'scribe_v1' (default) | 'scribe_v1_experimental'
-    biased_keywords:   list of words/phrases to bias toward, e.g. ['Chowchilla', 'Miha']
+    biased_keywords:   list of words/phrases to bias toward, e.g. ['ProductName', 'PlaceName']
                        — KILLER for proper-noun-heavy QA. Each can include a bias
                        weight via 'word:N.N' (1.0 default, max ~5.0).
     language_code:     ISO-639-1 (e.g. 'en'); None = auto-detect.

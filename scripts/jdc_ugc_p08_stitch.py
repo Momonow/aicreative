@@ -8,7 +8,7 @@ Sources (all Lite 720p):
   clip 4   : p08_clip4_lite720.mp4
 
 Per-clip processing:
-  1. Whisper-medium → get first-word start + last-word end times
+  1. ElevenLabs Scribe -> get first-word start + last-word end times
   2. Trim each clip to [first-0.15s, last+0.20s]
      SPECIAL clip 2b: trim from end of overlap phrase "Just found out" (so
      stitched audio = clip 2a's full delivery + clip 2b's continuation,

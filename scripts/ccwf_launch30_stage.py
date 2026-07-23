@@ -14,13 +14,15 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(ROOT / "scripts"))
 import admachin_client as am
-from caption_styled import DEFAULT_DISCLAIMER
-from burn_disclaimer_image import burn as burn_disc
+from burn_pulaski_jones_disclaimer_image import burn as burn_disc
 
 PROJECT = "e15c60bd-95c2-47b9-9730-c29fb5325461"        # Tort
 SUBPROJECT = "acf1b974-9721-488b-a4e0-ffe0664070c5"     # Women's Prison
 BASE = ROOT / "outputs/ccwf_women"
 STATE = BASE / "launch30_stage.json"
+DEFAULT_DISCLAIMER = (
+    ROOT / "config/campaigns/pulaski-jones/disclaimer.txt"
+).read_text().strip()
 
 # (slug, batch-dir, headline, primary)  — primary as approved in chat; disclaimer appended at stage.
 COPY = [

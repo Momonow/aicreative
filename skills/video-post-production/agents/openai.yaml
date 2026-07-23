@@ -1,0 +1,4 @@
+interface:
+  display_name: "Video Post Production"
+  short_description: "Edit, caption, mix, and frame-QA videos"
+  default_prompt: "Use $video-post-production to assemble and finish this video cleanly."

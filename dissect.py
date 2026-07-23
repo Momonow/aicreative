@@ -2,7 +2,7 @@
 """
 Dissect a competitor / generated video into beat-by-beat artifacts.
 
-Usage: python dissect.py <path-to-video> [--biased-keywords Chowchilla Mija] [--no-ocr]
+Usage: python dissect.py <path-to-video> [--biased-keywords ProductName PlaceName] [--no-ocr]
 
 Produces outputs/<videoname>/:
   metadata.json    — duration, fps, resolution, aspect ratio
@@ -23,7 +23,6 @@ prompts. A clip is FLAGGED if any frame has 2+ words at confidence >= 60 outside
 """
 import argparse
 import json
-import os
 import re
 import subprocess
 import sys
@@ -111,19 +110,12 @@ def transcribe(audio_path, biased_keywords=None, language="en"):
     """Transcribe via ElevenLabs Scribe (speech-to-text API).
 
     Returns Whisper-compatible JSON: {text, segments:[{words:[{start,end,word}]}], language}.
-    biased_keywords: proper nouns to bias toward, e.g. ['Chowchilla', 'Mija'] — sharply
-    improves proper-noun accuracy on legal/place-name-heavy ads.
-
-    Backend routing: prefer fal.ai (FAL_KEY) if set, else direct ElevenLabs
-    (ELEVENLABS_API_KEY). Both expose the same scribe_whisper_compat contract.
-    Lazy import so probe/frames/OCR still run without any key.
+    biased_keywords: proper nouns to bias toward, such as a product or place name.
+    Lazy import keeps probe/frames/OCR available when no transcription key is configured.
     """
     from dotenv import load_dotenv
     load_dotenv()
-    if os.getenv("FAL_KEY"):
-        from fal_client import scribe_whisper_compat
-    else:
-        from elevenlabs_client import scribe_whisper_compat
+    from elevenlabs_client import scribe_whisper_compat
     return scribe_whisper_compat(str(audio_path), biased_keywords=biased_keywords,
                                  language_code=language)
 
@@ -232,7 +224,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("video", help="path to competitor video")
     ap.add_argument("--biased-keywords", nargs="+", default=None,
-                    help="proper nouns to bias Scribe toward, e.g. --biased-keywords Chowchilla Mija")
+                    help="proper nouns to bias Scribe toward")
     ap.add_argument("--language", default="en", help="ISO-639-1 language code for Scribe (default en)")
     ap.add_argument("--scene-threshold", type=float, default=0.3)
     ap.add_argument("--interval", type=float, default=1.0, help="sample a frame every N seconds via ffmpeg (default 1.0; 0 to disable)")

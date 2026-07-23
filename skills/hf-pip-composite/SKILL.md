@@ -1,92 +1,89 @@
 ---
 name: hf-pip-composite
-description: HyperFrames TikTok-style PIP composite — a matted talking head (alpha webm) animated over a still backdrop (evidence photo) with a big title word. Use when the user says "pip composite", "talking head over backdrop", "scan/scar backdrop with her talking", "TikTok motion composite", "hyperframes composite", or wants the speaker to move around / zoom for emphasis over an image. USER-VALIDATED on the Depo gatekeeper ad (2026-07-09) — DRIFT is the picked primary motion, CRASH the approved opener; face-safe supersize layout law is locked.
+description: Build a deterministic HyperFrames picture-in-picture composite with a matted talking head animated over a still or video backdrop, optional title treatment, and beat-synced motion. Use for TikTok-style moving presenter overlays, proof backdrops, evidence imagery, or face-safe foreground/background compositions.
 ---
 
-# HyperFrames PIP composite (TikTok motion)
+# HyperFrames PIP Composite
 
-Deterministic HTML→MP4 render (HyperFrames + GSAP) compositing a **matted UGC talker** over a
-**still backdrop** (the "evidence": hospital selfie, scan, document) with a big title word.
-Replaces the static ffmpeg overlay when the user wants the talker to **move/zoom like TikTok**.
+Use HyperFrames and GSAP to animate a foreground presenter matte over a backdrop. This skill owns
+the reusable composition mechanics; backdrop content, title words, caption position, and campaign
+claims remain project inputs.
 
-Reference build: `outputs/depo_tt/ad05_gatekeeper/composite/hf_v8_drift_fs.mp4` (drift) and
-`hf_v6_facesafe.mp4` (crash). Templates in `templates/` (drop-in `index.html` for a project).
+Templates live in `assets/templates/`.
 
-## Asset prep (existing pipeline)
+## Inputs
 
-1. Backdrop still: nano-banana (permissive on medical/scar imagery — gpt-image-2 REFUSES realistic
-   MRI/anatomy) or gpt-image-2 for benign scenes. Must read AUTHENTIC (phone-selfie framing, not
-   staged documentary — user rejected the cinematic hospital shot for a casual selfie w/ staples).
-2. Talker matte: `fal_client.remove_background(video, out.webm)` → VEED vp9-alpha webm (keeps audio).
-3. Word timings for beats: dissect the assembled ad audio; emphasis words drive the motion.
+- approved presenter video
+- background-removed presenter matte with alpha
+- approved backdrop image or video
+- final audio and Scribe word timings
+- optional title text and brand font
 
-## Project setup (no bun needed — node 22+ + ffmpeg)
+## Build
 
 ```bash
-npx hyperframes init proj --example blank --resolution portrait --non-interactive
-cp backdrop.png proj/assets/ ; cp matte.webm proj/assets/ ; cp Montserrat-Black.ttf proj/assets/fonts/
-# author index.html from templates/, then:
-npx hyperframes lint && npx hyperframes validate
-npx hyperframes render --quality draft --output out.mp4     # iterate; --quality high to deliver
+npx hyperframes init project --example blank --resolution portrait --non-interactive
+cp skills/hf-pip-composite/assets/templates/drift_facesafe.html project/index.html
+npx hyperframes lint
+npx hyperframes validate
+npx hyperframes render --quality draft --output preview.mp4
+npx hyperframes render --quality high --output final.mp4
 ```
 
-## FACE-SAFE SUPERSIZE layout law (user-locked)
+Replace the template asset names and placeholder text inside the project copy.
 
-The talker must read BIG but must NOT hide the backdrop subject's face ("people should look at
-the face"). The compromise (approved): crop INTO the talker — head + chest only, shoulders/body
-cut by the box — as a wide band rising from the bottom edge.
+## Face-Safe Layout
 
-```css
-#pip{position:absolute;left:90px;bottom:0;width:900px;height:850px;
-     object-fit:cover;object-position:50% 12%;      /* head-focused crop */
-     transform-origin:bottom center;z-index:2;}      /* scale grows UP from bottom */
-```
+- Make the foreground presenter large enough to read on mobile.
+- Crop into the presenter when needed so the head and upper torso stay prominent.
+- Anchor foreground scaling at the bottom so growth moves upward predictably.
+- Measure both faces at the largest scale and every horizontal waypoint.
+- Keep a stable scale floor and cap; do not let the presenter shrink into a decorative inset.
+- Place every waypoint deliberately. Repeated returns to one home position look mechanical.
+- Select caption position from the actual composite preview; never inherit a campaign-specific
+  vertical position.
 
-- Canvas 1080×1920. Talker band top edge ≈ y1070 at rest — BELOW the subject's chin.
-- Scale range **0.97–1.12 only** (bigger scales re-cover the face); big scales bias x to a side.
-- Positions x ∈ [−260, 260]; **never return to a "home" position** (user: repeated home = fake);
-  every waypoint is a new spot (min 140px from previous).
-- Size floor is a hard rule: she must never appear smaller than the largest size of the prior
-  approved render (user iterated bigger twice — small corner insets are rejected).
-- Title word (e.g. MENINGIOMA): full-width top band, Montserrat Black ~140px, white +5px black
-  stroke on rgba(0,0,0,.42) band, z-index above all; slam-in entrance (`from scale:1.6, power3.out`).
+## Motion Treatments
 
-## Motion treatments (user-picked)
+`drift_facesafe.html`
 
-**DRIFT (primary):** one continuous glide, no stops.
-```js
-gsap.set("#pip",{x:-160,scale:0.97});
-tl.to("#pip",{x:160,duration:9.6,ease:"sine.inOut"},0.2);
-tl.to("#pip",{scale:1.12,duration:4.8,ease:"sine.inOut",yoyo:true,repeat:1},0.2);
-tl.fromTo("#bg",{scale:1.26},{scale:1.02,duration:9.8,ease:"sine.out"},0);
-```
-For long ads: chain drift glides in 8–12s segments (alternate direction + swell timing).
+- continuous lateral glide
+- gentle scale swell
+- slow background counter-zoom
+- best for sustained narration
 
-**CRASH (approved opener / alt):** drastic open — backdrop punched in tight on the evidence
-(set bg `transform-origin` near it, e.g. `38% 20%` for a scalp scar) then whips out with a small
-re-punch, while the talker enters big and hard-punches out/in; then wander (seeded random walk,
-varied ease per hop: elastic/back/power2/sine). See `templates/crash_facesafe.html`.
+`crash_facesafe.html`
 
-**HOPPER (also OK):** instant jump-cut teleports (`duration:.05, ease:"none"`), backdrop
-snap-zooms in sync. See `templates/hopper_facesafe.html`.
+- forceful opening push on the backdrop's focal proof
+- presenter punch-in/punch-out
+- settles into varied waypoints
+- best for a high-impact hook
 
-Beat sync: put emphasis moves ON the Scribe word times of the money words (meningioma /
-compensation / Go); calm connective lines get the smaller/zoom-out waypoints.
+`hopper_facesafe.html`
 
-## Hard-won gotchas
+- deliberate snap relocations
+- background snap-zooms on the same beats
+- use only when the reference supports jump-cut energy
 
-- **`<video>`/`<audio>` MUST be direct children of the composition root** — wrapped/nested media
-  never decodes (renders blank). Audio = separate `<audio>` (same webm src), video stays `muted`.
-- Text: our homebrew ffmpeg has NO drawtext, and HyperFrames text is plain HTML/CSS — declare
-  fonts via `@font-face` (lint errors on unresolvable families like Impact).
-- vp9 alpha: ffmpeg-side previews need `-c:v libvpx-vp9` BEFORE the input; input-seeking (`-ss`
-  before `-i`) on alpha webm drops the alpha — flatten to mp4 first for frame extraction.
-- Determinism: no `Math.random` in composition JS — generate waypoints in PYTHON (seeded) and
-  emit literal tweens (pattern: `depo_hf/gen_walk.py`, seed 11).
-- One paused GSAP timeline at `window.__timelines["<composition-id>"]`; finite repeats only.
-- Draft render ≈ 3-4s/video-second (10s ≈ 40s wall). Renders are sequential — never two at once.
-- Captions: render the motion composite CLEAN, then burn Hormozi (`--no-emoji`) after.
-  **Position = the backdrop subject's FOREHEAD band, `--vertical-pos 0.28`** (user-locked
-  2026-07-09): the gap between the title band and the subject's eyes. The default lower-third
-  (~0.80) lands ON the talker's face in this supersized layout and was rejected; forehead keeps
-  BOTH faces clear and reads title → caption → eyes → talker.
+Align emphasis moves to Scribe word starts for the important claim, proof, or CTA words. Keep
+connective language visually calmer.
+
+## HyperFrames Rules
+
+- Video and audio elements must be direct children of the composition root.
+- Keep the visual `<video>` muted and add a separate `<audio>` element.
+- Define fonts through `@font-face`; do not depend on unavailable system fonts.
+- Register one paused, finite GSAP timeline in `window.__timelines`.
+- Do not use `Math.random` in composition JavaScript. Generate seeded literal waypoints outside
+  the renderer when variation is needed.
+- For VP9 alpha inspection, put `-c:v libvpx-vp9` before the input. Input-seeking can lose alpha;
+  flatten a preview before extracting diagnostic frames.
+- Render motion clean, then apply the selected caption skill as a separate pass.
+
+## QA
+
+- Preview first, middle, and last frame plus every motion beat.
+- Check presenter matte edges, alpha, face occlusion, title fit, and caption-safe space.
+- Confirm deterministic output by rerendering a short draft when the composition uses generated
+  waypoints.
+- Apply `video-post-production` framewise and audio QA before delivery.

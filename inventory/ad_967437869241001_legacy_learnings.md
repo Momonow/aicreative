@@ -1,6 +1,7 @@
-# LEARNINGS.md — aicreative
+# Legacy Learnings: ad-967437869241001
 
-Captured from the end-to-end build of `ad-967437869241001` (California women's prison legal services ad clone). Read this before starting another ad clone — it'll save 10× the time we spent figuring it out.
+Historical snapshot from the end-to-end build of `ad-967437869241001`. Campaign-specific facts
+remain useful here, but current reusable rules and provider routes live in the general video skills.
 
 ---
 
@@ -50,7 +51,9 @@ Captured from the end-to-end build of `ad-967437869241001` (California women's p
 
 ## Captions
 
-- **STT auto-corrects some pronunciations and mangles others.** Phonetic respell `Chow-chilluh` came back as `Chowchilla` (great — captions read clean). But `Chowchilla` (in another segment) came back as `Chowchilly`. Always use a substitution dict for known proper nouns. See `caption.py` `SUBSTITUTIONS`. *(Update 2026-05-20: transcription moved from local Whisper to ElevenLabs Scribe — pass `--biased-keywords` with the proper nouns to cut mistranscriptions at the source; SUBSTITUTIONS remains the post-fix.)*
+- **STT auto-corrects some pronunciations and mangles others.** Use Scribe bias for known proper
+  nouns and pass a campaign-owned correction map with `--substitutions-json`; generic caption
+  renderers must not carry hidden campaign spellings.
 - **TikTok/Submagic font sizing is ~3–4% of frame height.** Not 6%. ~28–35px on 480p, ~38–45px on 720p. Bigger reads as low-effort/Mr-Beast-ish.
 - **Outline scales with fontsize** (~8% of fontsize) so it stays proportional when the font auto-shrinks.
 - **Adaptive font shrink for max-2-lines is essential.** Long-word chunks like "SIGNIFICANT POTENTIAL FINANCIAL COMPENSATION" can't fit in 2 lines at default size. The renderer should shrink ~8% per attempt until it fits, with a floor (~18px).

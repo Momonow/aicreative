@@ -1,6 +1,5 @@
-"""REDWOOD — internal clone of the pink-karaoke caption style (reverse-engineered from
-ad-1926019294732556.mp4, 2026-07-15). ALL-CAPS Anton, white fill + black stroke + soft shadow,
-ONE keyword per card boxed in hot pink (rounded rect), single centered line ~55% of frame height.
+"""Redwood internal clone of an approved pink-karaoke caption reference. All-caps Anton, white
+fill with black stroke and soft shadow, and one word at a time boxed in hot pink.
 
 Measured spec (720x1280 reference):
   - font: Anton (ultra-bold condensed), ALL-CAPS, punctuation KEPT (periods/commas render)
@@ -11,7 +10,7 @@ Measured spec (720x1280 reference):
   - 2-3 words per card, single line, center anchored at vpos ~0.55
   - subtle scale-pop on card appearance
 
-Disclaimer is a separate layer — run scripts/burn_disclaimer.py on the output for the combo.
+Any campaign disclaimer is a separate, explicitly selected layer.
 
   .venv/bin/python scripts/caption_redwood.py <in.mp4> --out <out.mp4>
 """
@@ -24,7 +23,7 @@ import sys
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from PIL import Image, ImageFont, ImageDraw
 from caption_hormozi3 import scribe_transcribe, probe_fps, probe_duration
-from caption_styled import probe_size
+from caption_styled import apply_subs, load_substitutions, probe_size
 
 FONT_PATH = str(Path(__file__).resolve().parent.parent / "assets/fonts/Anton-Regular.ttf")
 TEXT_RGB = (255, 255, 255)
@@ -50,7 +49,7 @@ def build_cards(segments, max_words=4, min_pause=0.35):
     words = []
     for sg in segments:
         for w in sg.get("words", []):
-            raw = (w.get("word") or w.get("text", "")).strip()
+            raw = apply_subs((w.get("word") or w.get("text", "")).strip())
             if raw:
                 words.append({"text": raw, "start": w["start"], "end": w["end"],
                               "eos": raw.rstrip('"').endswith((".", "?", "!"))})
@@ -227,7 +226,10 @@ def main():
     ap.add_argument("--vertical-pos", type=float, default=VPOS)
     ap.add_argument("--max-words", type=int, default=3)
     ap.add_argument("--min-pause", type=float, default=0.35)
-    ap.add_argument("--biased", default="Chowchilla:3.0,CCWF:2.0,CIW:2.0,Mija:2.0")
+    ap.add_argument("--biased", default="",
+                    help="comma-separated Scribe proper nouns; empty for generic text")
+    ap.add_argument("--substitutions-json", default=None,
+                    help="campaign-specific post-Scribe correction map")
     ap.add_argument("--end", type=float, default=None)
     ap.add_argument(
         "--caption-end",
@@ -240,6 +242,7 @@ def main():
     ap.add_argument("--preview-vpos", default="0.55,0.68,0.80",
                     help="comma list of vpos candidates for --preview")
     args = ap.parse_args()
+    load_substitutions(args.substitutions_json)
 
     video = Path(args.video)
     out = Path(args.out) if args.out else video.with_name(video.stem + "_redwood.mp4")

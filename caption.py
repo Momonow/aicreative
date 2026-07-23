@@ -34,25 +34,21 @@ FONT_CANDIDATES = [
     "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",  # Linux
 ]
 
-# Common Whisper mistranscriptions of proper nouns we use across ad clones.
-# Applied case-insensitively to chunk text before rendering.
-SUBSTITUTIONS = {
-    "CHOWCHILLY": "CHOWCHILLA",
-    "CHOW CHILLER": "CHOWCHILLA",
-    "CHOW-CHILLER": "CHOWCHILLA",
-    "CHOW CHILLA": "CHOWCHILLA",
-    "CHOW-CHILLA": "CHOWCHILLA",
-    "CHILLAH": "CHILLA",
-    "FALSUM": "FOLSOM",
-    "FOLSUM": "FOLSOM",
-    "CHEENO": "CHINO",
-    "CHEE-NO": "CHINO",
-    "REPRESSA": "REPRESA",
-    "REPRESSER": "REPRESA",
-    "CCWS": "CCWF",
-    "VSPS": "VSPW",
-    "SIW": "CIW",
-}
+# Campaign corrections must be loaded explicitly. Generic captions never rewrite proper nouns.
+SUBSTITUTIONS = {}
+
+
+def load_substitutions(path):
+    SUBSTITUTIONS.clear()
+    if not path:
+        return
+    data = json.loads(Path(path).read_text())
+    if not isinstance(data, dict) or not all(
+        isinstance(key, str) and isinstance(value, str)
+        for key, value in data.items()
+    ):
+        raise ValueError("substitutions JSON must map strings to strings")
+    SUBSTITUTIONS.update(data)
 
 
 def apply_substitutions(text):
@@ -261,10 +257,13 @@ def main():
     ap.add_argument("video")
     ap.add_argument("--out", default=None)
     ap.add_argument("--biased-keywords", nargs="+", default=None,
-                    help="proper nouns to bias Scribe toward, e.g. --biased-keywords Chowchilla")
+                    help="proper nouns to bias Scribe toward")
+    ap.add_argument("--substitutions-json", default=None,
+                    help="explicit campaign-specific post-Scribe correction map")
     ap.add_argument("--max-words", type=int, default=4)
     ap.add_argument("--keep-pngs", action="store_true")
     args = ap.parse_args()
+    load_substitutions(args.substitutions_json)
 
     video = Path(args.video).resolve()
     if not video.exists():

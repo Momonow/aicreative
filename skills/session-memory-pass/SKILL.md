@@ -36,6 +36,11 @@ If Codex's live `~/.codex/AGENTS.md` is updated for a project-specific rule, mir
 
 - Write explicit "do not repeat" notes for rejected outputs and painful mistakes.
 - Keep broad rules separate from one-off campaign details.
+- A technique learned inside one campaign is still general when it applies without the campaign's
+  people, product, copy, IDs, or disclaimer. Promote it to the relevant reusable skill and leave
+  only the campaign application in inventory.
+- Keep exact scripts, qualification rules, legal text, provider task IDs, asset IDs, launch state,
+  and rejected campaign assets in campaign memory.
 - Prefer practical rules over long narrative.
 - Include the reason when it matters: "prevents flashing captions on sensitive legal ads," "prevents Veo mishearing form as forum."
 - Do not turn every detail into a global rule. Promote only lessons likely to recur.
