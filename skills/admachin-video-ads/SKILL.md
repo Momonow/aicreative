@@ -18,8 +18,7 @@ Use this skill to avoid re-learning hard-won production lessons from AdMachin ad
 
 ## Sensitive Legal Caption Rules
 
-This skill chooses the caption strategy. For execution details, use the dedicated skills:
-`yellow-text-sub`, `hormozi3`, `nick-subtitle`, and `pulaski-jones-disclaimer`.
+This skill chooses the caption strategy. Before changing any caption renderer, check the existing catalog and use the dedicated skill directly: `yellow-text-sub`, `hormozi3`, `nick-subtitle`, `redwood-subtitle`, `embedded-captions`, or `pulaski-jones-disclaimer`. Use `caption-engine-builder` only when the user wants a genuinely new reference style cloned.
 
 For sexual abuse, prison abuse, juvenile detention, medical injury, or other trauma/legal ads:
 
@@ -60,7 +59,7 @@ For sexual abuse, prison abuse, juvenile detention, medical injury, or other tra
 
 - Confession / podcast monologues should feel like one person talking to someone else in the room: off-camera gaze, conversational cadence, natural pauses.
 - Announcer / winner-clone reads should be direct-to-lens. Do not put a hype direct-response script on an off-camera confession visual.
-- In podcast/interview format, audible `mm-hmm` / `yeah` reactions are acceptable. Keep them in audio if natural, but filter them out of captions.
+- In podcast/interview format, audible `mm-hmm` / `yeah` reactions are acceptable only between complete thoughts. If a reaction interrupts or splits diagnosis, eligibility, compensation, disclaimer, or CTA wording, reroll the clip or remove the reaction at native speed using Scribe word timings under an approved B-roll span; filter any retained reactions out of captions.
 - Do not invent props such as headphones or microphones unless they are intentionally part of the persona. If a prop keeps appearing inconsistently, inspect the prompt first before rerolling anchors.
 - Veo renders `Ayo` badly. Use one clean opener such as `Yo, Illinois. Listen up.` or `Listen up, Illinois.` instead of stacking slang bursts.
 
@@ -71,6 +70,7 @@ For sexual abuse, prison abuse, juvenile detention, medical injury, or other tra
 
 ## Persona Image QA
 
+- For a multi-ad batch, use a visibly distinct approved persona for every ad unless the user explicitly approves reuse. Show each persona still before generation; do not let demographic prompt similarity collapse the batch into near-identical faces.
 - Pick animation-safe anchors: medium close-up or chest-up, face visible, mouth unobstructed, hands low or out of frame.
 - Avoid hands/fingers close to camera, extreme gestures, blocked mouth, heavy shadows, tight crops, or photos that read too young for adult legal campaigns.
 - For California women's-prison UGC, rougher/weathered Latina or Chicana personas generally outperform cleaner or glam-looking portraits. Start there unless the user asks for a different audience.
@@ -80,25 +80,35 @@ For sexual abuse, prison abuse, juvenile detention, medical injury, or other tra
 
 ## Veo / Clip Workflow
 
-- For Veo Lite/free Google Flow, route through `googleflow_client.generate_veo` with `model="veo-3.1-lite-low-priority"` unless the user requests otherwise.
+- **Asset approval gate:** before animating a presenter or assembling the final ad, show the proposed host/persona still and every proposed B-roll clip individually and obtain explicit user approval. Candidate B-roll may be generated for review, but unapproved assets must not be used in the ad.
+- **Generated B-roll persistence gate:** immediately after a newly generated B-roll clip passes QA, upload it to the correct AdMachin project/subproject with a descriptive title and tags. Store the complete generation model/provider and full prompt metadata through the supported REST metadata PATCH when applicable, then verify the returned clip id/row before treating it as reusable. Never leave approved generated B-roll only on local disk.
+- **Screen-content QA:** reject blank, empty-looking, or visually indecipherable phone/computer screens. At normal feed-viewing size, screen-based B-roll must clearly communicate a populated form, record, article, or intended action while keeping personal information fictitious, obscured, or out of focus.
+- **Reels eligibility screens:** use true 9:16 mobile viewport captures with feed-readable text. Present one clean, unselected question state per short clip; never show cursor taps, selected radio buttons, pressed controls, or which answers were chosen. Reject desktop-like page framing, and cut among separately captured states when showing multiple questions.
+- **Proof-intensity matching:** when cloning medical/tort swipes, map the source's proof-media cuts and match each insert's narrative function and emotional intensity. Do not replace patient, hospital-recovery, scar, or diagnosis imagery with generic calendars, folders, or paperwork. Favor patient-first and diagnosis-first visuals, and retain host-plus-proof PIP when the reference uses it to maintain momentum. Treat laptop/article/study screens as secondary corroboration; do not use them as the main emotional proof when doctor-patient, brain-scan, hospital, or recovery footage is available.
+- **Hard Veo provider rule:** route every Veo 3.1 clip through useapi Google Flow unlimited with `googleflow_client.generate_veo(model="veo-3.1-lite-low-priority")`. Retry/resume that queue on transient failures. Never switch a Veo 3.1 job to Poyo, KIE, OpenRouter, or another paid provider without explicit user approval.
+- Do not confuse `omni-flash` with free Veo Lite: Omni Flash spends Google Flow credits (4s/6s/8s/10s = 15/20/25/30 credits), including provider guardrail failures. Calculate the expected total before submitting; generate sequentially and reuse every accepted clip. For a multi-clip talking head, bind a Flow `referenceAudio_*` or reusable character voice during generation, because post-processing cannot reliably correct major native pitch drift.
 - Verify clip 1 before generating the rest: check face, voice, framing, pronunciation, tone, lip-sync, and legal phrasing.
 - Once clip 1 passes, generate clips 2-N in parallel if the user wants speed.
 - If every clip in a video uses the same approved persona anchor, keep raw Veo audio by default; only use ElevenLabs voice changer when it solves real cross-clip drift or multi-video host consistency.
 - If external dubbing/voice replacement makes multiple personas sound too similar, keep the original model audio for now. Raw Veo audio usually preserves more person-to-person variation than samey external passes.
 - Use clip-1 anchor rotation for multi-clip talking-head ads. Choose eyes-open, forward-gaze anchor frames.
+- Treat each supplied first frame as the sole source of truth for identity, appearance, wardrobe, setting, lighting, and framing. In image-to-video prompts, describe only action/performance, voice, dialogue, camera behavior, and an intentional visual change when the user explicitly requests one. Do not restate age, race, facial features, hair, eyes, skin, scars, bandages, clothing, furniture, room, lighting, or framing details; those textual descriptions invite the model to reinterpret the reference. To minimize drift, keep the framing fixed and requested movement restrained unless the concept requires otherwise.
+- **Hard identity-continuity gate:** compare the approved anchor with the start, midpoint, and end of every generated clip, plus extra quarter-points on clips 8 seconds or longer. A matching first frame is not enough. Any material change in face geometry, apparent age, skin tone, eye color, hair length/style/color, visible medical details, wardrobe, room layout, furnishings, lighting, camera position, or framing is an automatic rejection. Always reroll the affected clip from the approved anchor before stitching, captioning, or delivery; then repeat the full identity check on the reroll.
+- Never hide identity or scene drift with trimming around the change, captions, b-roll, a convenient cut, frozen/duplicated frames, speed changes, or post-processing. Reroll only the failing clip and preserve every accepted clip to control generation cost.
 - For reporter/interviewee or other 2-speaker scenes, **lip-sync alone is not enough**. Check each speaking turn with `scripts/voice_consistency.py` or a quick F0 comparison; if both speakers land in nearly the same register/timbre, treat it as a same-voice failure and split to one speaker per clip.
 - Kling 3.0 element refs usually hold two identities better than Veo Lite on interview-style clips, but keep continuous 2-person takes short (~7s). Kling can auto-cut mid-clip even with `multi_shots=false`.
 - Dense 8-second dialogue can cause end-of-clip wobble. Shorten the line rather than trying to hide the transition.
 - Check the last 0.5-1.0 seconds of every clip for trailing words, face morphs, ghost tails, and silent drift.
 - Build clip scripts on natural speech breaks. Do not cram too many questions into one 8-second clip when legal wording must stay clear.
-- Do not fix cut-off words, dead air, repeated audio, disappearing props, or bad gestures with frozen frames, speed changes, stabilization, or frame holds unless the user explicitly approves that exact post process. Re-trim at original speed or re-roll the failing clip.
+- Keep generated video and speech at their native playback speed at every stage. Never use slowdowns, speedups, time-stretching, duplicated frames, frozen frames, or frame holds to repair timing or defects. Re-trim at native speed or re-roll the failing clip.
 
 ## Audio / Finalize
 
 - For a single ad generated from one persona seed, prefer raw model audio plus loudness leveling. Use `voice_changer` when the same persona must sound consistent across multiple ads, when timbre drifts, or when music / room bleed must be removed.
 - Trim to the scripted words, not only silence. Trailing improvised words survive silence trim.
-- If a clip starts speaking immediately (first word under ~0.1s), prepend about `0.15s` of frozen first-frame plus silence before `voice_changer` so the opening word does not come out weak.
+- If a clip starts speaking immediately and `voice_changer` weakens the first word, retain available natural source lead-in at native speed or re-roll with more lead-in. Never create the lead-in by freezing or duplicating frames.
 - Clone a persona voice once from the cleanest clips and reuse that `voice_id` across every variant for that persona.
+- For a final static-gain loudness pass, disable ffmpeg `alimiter` auto makeup with `level=disabled` (for example, `alimiter=limit=0.794:level=disabled:asc=1`). The default makeup can undo the LUFS target and push the master close to 0 dBTP. Re-measure integrated LUFS and true peak on the rendered final.
 
 ## Seedance / useapi B-Roll Workflow
 
@@ -135,6 +145,9 @@ Use `prunaai/p-video` only when the user asks for it or Veo policy blocks a simp
 - Clean masters, captioned versions, and disclaimer versions should be separate files.
 - Show each generated video to the user immediately with a backticked local path before deep QA or post-processing.
 - After stitching, create a boundary/contact-sheet check around every clip join.
+- Frame-quantize B-roll edits. Adjacent B-roll shots must share one exact frame boundary; otherwise leave a deliberate host run of meaningful length, never a one- or two-frame host flash between inserts.
+- Before delivery, run `dissect.py <final> --every-frame --no-ocr` and `scripts/framewise_video_qa.py` on the decoded frames. Inspect every transition before/at/after and reject isolated flashes, black frames, frozen runs, or detected visual runs shorter than 12 frames.
+- Keep dense mobile eligibility/form screens unobstructed. If no safe subtitle position exists, stop captions exactly when the mobile sequence begins rather than covering questions or answer options.
 - Default join style is hard jump cut unless the user asks for a transition.
 - If a boundary looks like a soft dissolve, suspect the generated clip tail first. Trim or reroll the clip; do not assume ffmpeg caused it.
 - Do not burn captions by default. Burn captions only when the user asks for captions/subtitles/disclaimer on the deliverable.

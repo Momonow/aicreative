@@ -8,6 +8,7 @@ description: Burn "Redwood" captions — ALL-CAPS tracked Anton, white with blac
 ```bash
 .venv/bin/python scripts/caption_redwood.py <in.mp4> --out <out.mp4> --vertical-pos <ASK>
 .venv/bin/python scripts/caption_redwood.py <in.mp4> --preview 8      # vpos candidates first
+.venv/bin/python scripts/caption_redwood.py <in.mp4> --out <out.mp4> --caption-end <SECONDS>  # preserve full video, stop captions before dense screens
 .venv/bin/python scripts/burn_disclaimer.py <out.mp4> <out>_disclaimer.mp4   # combo
 ```
 
@@ -20,8 +21,12 @@ LOCKED spec (do NOT re-derive; calibrated vs the reference 2026-07-15):
   HOLDS until the next word. Box = real stroked ink bbox (textbbox) + symmetric **0.10em margin**
   on all four sides, radius 0.22*box_h. Words drawn at explicit cursor positions (same coordinate
   system as the box — never anchor="mm" + advance math).
-- ~4 words/card, cards never straddle sentence ends, card pop 0.95→1.0 over 0.10s.
+- Maximum 3 words/card, cards never straddle sentence ends, card pop 0.95→1.0 over 0.10s. Shorter cards prevent legal and medical phrases from turning into edge-to-edge banners.
+- Every card must be fit from the rendered RGBA bounds of every karaoke-word variant, not from plain `textlength()`. Tracking, outline, shadow, and pink-box padding all count. Require at least an 8% horizontal viewport margin on both sides and shrink until every variant passes.
 - **vpos is per-video — run --preview and ASK the user** (0.80 for the 2026-07 DJI yapper set).
 - Pilot ONE video for sign-off before batching a set.
+- Before delivery, inspect a contact sheet spanning every video in the batch. A single passing pilot is not enough when different transcripts produce different line widths.
+- The caption overlay must end with the source video (`overlay shortest=1:eof_action=endall`). Never let the caption PNG sequence extend the source, repeat its last frame, or alter native playback speed.
+- For dense mobile forms with no safe caption area, use `--caption-end` at the exact first form frame. This stops drawing captions while preserving the source's full duration; do not use `--end`, which intentionally shortens the render.
 
 Built with the `caption-engine-builder` method; sister engines: nick-subtitle, hormozi3.

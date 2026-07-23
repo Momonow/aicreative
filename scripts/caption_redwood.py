@@ -8,7 +8,7 @@ Measured spec (720x1280 reference):
   - white text, black stroke ~0.08*px, soft black shadow offset ~0.045*px
   - highlight: hot pink rounded box rgb(219,18,86) behind ONE word per card (some cards none),
     pad_x ~0.16*px, pad_y ~0.10*px, radius ~0.22*box_h; white text stays on top
-  - 2-5 words per card, single line, center anchored at vpos ~0.55
+  - 2-3 words per card, single line, center anchored at vpos ~0.55
   - subtle scale-pop on card appearance
 
 Disclaimer is a separate layer — run scripts/burn_disclaimer.py on the output for the combo.
@@ -39,6 +39,7 @@ TRACKING = 0.055            # extra letter-spacing as fraction of font px (ref h
 RADIUS = 0.22               # corner radius as fraction of box height
 POP_DUR = 0.10
 POP_START = 0.95
+HORIZONTAL_SAFE_MARGIN = 0.08
 STOPWORDS = {"the","a","an","and","or","but","of","to","in","on","at","for","with","was","is",
              "are","were","be","been","i","you","he","she","it","we","they","my","your","his",
              "her","its","our","their","this","that","so","not","no","if","as","by","me","him"}
@@ -150,7 +151,7 @@ def _scale_about(img, factor, cx, cy):
     return out
 
 
-def burn(video, cards, work_dir, out, font_ratio, vpos, end=None):
+def burn(video, cards, work_dir, out, font_ratio, vpos, end=None, caption_end=None):
     width, height = probe_size(video)
     fps = probe_fps(video)
     dur = probe_duration(video) if end is None else min(end, probe_duration(video))
@@ -161,13 +162,21 @@ def burn(video, cards, work_dir, out, font_ratio, vpos, end=None):
 
     disp_end = [cards[i + 1]["start"] for i in range(len(cards) - 1)] + [cards[-1]["end"] + 0.3]
     cd = []
-    meas = ImageDraw.Draw(Image.new("RGBA", (4, 4)))
     for ci, card in enumerate(cards):
         tokens = [w["text"].upper() for w in card["words"]]
         cf = base_font
-        while meas.textlength(" ".join(tokens), font=cf) > width * 0.92 and cf.size > 16:
-            cf = ImageFont.truetype(FONT_PATH, cf.size - 2)
-        variants = [render_card(tokens, cf, width, height, cy, hi_idx=i) for i in range(len(tokens))]
+        safe_left = int(width * HORIZONTAL_SAFE_MARGIN)
+        safe_right = width - safe_left
+        while True:
+            variants = [render_card(tokens, cf, width, height, cy, hi_idx=i)
+                        for i in range(len(tokens))]
+            bounds = [img.getbbox() for img in variants]
+            fits = all(b is None or (b[0] >= safe_left and b[2] <= safe_right) for b in bounds)
+            if fits:
+                break
+            if cf.size <= 16:
+                raise RuntimeError(f"Redwood caption cannot fit safely: {' '.join(tokens)}")
+            cf = ImageFont.truetype(FONT_PATH, max(16, cf.size - 2))
         cd.append({"d0": card["start"], "d1": disp_end[ci], "words": card["words"],
                    "variants": variants})
 
@@ -178,7 +187,9 @@ def burn(video, cards, work_dir, out, font_ratio, vpos, end=None):
     prev_key = prev_path = None
     for f in range(nframes):
         t = f / fps
-        active = next((c for c in cd if c["d0"] <= t < c["d1"]), None)
+        active = None
+        if caption_end is None or t < caption_end:
+            active = next((c for c in cd if c["d0"] <= t < c["d1"]), None)
         scale, hi = 1.0, 0
         if active is not None:
             scale = _pop(t - active["d0"])
@@ -201,7 +212,7 @@ def burn(video, cards, work_dir, out, font_ratio, vpos, end=None):
             prev_key, prev_path = key, path
 
     cmd = ["ffmpeg", "-y", "-i", str(video), "-framerate", f"{fps:.5f}", "-i", str(frames_dir / "%05d.png"),
-           "-filter_complex", "[0:v][1:v]overlay=0:0:format=auto[out]", "-map", "[out]", "-map", "0:a",
+           "-filter_complex", "[0:v][1:v]overlay=0:0:format=auto:shortest=1:eof_action=endall[out]", "-map", "[out]", "-map", "0:a",
            "-c:a", "copy", "-c:v", "libx264", "-preset", "fast", "-crf", "19", "-pix_fmt", "yuv420p", str(out)]
     r = run(cmd)
     if r.returncode != 0:
@@ -214,10 +225,16 @@ def main():
     ap.add_argument("--out", default=None)
     ap.add_argument("--font-ratio", type=float, default=FONT_RATIO)
     ap.add_argument("--vertical-pos", type=float, default=VPOS)
-    ap.add_argument("--max-words", type=int, default=4)
+    ap.add_argument("--max-words", type=int, default=3)
     ap.add_argument("--min-pause", type=float, default=0.35)
     ap.add_argument("--biased", default="Chowchilla:3.0,CCWF:2.0,CIW:2.0,Mija:2.0")
     ap.add_argument("--end", type=float, default=None)
+    ap.add_argument(
+        "--caption-end",
+        type=float,
+        default=None,
+        help="stop drawing captions at this time while preserving the full source duration",
+    )
     ap.add_argument("--preview", type=float, default=None,
                     help="render ONE composited frame at time T (secs) per candidate vpos, no full render")
     ap.add_argument("--preview-vpos", default="0.55,0.68,0.80",
@@ -256,7 +273,16 @@ def main():
     cards = build_cards(result.get("segments", []), max_words=args.max_words, min_pause=args.min_pause)
     print(f"      {len(cards)} cards", flush=True)
     print("[2/2] render Redwood captions", flush=True)
-    burn(video, cards, work, out, args.font_ratio, args.vertical_pos, end=args.end)
+    burn(
+        video,
+        cards,
+        work,
+        out,
+        args.font_ratio,
+        args.vertical_pos,
+        end=args.end,
+        caption_end=args.caption_end,
+    )
     print(f"DONE -> {out}", flush=True)
 
 

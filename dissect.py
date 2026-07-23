@@ -8,6 +8,7 @@ Produces outputs/<videoname>/:
   metadata.json    — duration, fps, resolution, aspect ratio
   scenes.json      — scene-cut timestamps (ffmpeg scene detection)
   frames/          — one jpg per scene boundary + every --interval seconds
+  all_frames/      — every decoded frame when --every-frame is used
   audio.wav        — extracted mono 16k audio
   transcript.json  — ElevenLabs Scribe output with word-level timestamps
   burned_text.json — tesseract OCR per-frame, flagging Veo-hallucinated subtitles
@@ -53,6 +54,7 @@ def probe(video):
         "height": h,
         "aspect_ratio": f"{w}:{h}",
         "codec": v.get("codec_name"),
+        "frame_count": int(v["nb_frames"]) if v.get("nb_frames") else None,
     }
 
 
@@ -81,6 +83,21 @@ def extract_frames(video, times, frames_dir):
         ])
         saved.append(str(out.relative_to(ROOT)))
     return saved
+
+
+def extract_all_frames(video, frames_dir):
+    """Decode every source frame in one ffmpeg pass."""
+    frames_dir.mkdir(parents=True, exist_ok=True)
+    for old_frame in frames_dir.glob("frame_*.jpg"):
+        old_frame.unlink()
+    result = run([
+        "ffmpeg", "-y", "-i", str(video),
+        "-fps_mode", "passthrough", "-q:v", "2",
+        str(frames_dir / "frame_%06d.jpg"),
+    ])
+    if result.returncode != 0:
+        raise RuntimeError(f"Every-frame extraction failed: {result.stderr[-1000:]}")
+    return len(list(frames_dir.glob("frame_*.jpg")))
 
 
 def extract_audio(video, audio_path):
@@ -219,6 +236,11 @@ def main():
     ap.add_argument("--language", default="en", help="ISO-639-1 language code for Scribe (default en)")
     ap.add_argument("--scene-threshold", type=float, default=0.3)
     ap.add_argument("--interval", type=float, default=1.0, help="sample a frame every N seconds via ffmpeg (default 1.0; 0 to disable)")
+    ap.add_argument(
+        "--every-frame",
+        action="store_true",
+        help="decode and save every video frame in one pass; ignores --interval",
+    )
     ap.add_argument("--no-ocr", action="store_true", help="skip burned-text OCR step (faster, but won't catch Veo subtitle hallucinations)")
     args = ap.parse_args()
 
@@ -238,18 +260,39 @@ def main():
     print(f"[2/5] scene detection (threshold={args.scene_threshold})", flush=True)
     cuts = detect_scenes(video, args.scene_threshold)
     times = [0.0] + cuts
-    if args.interval > 0:
+    if not args.every_frame and args.interval > 0:
         t = args.interval
         while t < meta["duration_s"]:
             if all(abs(t - x) > 0.5 for x in times):
                 times.append(t)
             t += args.interval
         times = sorted(times)
-    (out / "scenes.json").write_text(json.dumps({"cuts": cuts, "extracted_at": times}, indent=2))
-    print(f"      {len(cuts)} cuts, {len(times)} frames total", flush=True)
+    scene_data = {
+        "cuts": cuts,
+        "extracted_at": [] if args.every_frame else times,
+        "every_frame": args.every_frame,
+    }
+    (out / "scenes.json").write_text(json.dumps(scene_data, indent=2))
+    if args.every_frame:
+        expected_frames = meta["frame_count"] or round(meta["duration_s"] * meta["fps"])
+        print(f"      {len(cuts)} cuts, ~{expected_frames} frames expected", flush=True)
+    else:
+        print(f"      {len(cuts)} cuts, {len(times)} frames total", flush=True)
 
     print(f"[3/5] extract frames", flush=True)
-    extract_frames(video, times, out / "frames")
+    if args.every_frame:
+        extracted_dir = out / "all_frames"
+        extracted_frames = extract_all_frames(video, extracted_dir)
+        (out / "every_frame_qa.json").write_text(json.dumps({
+            "expected_frames": expected_frames,
+            "extracted_frames": extracted_frames,
+            "complete": extracted_frames == expected_frames,
+            "fps": meta["fps"],
+        }, indent=2))
+        print(f"      decoded {extracted_frames}/{expected_frames} frames", flush=True)
+    else:
+        extracted_dir = out / "frames"
+        extract_frames(video, times, extracted_dir)
 
     print(f"[4/5] extract audio", flush=True)
     audio = out / "audio.wav"
@@ -265,7 +308,7 @@ def main():
     if not args.no_ocr:
         print(f"[6/6] burned-text OCR (tesseract)", flush=True)
         try:
-            burned = scan_frames_for_burned_text(out / "frames")
+            burned = scan_frames_for_burned_text(extracted_dir)
             (out / "burned_text.json").write_text(json.dumps(burned, indent=2))
             marker = "✗ FLAGGED" if burned["flagged"] else "✓ clean"
             print(f"      {marker} — {burned['reason']}", flush=True)

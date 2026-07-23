@@ -135,6 +135,7 @@ If a guard or staff member sexually abused you at Chowchilla, Valley State, CIW,
 CUTS = {  # cut label -> filename template
  "stacked": "{L}_stacked_male_redwood_disclaimer.mp4",
  "regular": "{L}_full_redwood_disclaimer.mp4",
+ "pip":     "{L}_pip_nick_disclaimer.mp4",
 }
 
 def load():
